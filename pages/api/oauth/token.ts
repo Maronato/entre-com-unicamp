@@ -1,7 +1,14 @@
-import type { NextApiRequest, NextApiResponse } from 'next'
-import { AuthorizationServer, GrantType, AuthorizationCodeGrantType } from '../../../oauth2/authorizationServer'
-import { CodeChallengeMethod } from '../../../oauth2/authorizationServer/grant'
-import { AccessToken, RefreshToken } from '../../../oauth2/authorizationServer/token'
+import {
+  AuthorizationServer,
+  GrantType,
+  AuthorizationCodeGrantType,
+} from "../../../oauth2/authorizationServer"
+import {
+  AccessToken,
+  RefreshToken,
+} from "../../../oauth2/authorizationServer/token"
+
+import type { NextApiRequest, NextApiResponse } from "next"
 
 type BaseRequestData = {
   grantType: GrantType
@@ -27,7 +34,9 @@ type BaseRefreshRequestData = BaseRequestData & {
 type RefreshConfidentialRequestData = BaseRefreshRequestData & {
   clientSecret: string
 }
-type RefreshRequestData = BaseRefreshRequestData | RefreshConfidentialRequestData
+type RefreshRequestData =
+  | BaseRefreshRequestData
+  | RefreshConfidentialRequestData
 
 type RequestData = AccessRequestData | RefreshRequestData
 
@@ -49,7 +58,7 @@ export default async function handler(
   if (req.method !== "POST") {
     return res.status(405).send("Method not allowed")
   }
-  
+
   const data: RequestData = req.body
   if (data.grantType === "authorization_code") {
     return accessTokenHandler(req, res)
@@ -59,17 +68,35 @@ export default async function handler(
   return res.status(400).json({ error: "unsupported_grant_type" })
 }
 
-function respondExchange(res: NextApiResponse<ResponseData>, accessToken: AccessToken, refreshToken: RefreshToken) {
-  return res.status(200).json({ access_token: accessToken.token, refresh_token: refreshToken.token, token_type: "Bearer" })
+function respondExchange(
+  res: NextApiResponse<ResponseData>,
+  accessToken: AccessToken,
+  refreshToken: RefreshToken
+) {
+  return res.status(200).json({
+    access_token: accessToken.token,
+    refresh_token: refreshToken.token,
+    token_type: "Bearer",
+  })
 }
 
-async function accessTokenHandler(req: NextApiRequest, res: NextApiResponse<ResponseData | string>) {
+async function accessTokenHandler(
+  req: NextApiRequest,
+  res: NextApiResponse<ResponseData | string>
+) {
   const data = req.body as AccessRequestData
   const server = new AuthorizationServer()
 
-  const secretOrVerifier = "clientSecret" in data ? data.clientSecret : data.codeVerifier
+  const secretOrVerifier =
+    "clientSecret" in data ? data.clientSecret : data.codeVerifier
 
-  const auth = await server.exchangeToken('authorization_code', data.code, data.clientId, secretOrVerifier, data.redirectUri)
+  const auth = await server.exchangeToken(
+    "authorization_code",
+    data.code,
+    data.clientId,
+    secretOrVerifier,
+    data.redirectUri
+  )
   if (typeof auth === "string") {
     return res.status(400).json({ error: auth })
   }
@@ -77,12 +104,20 @@ async function accessTokenHandler(req: NextApiRequest, res: NextApiResponse<Resp
   return respondExchange(res, accessToken, refreshToken)
 }
 
-async function refreshTokenHandler(req: NextApiRequest, res: NextApiResponse<ResponseData | string>) {
+async function refreshTokenHandler(
+  req: NextApiRequest,
+  res: NextApiResponse<ResponseData | string>
+) {
   const data = req.body as RefreshRequestData
   const server = new AuthorizationServer()
 
   const clientSecret = "clientSecret" in data ? data.clientSecret : undefined
-  const auth = await server.exchangeToken("refresh_token", data.refreshToken, data.clientId, clientSecret)
+  const auth = await server.exchangeToken(
+    "refresh_token",
+    data.refreshToken,
+    data.clientId,
+    clientSecret
+  )
   if (typeof auth === "string") {
     return res.status(400).json({ error: auth })
   }

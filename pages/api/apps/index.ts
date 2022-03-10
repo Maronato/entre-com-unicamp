@@ -1,8 +1,9 @@
-import type { NextApiRequest, NextApiResponse } from 'next'
-import { Client, ClientType } from '../../../oauth2/authorizationServer/client'
-import { ResourceOwner } from '../../../oauth2/authorizationServer/resourceOwner'
-import { isAuthenticated } from '../../../utils/auth/server'
-import { getPrisma } from '../../../utils/db'
+import { Client, ClientType } from "../../../oauth2/authorizationServer/client"
+import { ResourceOwner } from "../../../oauth2/authorizationServer/resourceOwner"
+import { isAuthenticated } from "../../../utils/auth/server"
+import { getPrisma } from "../../../utils/db"
+
+import type { NextApiRequest, NextApiResponse } from "next"
 
 type CreateRequestData = {
   name?: string
@@ -41,14 +42,24 @@ async function listHandler(
   user: ResourceOwner
 ) {
   const prisma = getPrisma()
-  const apps = await prisma.clients.findMany({ where: { owner: BigInt(user.id) } })
+  const apps = await prisma.clients.findMany({
+    where: { owner: BigInt(user.id) },
+  })
 
-  const resData: ListResponseData = apps.map((app) => ({ clientId: app.client_id, id: app.id.toString(), name: app.name, type: app.type as ClientType }))
+  const resData: ListResponseData = apps.map((app) => ({
+    clientId: app.client_id,
+    id: app.id.toString(),
+    name: app.name,
+    type: app.type as ClientType,
+  }))
 
   return res.status(200).json(resData)
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
   const user = await isAuthenticated(req)
   if (!user) {
     return res.status(401).send("Must be authenticated")

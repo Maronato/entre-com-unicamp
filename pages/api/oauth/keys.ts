@@ -1,7 +1,8 @@
-import { JSONWebKeySet } from 'jose'
-import type { NextApiRequest, NextApiResponse } from 'next'
+import { JSONWebKeySet } from "jose"
+
 import { AuthorizationServer } from "../../../oauth2/authorizationServer"
 
+import type { NextApiRequest, NextApiResponse } from "next"
 
 export default async function handler(
   _req: NextApiRequest,

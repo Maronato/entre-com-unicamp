@@ -1,6 +1,13 @@
-import { GetServerSideProps, NextPage } from "next";
-import { FunctionComponent, useState } from "react";
-import { serverFetch, UserFallback, UserProvicer, useAuth } from "../../utils/auth/useUser";
+import { FunctionComponent, useState } from "react"
+
+import { GetServerSideProps, NextPage } from "next"
+
+import {
+  serverFetch,
+  UserFallback,
+  UserProvicer,
+  useAuth,
+} from "../../utils/auth/useUser"
 
 interface Props {
   fallback: UserFallback
@@ -23,11 +30,17 @@ const Authorize: FunctionComponent = () => {
 }
 
 const Page: NextPage<Props> = ({ fallback, ...props }) => {
-  return <UserProvicer fallback={fallback}><Authorize { ...props } /></UserProvicer>
+  return (
+    <UserProvicer fallback={fallback}>
+      <Authorize {...props} />
+    </UserProvicer>
+  )
 }
 export default Page
 
-export const getServerSideProps: GetServerSideProps<Props> = async ({ req }) => {
+export const getServerSideProps: GetServerSideProps<Props> = async ({
+  req,
+}) => {
   const user = await serverFetch(req)
   return { props: { fallback: { ...user } } }
 }

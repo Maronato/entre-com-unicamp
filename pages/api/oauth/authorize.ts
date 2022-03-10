@@ -1,7 +1,8 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
-import type { NextApiRequest, NextApiResponse } from 'next'
-import { AuthorizationServer } from '../../../oauth2/authorizationServer'
-import { CodeChallengeMethod } from '../../../oauth2/authorizationServer/grant'
+import { AuthorizationServer } from "../../../oauth2/authorizationServer"
+import { CodeChallengeMethod } from "../../../oauth2/authorizationServer/grant"
+
+import type { NextApiRequest, NextApiResponse } from "next"
 
 type CodeRequestData = {
   clientId: string
@@ -39,15 +40,33 @@ export default async function handler(
   }
   const server = new AuthorizationServer()
   const data: RequestData = req.body
-  
+
   if ("codeChallenge" in data) {
-    const auth = await server.authorize(data.responseType, { clientId: data.clientId, codeChallenge: data.codeChallenge, codeChallengeMethod: data.codeChallengeMethod }, data.resourceOwnerId, data.redirectUri, data.scope, data.state)
+    const auth = await server.authorize(
+      data.responseType,
+      {
+        clientId: data.clientId,
+        codeChallenge: data.codeChallenge,
+        codeChallengeMethod: data.codeChallengeMethod,
+      },
+      data.resourceOwnerId,
+      data.redirectUri,
+      data.scope,
+      data.state
+    )
     if (typeof auth === "string") {
       return res.status(400).json({ error: auth, state: data.state })
     }
     return res.status(200).json({ code: auth.code, state: data.state })
   }
-  const auth = await server.authorize(data.responseType, { clientId: data.clientId }, data.resourceOwnerId, data.redirectUri, data.scope, data.state)
+  const auth = await server.authorize(
+    data.responseType,
+    { clientId: data.clientId },
+    data.resourceOwnerId,
+    data.redirectUri,
+    data.scope,
+    data.state
+  )
   if (typeof auth === "string") {
     return res.status(400).json({ error: auth, state: data.state })
   }

@@ -1,8 +1,9 @@
-import type { NextApiRequest, NextApiResponse } from 'next'
-import { Client } from '../../../oauth2/authorizationServer/client'
-import { ResourceOwner } from '../../../oauth2/authorizationServer/resourceOwner'
-import { isAuthenticated } from '../../../utils/auth/server'
-import { getPrisma } from '../../../utils/db'
+import { Client } from "../../../oauth2/authorizationServer/client"
+import { ResourceOwner } from "../../../oauth2/authorizationServer/resourceOwner"
+import { isAuthenticated } from "../../../utils/auth/server"
+import { getPrisma } from "../../../utils/db"
+
+import type { NextApiRequest, NextApiResponse } from "next"
 
 async function getUserApp(req: NextApiRequest, user: ResourceOwner) {
   const { appId } = req.query as { appId: string }
@@ -13,7 +14,6 @@ async function getUserApp(req: NextApiRequest, user: ResourceOwner) {
   }
 }
 
-type ListResponseData = Pick<Client, "clientId" | "id" | "name" | "type">[]
 async function getHandler(
   req: NextApiRequest,
   res: NextApiResponse<Client | string>,
@@ -24,10 +24,9 @@ async function getHandler(
   if (!app) {
     return res.status(404).send("App not found")
   }
-  
+
   return res.status(200).json(app)
 }
-
 
 async function deleteHandler(
   req: NextApiRequest,
@@ -39,12 +38,15 @@ async function deleteHandler(
     return res.status(404).send("App not found")
   }
   const prisma = getPrisma()
-  await prisma.clients.delete({ where: { id: BigInt(app.id)} })
+  await prisma.clients.delete({ where: { id: BigInt(app.id) } })
 
   return res.status(204).json("Success")
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
   const user = await isAuthenticated(req)
   if (!user) {
     return res.status(401).send("Must be authenticated")

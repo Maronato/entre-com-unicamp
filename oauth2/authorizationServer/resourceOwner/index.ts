@@ -11,7 +11,9 @@ export class ResourceOwner {
 
   static async get(id: string) {
     const prisma = getPrisma()
-    const resourceOwner = await prisma.resource_owners.findUnique({ where: { id: BigInt(id) } })
+    const resourceOwner = await prisma.resource_owners.findUnique({
+      where: { id: BigInt(id) },
+    })
     if (resourceOwner) {
       return new ResourceOwner(resourceOwner.id.toString(), resourceOwner.email)
     }
@@ -19,14 +21,16 @@ export class ResourceOwner {
 
   static async create(email: string) {
     const prisma = getPrisma()
-    const resourceOwner = await prisma.resource_owners.create({ data: { email } })
+    const resourceOwner = await prisma.resource_owners.create({
+      data: { email },
+    })
     return new ResourceOwner(resourceOwner.id.toString(), resourceOwner.email)
   }
 
   toJSON() {
     return {
       id: this.id,
-      email: this.email
+      email: this.email,
     }
   }
 }
