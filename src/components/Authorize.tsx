@@ -5,7 +5,6 @@ import { useRouter } from "next/router"
 
 import {
   RequestData,
-  ErrorResponseData,
   ValidResponseData,
   ChallengeRequestData,
 } from "@/pages/api/oauth/authorize"
