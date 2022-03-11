@@ -1,3 +1,8 @@
+import {
+  respondInvalidRequest,
+  respondMethodNotAllowed,
+} from "@/utils/serverUtils"
+
 import { getPrisma } from "../../../utils/db"
 import { createRandomString } from "../../../utils/random"
 
@@ -12,12 +17,20 @@ export default async function handler(
   res: NextApiResponse
 ) {
   if (req.method !== "POST") {
-    return res.status(405).send("Method not allowed")
+    return respondMethodNotAllowed(res)
   }
   const { email }: RequestData = req.body
 
   if (!email) {
-    return res.status(400).send("Missing email")
+    return respondInvalidRequest(res, "Missing email")
+  }
+
+  const emailExp = new RegExp(/\w+@[[A-Za-z]+\.]?unicamp\.br/)
+  if (!emailExp.test(email)) {
+    return respondInvalidRequest(
+      res,
+      "Invalid email format. Must be a valid email and end with 'unicamp.br'"
+    )
   }
 
   const prisma = getPrisma()
@@ -34,5 +47,5 @@ export default async function handler(
     )
   )
 
-  return res.status(200).send("Success")
+  return res.status(200).send({ success: true })
 }

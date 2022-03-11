@@ -2,6 +2,11 @@ import { Client } from "@/oauth2/client"
 import { ResourceOwner } from "@/oauth2/resourceOwner"
 import { isAuthenticated } from "@/utils/auth/server"
 import { getPrisma } from "@/utils/db"
+import {
+  respondMethodNotAllowed,
+  respondNotFound,
+  respondUnauthorized,
+} from "@/utils/serverUtils"
 
 import type { NextApiRequest, NextApiResponse } from "next"
 
@@ -16,41 +21,43 @@ async function getUserApp(req: NextApiRequest, user: ResourceOwner) {
 
 async function getHandler(
   req: NextApiRequest,
-  res: NextApiResponse<Client | string>,
+  res: NextApiResponse,
   user: ResourceOwner
 ) {
   const app = await getUserApp(req, user)
 
   if (!app) {
-    return res.status(404).send("App not found")
+    return respondNotFound(res, "App not found")
   }
 
-  return res.status(200).json(app)
+  return res.status(200).json(app.toJSON(true))
 }
 
 async function deleteHandler(
   req: NextApiRequest,
-  res: NextApiResponse<string>,
+  res: NextApiResponse,
   user: ResourceOwner
 ) {
   const app = await getUserApp(req, user)
   if (!app) {
-    return res.status(404).send("App not found")
+    return respondNotFound(res, "App not found")
   }
   const prisma = getPrisma()
   await prisma.clients.delete({ where: { id: BigInt(app.id) } })
 
-  return res.status(204).json("Success")
+  return res.status(204).json({})
 }
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const user = await isAuthenticated(req)
-  if (!user) {
-    return res.status(401).send("Must be authenticated")
+  const auth = await isAuthenticated(req)
+  if (!auth) {
+    return respondUnauthorized(res, "Invalid credentials")
   }
+
+  const [user] = auth
 
   switch (req.method) {
     case "GET":
@@ -58,6 +65,6 @@ export default async function handler(
     case "DELETE":
       return deleteHandler(req, res, user)
     default:
-      return res.status(405).send("Method not allowed")
+      return respondMethodNotAllowed(res)
   }
 }

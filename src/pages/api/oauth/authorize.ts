@@ -1,6 +1,7 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import { AuthorizationServer } from "@/oauth2"
 import { CodeChallengeMethod } from "@/oauth2/grant"
+import { respondMethodNotAllowed } from "@/utils/serverUtils"
 
 import type { NextApiRequest, NextApiResponse } from "next"
 
@@ -9,22 +10,22 @@ type CodeRequestData = {
   resourceOwnerId: string
   responseType: "code"
   redirectUri: string
-  scope: string[]
+  scope?: string[]
   state?: string
 }
 
-type ChallengeRequestData = CodeRequestData & {
+export type ChallengeRequestData = CodeRequestData & {
   codeChallenge: string
   codeChallengeMethod: CodeChallengeMethod
 }
 
-type RequestData = CodeRequestData | ChallengeRequestData
+export type RequestData = CodeRequestData | ChallengeRequestData
 
-type ValidResponseData = {
+export type ValidResponseData = {
   code: string
   state?: string
 }
-type ErrorResponseData = {
+export type ErrorResponseData = {
   error: string
   state?: string
 }
@@ -36,7 +37,7 @@ export default async function handler(
   res: NextApiResponse<ResponseData | string>
 ) {
   if (req.method !== "POST") {
-    return res.status(405).send("Method not allowed")
+    return respondMethodNotAllowed(res)
   }
   const server = new AuthorizationServer()
   const data: RequestData = req.body

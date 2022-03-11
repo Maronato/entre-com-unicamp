@@ -2,6 +2,11 @@ import { Client, ClientType } from "@/oauth2/client"
 import { ResourceOwner } from "@/oauth2/resourceOwner"
 import { isAuthenticated } from "@/utils/auth/server"
 import { getPrisma } from "@/utils/db"
+import {
+  respondInvalidRequest,
+  respondMethodNotAllowed,
+  respondUnauthorized,
+} from "@/utils/serverUtils"
 
 import type { NextApiRequest, NextApiResponse } from "next"
 
@@ -21,18 +26,18 @@ async function createHandler(
   const { name, redirect_uris, type }: CreateRequestData = req.body
 
   if (!name) {
-    return res.status(401).send("Missing name")
+    return respondInvalidRequest(res, "Missing name")
   }
   if (!redirect_uris) {
-    return res.status(401).send("Missing redirect_uris")
+    return respondInvalidRequest(res, "Missing redirect_uris")
   }
   if (!type) {
-    return res.status(401).send("Missing type")
+    return respondInvalidRequest(res, "Missing type")
   }
 
   const client = await Client.create(name, user, type, redirect_uris)
 
-  return res.status(201).json(client)
+  return res.status(201).json(client.toJSON(true) as Client)
 }
 
 type ListResponseData = Pick<Client, "clientId" | "id" | "name" | "type">[]
@@ -60,10 +65,12 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const user = await isAuthenticated(req)
-  if (!user) {
-    return res.status(401).send("Must be authenticated")
+  const auth = await isAuthenticated(req)
+  if (!auth) {
+    return respondUnauthorized(res, "Invalid credentials")
   }
+
+  const [user] = auth
 
   switch (req.method) {
     case "POST":
@@ -71,6 +78,6 @@ export default async function handler(
     case "GET":
       return listHandler(req, res, user)
     default:
-      return res.status(405).send("Method not allowed")
+      return respondMethodNotAllowed(res)
   }
 }

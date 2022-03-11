@@ -8,11 +8,25 @@ export const postFetch = async <T>(
     headers: {
       "Content-type": "application/json; charset=UTF-8",
     },
-  }).then((r) => r.json())
+  })
+    .then((r) => {
+      if (!r.ok) {
+        throw r
+      }
+      return r
+    })
+    .then((r) => r.json())
   return res
 }
 
 export const getFetch = async <T>(url: string) => {
-  const res: T = await fetch(url).then((r) => r.json())
+  const res: T = await fetch(url)
+    .then((r) => {
+      if (!r.ok) {
+        throw r
+      }
+      return r
+    })
+    .then((r) => r.json())
   return res
 }

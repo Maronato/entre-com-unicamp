@@ -30,7 +30,7 @@ export class AuthorizationServer {
     auth: ConfidentialAuth,
     resourceOwnerId: string,
     redirectUri: string,
-    scope: string[],
+    scope?: string[],
     state?: string
   ): Promise<AuthorizationCodeGrant | string>
   async authorize(
@@ -38,7 +38,7 @@ export class AuthorizationServer {
     auth: PublicAuth,
     resourceOwnerId: string,
     redirectUri: string,
-    scope: string[],
+    scope?: string[],
     state?: string
   ): Promise<AuthorizationCodePKCEGrant | string>
   async authorize(
@@ -46,11 +46,11 @@ export class AuthorizationServer {
     auth: ConfidentialAuth | PublicAuth,
     resourceOwnerId: string,
     redirectUri: string,
-    scope: string[],
+    scope?: string[],
     state?: string
   ): Promise<AuthorizationCodeGrant | AuthorizationCodePKCEGrant | string> {
     const client = await Client.getByClientID(auth.clientId)
-    if (!client || !client.redirectUris.includes(redirectUri)) {
+    if (!client || !client.redirectIsValid(redirectUri)) {
       return "INVALID_CLIENT_OR_REDIRECT_URI"
     }
     const resourceOwner = await ResourceOwner.get(resourceOwnerId)
@@ -60,8 +60,8 @@ export class AuthorizationServer {
     if (responseType !== "code") {
       return "unsupported_response_type"
     }
-    if (scope.length === 0) {
-      return "invalid_scope"
+    if (!scope) {
+      scope = ["email"]
     }
     if (client.type === "confidential") {
       return AuthorizationCodeGrant.create(
@@ -101,6 +101,7 @@ export class AuthorizationServer {
     client: Client,
     codeVerifierOrClientSecret?: string
   ): Promise<[AccessToken, RefreshToken] | string> {
+    console.log("exchanging")
     if ("codeChallenge" in grant) {
       if (!grant.check(codeVerifierOrClientSecret)) {
         return "invalid_grant"

@@ -27,10 +27,16 @@ export class ResourceOwner {
     return new ResourceOwner(resourceOwner.id.toString(), resourceOwner.email)
   }
 
-  toJSON() {
-    return {
-      id: this.id,
-      email: this.email,
+  toJSON(includePrivateInfo = false) {
+    const keys: (keyof this)[] = ["email"]
+
+    if (includePrivateInfo) {
+      keys.push("id")
     }
+
+    return keys.reduce(
+      (agg, key) => ({ ...agg, [key]: this[key] }),
+      {} as Record<keyof this, this[keyof this]>
+    )
   }
 }

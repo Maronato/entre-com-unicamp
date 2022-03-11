@@ -2,6 +2,11 @@ import { ResourceOwner } from "@/oauth2/resourceOwner"
 import { login } from "@/utils/auth/server"
 import { getPrisma } from "@/utils/db"
 import { delay } from "@/utils/misc"
+import {
+  respondInvalidRequest,
+  respondMethodNotAllowed,
+  respondUnauthorized,
+} from "@/utils/serverUtils"
 
 import type { NextApiRequest, NextApiResponse } from "next"
 
@@ -15,15 +20,15 @@ export default async function handler(
   res: NextApiResponse<{ user: ResourceOwner } | string>
 ) {
   if (req.method !== "POST") {
-    return res.status(405).send("Method not allowed")
+    return respondMethodNotAllowed(res)
   }
   const { email, code }: RequestData = req.body
 
   if (!email) {
-    return res.status(401).send("Missing email")
+    return respondInvalidRequest(res, "Missing email")
   }
   if (!code) {
-    return res.status(401).send("Missing code")
+    return respondInvalidRequest(res, "Missing code")
   }
 
   const prisma = getPrisma()
@@ -32,7 +37,7 @@ export default async function handler(
   })
   if (!emailCode) {
     await delay(3000)
-    return res.status(401).send("Invalid credentials")
+    return respondUnauthorized(res, "Invalid credentials")
   }
   let resourceOwner = await prisma.resource_owners.findFirst({
     where: { email },

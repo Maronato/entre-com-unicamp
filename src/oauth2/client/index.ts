@@ -31,6 +31,26 @@ export class Client {
     this.redirectUris = redirectUris
   }
 
+  redirectIsValid(redirectUri: string) {
+    return this.redirectUris.includes(redirectUri)
+  }
+
+  toJSON(includePrivateInfo = false) {
+    const keys: (keyof this)[] = ["name", "owner", "clientId"]
+
+    if (includePrivateInfo) {
+      keys.push("id", "type", "clientSecret", "redirectUris")
+    }
+
+    return keys.reduce((agg, key) => {
+      const value =
+        key !== "owner"
+          ? this[key]
+          : this[key as "owner"].toJSON(includePrivateInfo)
+      return { ...agg, [key]: value }
+    }, {} as Record<keyof this, this[keyof this]>)
+  }
+
   static async get(id: string) {
     const prisma = getPrisma()
     const client = await prisma.clients.findUnique({

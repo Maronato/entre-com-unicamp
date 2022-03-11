@@ -22,6 +22,7 @@ export const getAuthCookieOptions = () => ({
 
 interface BaseTokenPayload {
   user: Pick<ResourceOwner, "email" | "id">
+  scope: string[]
 }
 type TokenPayload = BaseTokenPayload &
   Required<Pick<JWTPayload, "iss" | "aud" | "iat" | "exp">>
@@ -29,6 +30,7 @@ type TokenPayload = BaseTokenPayload &
 async function signAuthToken(resourceOwner: ResourceOwner) {
   const payload: BaseTokenPayload = {
     user: { id: resourceOwner.id.toString(), email: resourceOwner.email },
+    scope: ["email", "id"],
   }
   return new SignJWT({ ...payload })
     .setProtectedHeader({ alg: ALGORITHM, typ: "JWT" })
@@ -39,19 +41,19 @@ async function signAuthToken(resourceOwner: ResourceOwner) {
     .sign(await getPrivateKey())
 }
 
-async function verifyAuthToken(token: string) {
+async function verifyAuthToken(token: string, checkAudience = true) {
   const jwks = await getJWKS()
   try {
     const result = await jwtVerify(token, jwks, {
       algorithms: [ALGORITHM],
       issuer: ISSUER,
-      audience: ISSUER,
+      audience: checkAudience ? ISSUER : undefined,
       typ: "JWT",
     })
     const { user } = result.payload as unknown as TokenPayload
     const resourceOwner = await ResourceOwner.get(user.id)
     if (resourceOwner) {
-      return resourceOwner
+      return [resourceOwner, result.payload.scope] as [ResourceOwner, string[]]
     }
   } catch (e) {
     return
@@ -59,7 +61,8 @@ async function verifyAuthToken(token: string) {
 }
 
 export function isAuthenticated(
-  req: Pick<NextApiRequest, "cookies" | "headers">
+  req: Pick<NextApiRequest, "cookies" | "headers">,
+  checkAudience = true
 ) {
   let token: string | undefined = (req.headers.authorization || "").split(
     "Bearer "
@@ -67,7 +70,7 @@ export function isAuthenticated(
   if (!token) {
     token = req.cookies[AUTH_COOKIE_NAME]
   }
-  return verifyAuthToken(token)
+  return verifyAuthToken(token, checkAudience)
 }
 
 export async function login(
