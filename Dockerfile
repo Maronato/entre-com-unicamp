@@ -1,18 +1,18 @@
-FROM node:16-alpine AS prod-deps
+FROM node:16 AS prod-deps
 WORKDIR /app
 ENV NODE_ENV=production
 COPY package.json pnpm-lock.yaml ./
 RUN yarn global add pnpm
 RUN pnpm install --prefer-frozen-lockfile --prod
 
-FROM node:16-alpine AS build-deps
+FROM node:16 AS build-deps
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
 COPY --from=prod-deps /app/node_modules ./node_modules
 RUN yarn global add pnpm
 RUN pnpm install --prefer-frozen-lockfile --prefer-offline
 
-FROM node:16-alpine AS builder
+FROM node:16 AS builder
 WORKDIR /app
 ENV NODE_ENV=production
 COPY . .
@@ -21,7 +21,7 @@ RUN yarn prisma generate
 RUN yarn build
 
 # Production image, copy all the files and run next
-FROM node:16-alpine AS runner
+FROM node:16 AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 COPY package.json ./
