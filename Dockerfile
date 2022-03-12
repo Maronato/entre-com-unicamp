@@ -1,13 +1,13 @@
 FROM node:16-alpine AS prod-deps
 WORKDIR /app
 ENV NODE_ENV=production
-COPY package.json yarn.lock ./
+COPY package.json pnpm-lock.yaml ./
 RUN yarn global add pnpm
 RUN pnpm install --prefer-frozen-lockfile --prod
 
 FROM node:16-alpine AS build-deps
 WORKDIR /app
-COPY package.json yarn.lock ./
+COPY package.json pnpm-lock.yaml ./
 COPY --from=prod-deps /app/node_modules ./node_modules
 RUN yarn global add pnpm
 RUN pnpm install --prefer-frozen-lockfile --prefer-offline
