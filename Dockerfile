@@ -30,5 +30,4 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/dist ./dist
 COPY --from=prod-deps /app/node_modules ./node_modules
-RUN yarn prisma generate
 CMD ["yarn", "serve"]
