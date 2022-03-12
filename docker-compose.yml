@@ -3,17 +3,18 @@ version: '3.8'
 networks:
   captain:
     external: true
-    name: captain-network-overlay
+    name: captain-overlay-network
   prom:
     external: true
     name: devops_prom
 
 services:
   entre-com-unicamp:
-    image: maronato/entre-com-unicamp:latest
+    image: maronato/entre-com-unicamp:5
     networks:
       - captain
       - prom
+    env_file: .env
     deploy:
       mode: replicated
       replicas: 1
