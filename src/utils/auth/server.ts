@@ -1,9 +1,10 @@
 import { JWTPayload, jwtVerify, SignJWT } from "jose"
-import { NextApiRequest, NextApiResponse } from "next"
+import { GetServerSideProps, NextApiRequest, NextApiResponse } from "next"
 
 import { ResourceOwner } from "@/oauth2/resourceOwner"
 
 import { removeCookie, setCookie } from "../cookie"
+import { key, UserFallback } from "../hooks/useUser"
 import { ALGORITHM, getJWKS, getPrivateKey } from "../jwk"
 
 const AUTH_COOKIE_NAME = "jwt-auth"
@@ -83,4 +84,13 @@ export async function login(
 
 export function logout(res: NextApiResponse) {
   removeCookie(res, AUTH_COOKIE_NAME, getAuthCookieOptions())
+}
+
+export const serverFetch = async (
+  req: Parameters<GetServerSideProps>[0]["req"]
+): Promise<UserFallback> => {
+  const user = (await isAuthenticated(req)) || null
+  return {
+    [key]: user ? user[0].toJSON(true) : user,
+  }
 }

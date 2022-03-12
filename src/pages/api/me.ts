@@ -2,14 +2,16 @@ import { ResourceOwner } from "@/oauth2/resourceOwner"
 import { isAuthenticated } from "@/utils/auth/server"
 import {
   respondMethodNotAllowed,
+  respondOk,
   respondUnauthorized,
 } from "@/utils/serverUtils"
+import { withTelemetry } from "@/utils/telemetry"
 
 import type { NextApiRequest, NextApiResponse } from "next"
 
 type ResponseData = ResourceOwner
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ResponseData | string>
 ) {
@@ -23,7 +25,9 @@ export default async function handler(
   const [user, scope] = auth
 
   if (scope.includes("id")) {
-    return res.status(200).json(user.toJSON(true) as ResourceOwner)
+    return respondOk(res, user.toJSON(true) as ResourceOwner)
   }
-  return res.status(200).json(user.toJSON(false) as ResourceOwner)
+  return respondOk(res, user.toJSON(false) as ResourceOwner)
 }
+
+export default withTelemetry(handler)

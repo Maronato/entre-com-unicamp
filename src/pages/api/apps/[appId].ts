@@ -4,9 +4,12 @@ import { isAuthenticated } from "@/utils/auth/server"
 import { getPrisma } from "@/utils/db"
 import {
   respondMethodNotAllowed,
+  respondNoContent,
   respondNotFound,
+  respondOk,
   respondUnauthorized,
 } from "@/utils/serverUtils"
+import { withTelemetry } from "@/utils/telemetry"
 
 import type { NextApiRequest, NextApiResponse } from "next"
 
@@ -30,7 +33,7 @@ async function getHandler(
     return respondNotFound(res, "App not found")
   }
 
-  return res.status(200).json(app.toJSON(true))
+  return respondOk(res, app.toJSON(true))
 }
 
 async function deleteHandler(
@@ -45,13 +48,10 @@ async function deleteHandler(
   const prisma = getPrisma()
   await prisma.clients.delete({ where: { id: BigInt(app.id) } })
 
-  return res.status(204).json({})
+  return respondNoContent(res)
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   const auth = await isAuthenticated(req)
   if (!auth) {
     return respondUnauthorized(res, "Invalid credentials")
@@ -68,3 +68,5 @@ export default async function handler(
       return respondMethodNotAllowed(res)
   }
 }
+
+export default withTelemetry(handler)

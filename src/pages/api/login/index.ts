@@ -5,8 +5,10 @@ import { delay } from "@/utils/misc"
 import {
   respondInvalidRequest,
   respondMethodNotAllowed,
+  respondOk,
   respondUnauthorized,
 } from "@/utils/serverUtils"
+import { withTelemetry } from "@/utils/telemetry"
 
 import type { NextApiRequest, NextApiResponse } from "next"
 
@@ -15,7 +17,7 @@ type RequestData = {
   email?: string
 }
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse<{ user: ResourceOwner } | string>
 ) {
@@ -54,5 +56,7 @@ export default async function handler(
   // Remove used code
   await prisma.email_codes.delete({ where: { id: emailCode.id } })
 
-  return res.status(200).json({ user })
+  return respondOk(res, { user })
 }
+
+export default withTelemetry(handler)

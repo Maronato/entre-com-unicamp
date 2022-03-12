@@ -11,6 +11,7 @@
 # next.js
 /.next/
 /out/
+/dist
 
 # production
 /build
@@ -39,4 +40,5 @@ yarn-error.log*
 
 .env
 
-tsconfig.*.json
+next.config.mjs
+server/index.js

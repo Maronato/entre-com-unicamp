@@ -1,7 +1,12 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import { AuthorizationServer } from "@/oauth2"
 import { CodeChallengeMethod } from "@/oauth2/grant"
-import { respondMethodNotAllowed } from "@/utils/serverUtils"
+import {
+  respondInvalidRequest,
+  respondMethodNotAllowed,
+  respondOk,
+} from "@/utils/serverUtils"
+import { withTelemetry } from "@/utils/telemetry"
 
 import type { NextApiRequest, NextApiResponse } from "next"
 
@@ -32,7 +37,7 @@ export type ErrorResponseData = {
 
 type ResponseData = ValidResponseData | ErrorResponseData
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ResponseData | string>
 ) {
@@ -56,9 +61,9 @@ export default async function handler(
       data.state
     )
     if (typeof auth === "string") {
-      return res.status(400).json({ error: auth, state: data.state })
+      return respondInvalidRequest(res, { error: auth, state: data.state })
     }
-    return res.status(200).json({ code: auth.code, state: data.state })
+    return respondOk(res, { code: auth.code, state: data.state })
   }
   const auth = await server.authorize(
     data.responseType,
@@ -69,7 +74,9 @@ export default async function handler(
     data.state
   )
   if (typeof auth === "string") {
-    return res.status(400).json({ error: auth, state: data.state })
+    return respondInvalidRequest(res, { error: auth, state: data.state })
   }
-  return res.status(200).json({ code: auth.code, state: data.state })
+  return respondOk(res, { code: auth.code, state: data.state })
 }
+
+export default withTelemetry(handler)

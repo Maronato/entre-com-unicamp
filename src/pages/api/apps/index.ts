@@ -3,10 +3,13 @@ import { ResourceOwner } from "@/oauth2/resourceOwner"
 import { isAuthenticated } from "@/utils/auth/server"
 import { getPrisma } from "@/utils/db"
 import {
+  respondCreated,
   respondInvalidRequest,
   respondMethodNotAllowed,
+  respondOk,
   respondUnauthorized,
 } from "@/utils/serverUtils"
+import { withTelemetry } from "@/utils/telemetry"
 
 import type { NextApiRequest, NextApiResponse } from "next"
 
@@ -37,7 +40,7 @@ async function createHandler(
 
   const client = await Client.create(name, user, type, redirect_uris)
 
-  return res.status(201).json(client.toJSON(true) as Client)
+  return respondCreated(res, client.toJSON(true) as Client)
 }
 
 type ListResponseData = Pick<Client, "clientId" | "id" | "name" | "type">[]
@@ -58,13 +61,10 @@ async function listHandler(
     type: app.type as ClientType,
   }))
 
-  return res.status(200).json(resData)
+  return respondOk(res, resData)
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   const auth = await isAuthenticated(req)
   if (!auth) {
     return respondUnauthorized(res, "Invalid credentials")
@@ -81,3 +81,5 @@ export default async function handler(
       return respondMethodNotAllowed(res)
   }
 }
+
+export default withTelemetry(handler)

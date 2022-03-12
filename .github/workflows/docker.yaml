@@ -1,0 +1,37 @@
+name: Docker Build/Publish Image
+on:
+  push:
+    branches: [master]
+jobs:
+  build:
+    runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        platform: ["linux/arm64/v8", "linux/amd64"]
+    env:
+      DOCKER_REGISTRY: registry.hub.docker.com
+      DOCKER_IMAGE: maronato/entre-com-unicamp
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v1
+      - name: Set up Docker Buildx
+        uses: crazy-max/ghaction-docker-buildx@v1
+        with:
+          version: latest
+      - name: Prepare
+        if: success()
+        id: prepare
+        run: |
+          echo ::set-output name=docker_platform::${ matrix.platform }        
+          echo ::set-output name=docker_image::${DOCKER_REGISTRY}/${DOCKER_IMAGE}        
+          echo ::set-output name=version::${GITHUB_RUN_NUMBER}
+      - name: Docker Login
+        if: success()
+        run: |
+          echo "${DOCKER_PASSWORD}" | docker login ${DOCKER_REGISTRY} --username "${DOCKER_USERNAME}" --password-stdin
+      - name: Run Buildx (push image)
+        if: success()
+        run: |
+          docker buildx build --platform ${{ steps.prepare.outputs.docker_platform }} --tag ${{ steps.prepare.outputs.docker_image }}:${{ steps.prepare.outputs.version }} --file ./Dockerfile --output type=image,push=true .

@@ -101,7 +101,6 @@ export class AuthorizationServer {
     client: Client,
     codeVerifierOrClientSecret?: string
   ): Promise<[AccessToken, RefreshToken] | string> {
-    console.log("exchanging")
     if ("codeChallenge" in grant) {
       if (!grant.check(codeVerifierOrClientSecret)) {
         return "invalid_grant"

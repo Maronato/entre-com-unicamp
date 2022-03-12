@@ -7,7 +7,9 @@ import { AccessToken, RefreshToken } from "@/oauth2/token"
 import {
   respondInvalidRequest,
   respondMethodNotAllowed,
+  respondOk,
 } from "@/utils/serverUtils"
+import { withTelemetry } from "@/utils/telemetry"
 
 import type { NextApiRequest, NextApiResponse } from "next"
 
@@ -52,7 +54,7 @@ type ErrorResponseData = {
 
 type ResponseData = ValidResponseData | ErrorResponseData
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ResponseData | string>
 ) {
@@ -74,7 +76,7 @@ function respondExchange(
   accessToken: AccessToken,
   refreshToken: RefreshToken
 ) {
-  return res.status(200).json({
+  return respondOk(res, {
     access_token: accessToken.token,
     refresh_token: refreshToken.token,
     token_type: "Bearer",
@@ -134,3 +136,5 @@ async function refreshTokenHandler(
   const [accessToken, refreshToken] = auth
   return respondExchange(res, accessToken, refreshToken)
 }
+
+export default withTelemetry(handler)

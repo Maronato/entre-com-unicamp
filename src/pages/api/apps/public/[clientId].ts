@@ -1,5 +1,10 @@
 import { Client } from "@/oauth2/client"
-import { respondMethodNotAllowed, respondNotFound } from "@/utils/serverUtils"
+import {
+  respondMethodNotAllowed,
+  respondNotFound,
+  respondOk,
+} from "@/utils/serverUtils"
+import { withTelemetry } from "@/utils/telemetry"
 
 import type { NextApiRequest, NextApiResponse } from "next"
 
@@ -16,7 +21,7 @@ export interface ResponseData {
   }
 }
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ResponseData>
 ) {
@@ -29,5 +34,7 @@ export default async function handler(
     return respondNotFound(res, "App not found")
   }
 
-  return res.status(200).json(app.toJSON(false) as ResponseData)
+  return respondOk(res, app.toJSON(false) as ResponseData)
 }
+
+export default withTelemetry(handler)

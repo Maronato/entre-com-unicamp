@@ -1,7 +1,9 @@
 import {
   respondInvalidRequest,
   respondMethodNotAllowed,
+  respondOk,
 } from "@/utils/serverUtils"
+import { withTelemetry } from "@/utils/telemetry"
 
 import { getPrisma } from "../../../utils/db"
 import { createRandomString } from "../../../utils/random"
@@ -12,10 +14,7 @@ type RequestData = {
   email?: string
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
     return respondMethodNotAllowed(res)
   }
@@ -34,7 +33,6 @@ export default async function handler(
   }
 
   const prisma = getPrisma()
-
   const code = createRandomString(2).toUpperCase()
   const emailCode = await prisma.email_codes.create({
     data: { email, code, expires_in: 3600 },
@@ -47,5 +45,7 @@ export default async function handler(
     )
   )
 
-  return res.status(200).send({ success: true })
+  return respondOk(res, { success: true })
 }
+
+export default withTelemetry(handler)

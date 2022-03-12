@@ -1,0 +1,25 @@
+version: '3.8'
+
+networks:
+  captain:
+    external: true
+    name: captain-network-overlay
+  prom:
+    external: true
+    name: devops_prom
+
+services:
+  entre-com-unicamp:
+    image: maronato/entre-com-unicamp:latest
+    networks:
+      - captain
+      - prom
+    deploy:
+      mode: replicated
+      replicas: 1
+      labels:
+        prometheus-job: "entre-com-unicamp"
+        prometheus-port: "9464"
+      resources:
+        limits:
+          memory: 512M

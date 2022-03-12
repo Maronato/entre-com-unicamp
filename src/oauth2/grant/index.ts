@@ -54,11 +54,9 @@ class BaseAuthorizationCodeGrant {
 
   static async _get(client: Client, code: string) {
     const prisma = getPrisma()
-    console.log({ client: Number(client.id), code })
     const grant = await prisma.grants.findFirst({
       where: { client: Number(client.id), code },
     })
-    console.log(grant)
     if (grant) {
       // Prevent replay attacks by deleting the grant
       await prisma.grants.delete({ where: { id: grant.id } })
@@ -237,7 +235,6 @@ export class AuthorizationCodePKCEGrant extends BaseAuthorizationCodeGrant {
 
   static async get(client: Client, code: string) {
     const response = await this._get(client, code)
-    console.log("response", response)
     if (response) {
       const [grant, client, resourceOwner] = response
       if (grant.code_challenge) {

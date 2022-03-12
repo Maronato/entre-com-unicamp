@@ -7,13 +7,9 @@ import InvalidAuthorize from "@/components/InvalidAuthorize"
 import Login from "@/components/Login"
 import { Client } from "@/oauth2/client"
 import { CodeChallengeMethod } from "@/oauth2/grant"
+import { serverFetch } from "@/utils/auth/server"
 
-import {
-  serverFetch,
-  UserFallback,
-  UserProvicer,
-  useAuth,
-} from "../../utils/hooks/useUser"
+import { UserFallback, UserProvicer, useAuth } from "../../utils/hooks/useUser"
 
 type BaseProps = {
   fallback: UserFallback
