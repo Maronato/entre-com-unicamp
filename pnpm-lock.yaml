@@ -67,6 +67,7 @@ dependencies:
   jose: 4.6.0
   next: 12.1.0_react-dom@17.0.2+react@17.0.2
   pg-connection-string: 2.5.0
+  prisma: 3.10.0
   react: 17.0.2
   react-dom: 17.0.2_react@17.0.2
   react-popper: 2.2.5_4d48938cec404f33c7375aa6b453941c
@@ -86,7 +87,6 @@ devDependencies:
   postcss: 8.4.8
   postcss-import: 14.0.2_postcss@8.4.8
   prettier: 2.5.1
-  prisma: 3.10.0
   rimraf: 3.0.2
   tailwindcss: 3.0.23_2a12c91f48b4280adc4c14dfe7c50ae2
   ts-node: 10.7.0_e79e62fe450383fd2d418267dc75e645
@@ -1087,7 +1087,7 @@ packages:
   /@prisma/engines/3.10.0-50.73e60b76d394f8d37d8ebd1f8918c79029f0db86:
     resolution: {integrity: sha512-LjRssaWu9w2SrXitofnutRIyURI7l0veQYIALz7uY4shygM9nMcK3omXcObRm7TAcw3Z+9ytfK1B+ySOsOesxQ==}
     requiresBuild: true
-    dev: true
+    dev: false
 
   /@sideway/address/4.1.3:
     resolution: {integrity: sha512-8ncEUtmnTsMmL7z1YPB47kPUq7LpKWJNFPsRzHiIajGC5uXlWGn+AmkYPcHNl8S4tcEGx+cnORnNYaw2wvL+LQ==}
@@ -4469,7 +4469,7 @@ packages:
     requiresBuild: true
     dependencies:
       '@prisma/engines': 3.10.0-50.73e60b76d394f8d37d8ebd1f8918c79029f0db86
-    dev: true
+    dev: false
 
   /process-warning/1.0.0:
     resolution: {integrity: sha512-du4wfLyj4yCZq1VupnVSZmRsPJsNuxoDQFdCFHLaYiEbFBD7QE0a+I4D7hOxrVnh78QE/YipFAj9lXHiXocV+Q==}
