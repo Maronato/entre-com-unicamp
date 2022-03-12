@@ -1,4 +1,3 @@
-import { SpanKind, SpanStatusCode } from "@opentelemetry/api"
 import { metrics } from "@opentelemetry/api-metrics"
 import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node"
 import { JaegerExporter } from "@opentelemetry/exporter-jaeger"
@@ -12,7 +11,6 @@ import {
   ConsoleSpanExporter,
   SpanExporter,
 } from "@opentelemetry/sdk-trace-base"
-import { SemanticAttributes } from "@opentelemetry/semantic-conventions"
 import { NextApiRequest, NextApiResponse } from "next"
 
 const sdkRef: { sdk?: NodeSDK } = {}
@@ -66,60 +64,10 @@ export const getInstruments = () => {
   }
 }
 
-const getRootCtx = (req: NextApiRequest) => {
-  const traceId = req.headers["uber-trace-id"] || req.headers["x-trace-id"]
-  const tracer = getTracer()
-
-  const rootSpanContext = tracer.startSpan("root").spanContext()
-
-  return api.trace.setSpanContext(
-    getContext(),
-    traceId && !Array.isArray(traceId)
-      ? {
-          ...rootSpanContext,
-          traceId,
-        }
-      : rootSpanContext
-  )
-}
-
 export const withTelemetry =
   (handler: (req: NextApiRequest, res: NextApiResponse) => Promise<unknown>) =>
   async (req: NextApiRequest, res: NextApiResponse) => {
-    const tracer = getTracer()
-
-    const rootCtx = getRootCtx(req)
-
-    await api.context.with(rootCtx, async () => {
-      const span = tracer.startSpan(`${req.method} ${req.url}`, {
-        kind: SpanKind.SERVER,
-        attributes: {
-          [SemanticAttributes.HTTP_METHOD]: req.method,
-          [SemanticAttributes.HTTP_URL]: req.url,
-          [SemanticAttributes.HTTP_CLIENT_IP]:
-            req.headers["x-forwarded-for"] ||
-            req.headers["x-real-ip"] ||
-            req.socket.remoteAddress,
-          [SemanticAttributes.NET_PEER_IP]: req.socket.remoteAddress,
-        },
-      })
-
-      // Create base context
-      const ctx = api.trace.setSpan(getContext(), span)
-
-      res.setHeader("x-trace-id", span.spanContext().traceId)
-      res.setHeader("uber-trace-id", span.spanContext().traceId)
-
-      // Call handler with context and span
-      await api.context.with(ctx, () => handler(req, res))
-
-      // Set status to match http response
-      span.setStatus({
-        code: res.statusCode < 400 ? SpanStatusCode.OK : SpanStatusCode.ERROR,
-      })
-      // End the span
-      span.end()
-    })
+    return handler(req, res)
   }
 
 export const startTelemetry = async () => {
