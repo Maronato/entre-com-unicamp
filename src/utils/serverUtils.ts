@@ -1,7 +1,7 @@
 import { NextApiResponse } from "next"
 
 export type StatusOk = 200 | 201 | 202 | 203 | 204
-export type StatusError = 400 | 401 | 403 | 404 | 405
+export type StatusError = 400 | 401 | 403 | 404 | 405 | 500 | 503
 const statusIsOk = (
   statusCode: StatusOk | StatusError
 ): statusCode is StatusOk => statusCode < 400
@@ -53,6 +53,11 @@ export const respondForbidden = (res: NextApiResponse, message: unknown) =>
 
 export const respondNotFound = (res: NextApiResponse, message: unknown) =>
   respond(res, 404, message)
+
+export const respondServiceUnavailable = (
+  res: NextApiResponse,
+  message: unknown
+) => respond(res, 503, message)
 
 export const respondOk = (res: NextApiResponse, data?: unknown) =>
   respond(res, 200, data)

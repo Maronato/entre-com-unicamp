@@ -31,4 +31,13 @@ COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/dist ./dist
 COPY --from=prod-deps /app/node_modules ./node_modules
 COPY package.json ./
+COPY prisma ./prisma
+
+COPY docker-entrypoint.sh docker-entrypoint.sh
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
+
+EXPOSE 3000
+HEALTHCHECK --interval=1m --timeout=5s \
+  CMD curl --HEAD --fail http://localhost:3000/api/health || exit 1
+
 CMD ["yarn", "serve"]

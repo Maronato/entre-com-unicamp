@@ -1,5 +1,5 @@
 import { getPrisma } from "../../utils/db"
-import { createRandomString } from "../../utils/random"
+import { createClientID, createClientSecret } from "../../utils/random"
 import { ResourceOwner } from "../resourceOwner"
 
 export type ClientType = "confidential" | "public"
@@ -100,8 +100,8 @@ export class Client {
     redirectUris: string[]
   ) {
     const prisma = getPrisma()
-    const clientId = createRandomString(24)
-    const clientSecret = createRandomString(48)
+    const clientId = createClientID()
+    const clientSecret = createClientSecret()
     const client = await prisma.clients.create({
       data: {
         name,
