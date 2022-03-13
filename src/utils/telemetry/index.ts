@@ -13,6 +13,8 @@ import {
   SpanExporter,
 } from "@opentelemetry/sdk-trace-base"
 
+import { startHostMetrics } from "./metrics"
+
 const sdkRef: { sdk?: NodeSDK } = {}
 const exportConsoleMetrics = false
 
@@ -64,3 +66,4 @@ export const getContext = () => {
 export const startTelemetry = async () => {
   await getSDK()
 }
+startHostMetrics()
