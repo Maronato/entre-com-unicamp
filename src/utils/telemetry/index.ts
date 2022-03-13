@@ -12,7 +12,6 @@ import {
   ConsoleSpanExporter,
   SpanExporter,
 } from "@opentelemetry/sdk-trace-base"
-import { NextApiRequest, NextApiResponse } from "next"
 
 const sdkRef: { sdk?: NodeSDK } = {}
 
@@ -71,12 +70,6 @@ export const getInstruments = () => {
     requests,
   }
 }
-
-export const withTelemetry =
-  (handler: (req: NextApiRequest, res: NextApiResponse) => Promise<unknown>) =>
-  async (req: NextApiRequest, res: NextApiResponse) => {
-    return handler(req, res)
-  }
 
 export const startTelemetry = async () => {
   await getSDK()

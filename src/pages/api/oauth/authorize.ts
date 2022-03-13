@@ -6,7 +6,6 @@ import {
   respondMethodNotAllowed,
   respondOk,
 } from "@/utils/serverUtils"
-import { withTelemetry } from "@/utils/telemetry"
 
 import type { NextApiRequest, NextApiResponse } from "next"
 
@@ -37,7 +36,7 @@ export type ErrorResponseData = {
 
 type ResponseData = ValidResponseData | ErrorResponseData
 
-async function handler(
+export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ResponseData | string>
 ) {
@@ -78,5 +77,3 @@ async function handler(
   }
   return respondOk(res, { code: auth.code, state: data.state })
 }
-
-export default withTelemetry(handler)

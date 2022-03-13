@@ -5,13 +5,12 @@ import {
   respondOk,
   respondUnauthorized,
 } from "@/utils/serverUtils"
-import { withTelemetry } from "@/utils/telemetry"
 
 import type { NextApiRequest, NextApiResponse } from "next"
 
 type ResponseData = ResourceOwner
 
-async function handler(
+export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ResponseData | string>
 ) {
@@ -29,5 +28,3 @@ async function handler(
   }
   return respondOk(res, user.toJSON(false) as ResourceOwner)
 }
-
-export default withTelemetry(handler)

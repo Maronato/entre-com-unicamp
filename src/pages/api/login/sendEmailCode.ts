@@ -3,7 +3,6 @@ import {
   respondMethodNotAllowed,
   respondOk,
 } from "@/utils/serverUtils"
-import { withTelemetry } from "@/utils/telemetry"
 
 import { getPrisma } from "../../../utils/db"
 import { createRandomString } from "../../../utils/random"
@@ -14,7 +13,10 @@ type RequestData = {
   email?: string
 }
 
-async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
   if (req.method !== "POST") {
     return respondMethodNotAllowed(res)
   }
@@ -47,5 +49,3 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
   return respondOk(res, { success: true })
 }
-
-export default withTelemetry(handler)

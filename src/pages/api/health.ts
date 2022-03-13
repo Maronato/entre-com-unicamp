@@ -4,11 +4,13 @@ import {
   respondOk,
   respondServiceUnavailable,
 } from "@/utils/serverUtils"
-import { withTelemetry } from "@/utils/telemetry"
 
 import type { NextApiRequest, NextApiResponse } from "next"
 
-async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
   if (req.method !== "GET") {
     return respondMethodNotAllowed(res)
   }
@@ -28,5 +30,3 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
   return respondServiceUnavailable(res, "Failed to connect to database")
 }
-
-export default withTelemetry(handler)

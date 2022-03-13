@@ -9,7 +9,6 @@ import {
   respondOk,
   respondUnauthorized,
 } from "@/utils/serverUtils"
-import { withTelemetry } from "@/utils/telemetry"
 
 import type { NextApiRequest, NextApiResponse } from "next"
 
@@ -64,7 +63,10 @@ async function listHandler(
   return respondOk(res, resData)
 }
 
-async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
   const auth = await isAuthenticated(req)
   if (!auth) {
     return respondUnauthorized(res, "Invalid credentials")
@@ -81,5 +83,3 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       return respondMethodNotAllowed(res)
   }
 }
-
-export default withTelemetry(handler)
