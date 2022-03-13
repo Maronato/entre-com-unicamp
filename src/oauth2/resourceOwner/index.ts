@@ -1,4 +1,5 @@
 import { getPrisma } from "@/utils/db"
+import { startActiveSpan } from "@/utils/telemetry/trace"
 
 export class ResourceOwner {
   id: string
@@ -10,21 +11,31 @@ export class ResourceOwner {
   }
 
   static async get(id: string) {
-    const prisma = getPrisma()
-    const resourceOwner = await prisma.resource_owners.findUnique({
-      where: { id: BigInt(id) },
+    return startActiveSpan("ResourceOwner.get", async (span) => {
+      span.setAttribute(id, id)
+
+      const prisma = getPrisma()
+      const resourceOwner = await prisma.resource_owners.findUnique({
+        where: { id: BigInt(id) },
+      })
+      if (resourceOwner) {
+        return new ResourceOwner(
+          resourceOwner.id.toString(),
+          resourceOwner.email
+        )
+      }
     })
-    if (resourceOwner) {
-      return new ResourceOwner(resourceOwner.id.toString(), resourceOwner.email)
-    }
   }
 
   static async create(email: string) {
-    const prisma = getPrisma()
-    const resourceOwner = await prisma.resource_owners.create({
-      data: { email },
+    return startActiveSpan("ResourceOwner.create", async (span) => {
+      span.setAttribute("email", email)
+      const prisma = getPrisma()
+      const resourceOwner = await prisma.resource_owners.create({
+        data: { email },
+      })
+      return new ResourceOwner(resourceOwner.id.toString(), resourceOwner.email)
     })
-    return new ResourceOwner(resourceOwner.id.toString(), resourceOwner.email)
   }
 
   toJSON(includePrivateInfo = false) {

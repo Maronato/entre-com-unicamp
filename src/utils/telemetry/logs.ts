@@ -33,7 +33,7 @@ export const creatRequestLogger = () => {
     res: ServerResponse,
     url: UrlWithParsedQuery
   ) => {
-    const { path, hostname } = url
+    const { pathname, hostname } = url
     const xForwardedFor = req.headers["x-forwarded-for"]
     const userAgent = req.headers["user-agent"]
     const referer = req.headers["referer"]
@@ -41,11 +41,11 @@ export const creatRequestLogger = () => {
     const httpVersion = req.httpVersion
     const method = req.method
     const remoteAddress = req.socket.remoteAddress
-    const request = `${method} ${path} HTTP/${httpVersion}`
+    const request = `${method} ${pathname} HTTP/${httpVersion}`
 
     const metadata = {
       host,
-      path,
+      pathname,
       method,
       request,
       http_x_forwarded_for: xForwardedFor,
@@ -57,7 +57,7 @@ export const creatRequestLogger = () => {
     const start = new Date().getTime()
     res.on("finish", () => {
       const responseTime = new Date().getTime() - start
-      logger.http(`${method} ${path} ${res.statusCode} ${responseTime}ms`, {
+      logger.http(`${method} ${pathname} ${res.statusCode} ${responseTime}ms`, {
         ...metadata,
         status: res.statusCode,
         response_time: responseTime,

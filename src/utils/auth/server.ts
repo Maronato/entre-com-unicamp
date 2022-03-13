@@ -6,6 +6,7 @@ import { ResourceOwner } from "@/oauth2/resourceOwner"
 import { removeCookie, setCookie } from "../cookie"
 import { key, UserFallback } from "../hooks/useUser"
 import { ALGORITHM, getJWKS, getPrivateKey } from "../jwk"
+import { startActiveSpan } from "../telemetry/trace"
 
 const AUTH_COOKIE_NAME = "jwt-auth"
 
@@ -43,47 +44,65 @@ async function signAuthToken(resourceOwner: ResourceOwner) {
 }
 
 async function verifyAuthToken(token: string, checkAudience = true) {
-  const jwks = await getJWKS()
-  try {
-    const result = await jwtVerify(token, jwks, {
-      algorithms: [ALGORITHM],
-      issuer: ISSUER,
-      audience: checkAudience ? ISSUER : undefined,
-      typ: "JWT",
-    })
-    const { user } = result.payload as unknown as TokenPayload
-    const resourceOwner = await ResourceOwner.get(user.id)
-    if (resourceOwner) {
-      return [resourceOwner, result.payload.scope] as [ResourceOwner, string[]]
+  return startActiveSpan("verifyAuthToken", async (span, setError) => {
+    span.setAttribute("checkAudience", checkAudience)
+
+    const jwks = await getJWKS()
+    try {
+      const result = await jwtVerify(token, jwks, {
+        algorithms: [ALGORITHM],
+        issuer: ISSUER,
+        audience: checkAudience ? ISSUER : undefined,
+        typ: "JWT",
+      })
+      const { user } = result.payload as unknown as TokenPayload
+      const resourceOwner = await ResourceOwner.get(user.id)
+      if (resourceOwner) {
+        return [resourceOwner, result.payload.scope] as [
+          ResourceOwner,
+          string[]
+        ]
+      }
+    } catch (e) {
+      setError("Invalid token")
+      return
     }
-  } catch (e) {
-    return
-  }
+  })
 }
 
 export function isAuthenticated(
   req: Pick<NextApiRequest, "cookies" | "headers">,
   checkAudience = true
 ) {
-  let token: string | undefined = (req.headers.authorization || "").split(
-    "Bearer "
-  )[1]
-  if (!token) {
-    token = req.cookies[AUTH_COOKIE_NAME]
-  }
-  return verifyAuthToken(token, checkAudience)
+  return startActiveSpan("isAuthenticated", async (span) => {
+    span.setAttribute("checkAudience", checkAudience)
+
+    let token: string | undefined = (req.headers.authorization || "").split(
+      "Bearer "
+    )[1]
+    if (!token) {
+      token = req.cookies[AUTH_COOKIE_NAME]
+    }
+    return verifyAuthToken(token, checkAudience)
+  })
 }
 
 export async function login(
   res: NextApiResponse,
   resourceOwner: ResourceOwner
 ) {
-  const authToken = await signAuthToken(resourceOwner)
-  setCookie(res, AUTH_COOKIE_NAME, authToken, getAuthCookieOptions())
+  return startActiveSpan("login", async (span) => {
+    span.setAttribute("resourceOwner", resourceOwner.id)
+
+    const authToken = await signAuthToken(resourceOwner)
+    setCookie(res, AUTH_COOKIE_NAME, authToken, getAuthCookieOptions())
+  })
 }
 
 export function logout(res: NextApiResponse) {
-  removeCookie(res, AUTH_COOKIE_NAME, getAuthCookieOptions())
+  return startActiveSpan("logout", async () => {
+    removeCookie(res, AUTH_COOKIE_NAME, getAuthCookieOptions())
+  })
 }
 
 export const serverFetch = async (

@@ -3,10 +3,6 @@ import { PrometheusExporter } from "@opentelemetry/exporter-prometheus"
 import { HttpInstrumentation } from "@opentelemetry/instrumentation-http"
 import { WinstonInstrumentation } from "@opentelemetry/instrumentation-winston"
 import { JaegerPropagator } from "@opentelemetry/propagator-jaeger"
-import {
-  ConsoleMetricExporter,
-  MetricExporter,
-} from "@opentelemetry/sdk-metrics-base"
 import { api, NodeSDK } from "@opentelemetry/sdk-node"
 import {
   ConsoleSpanExporter,
@@ -16,8 +12,8 @@ import {
 import { startHostMetrics } from "./metrics"
 
 const sdkRef: { sdk?: NodeSDK } = {}
-const exportConsoleMetrics = false
-const exportConsoleTraces = false
+
+const exportConsoleTraces = true
 
 const getSDK = async () => {
   if (!sdkRef.sdk) {
@@ -34,14 +30,9 @@ const getSDK = async () => {
         : undefined
 
     // Get Prometheus exporter if in prod. Else, console exporter
-    const metricExporter: MetricExporter | undefined =
-      process.env.NODE_ENV === "production"
-        ? new PrometheusExporter({
-            port: 9464,
-          })
-        : exportConsoleMetrics
-        ? new ConsoleMetricExporter()
-        : undefined
+    const metricExporter = new PrometheusExporter({
+      port: 9464,
+    })
 
     // Only HTTP and winston logs calls may be auto-logged
     const instrumentations = [
@@ -69,6 +60,7 @@ export const getContext = () => {
 export const startTelemetry = async () => {
   await getSDK()
   startHostMetrics()
+
   const logger = (await import("./logs")).getLogger()
   logger.info("Started telemetry service")
 }

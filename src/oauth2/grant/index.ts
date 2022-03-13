@@ -5,6 +5,7 @@ import { addSeconds, isAfter } from "date-fns"
 
 import { getPrisma } from "@/utils/db"
 import { createRandomString } from "@/utils/random"
+import { startActiveSpan } from "@/utils/telemetry/trace"
 
 import { Client } from "../client"
 import { ResourceOwner } from "../resourceOwner"
@@ -53,27 +54,45 @@ class BaseAuthorizationCodeGrant {
   }
 
   static async _get(client: Client, code: string) {
-    const prisma = getPrisma()
-    const grant = await prisma.grants.findFirst({
-      where: { client: Number(client.id), code },
-    })
-    if (grant) {
-      // Prevent replay attacks by deleting the grant
-      await prisma.grants.delete({ where: { id: grant.id } })
-      const client = await Client.get(grant.client.toString())
-      if (client) {
-        const resourceOwner = await ResourceOwner.get(
-          grant.resource_owner.toString()
-        )
-        if (resourceOwner) {
-          return [grant, client, resourceOwner] as [
-            grants,
-            Client,
-            ResourceOwner
-          ]
+    return startActiveSpan(
+      "BaseAuthorizationCodeGrant._get",
+      async (span, setError) => {
+        span.setAttributes({
+          code,
+          client: client.id,
+        })
+
+        const prisma = getPrisma()
+        const grant = await prisma.grants.findFirst({
+          where: { client: Number(client.id), code },
+        })
+        if (grant) {
+          // Prevent replay attacks by deleting the grant
+          await prisma.grants.delete({ where: { id: grant.id } })
+          const client = await Client.get(grant.client.toString())
+          if (client) {
+            const resourceOwner = await ResourceOwner.get(
+              grant.resource_owner.toString()
+            )
+            if (resourceOwner) {
+              return [grant, client, resourceOwner] as [
+                grants,
+                Client,
+                ResourceOwner
+              ]
+            } else {
+              setError(`Failed to get resourceOwner: ${grant.resource_owner}`)
+            }
+          } else {
+            setError(
+              `Failed to delete grant or to find client: ${grant.client}`
+            )
+          }
+        } else {
+          setError(`Failed to find grant`)
         }
       }
-    }
+    )
   }
 }
 
@@ -126,10 +145,17 @@ export class AuthorizationCodeGrant extends BaseAuthorizationCodeGrant {
   }
 
   static async get(client: Client, code: string) {
-    const response = await this._get(client, code)
-    if (response) {
-      return this._fromResponse(response)
-    }
+    return startActiveSpan("AuthorizationCodeGrant.get", async (span) => {
+      span.setAttributes({
+        code,
+        client: client.id,
+      })
+
+      const response = await this._get(client, code)
+      if (response) {
+        return this._fromResponse(response)
+      }
+    })
   }
 }
 
@@ -204,62 +230,89 @@ export class AuthorizationCodePKCEGrant extends BaseAuthorizationCodeGrant {
     codeChallengeMethod: CodeChallengeMethod,
     state?: string
   ) {
-    const prisma = getPrisma()
-    const code = createRandomString(24)
-    const grant = await prisma.grants.create({
-      data: {
-        code,
-        scope,
-        state,
-        redirect_uri: redirectUri,
-        client: BigInt(client.id),
-        resource_owner: BigInt(resourceOwner.id),
-        code_challenge: codeChallenge,
-        code_challenge_method: codeChallengeMethod,
-      },
-    })
-    return new AuthorizationCodePKCEGrant(
-      grant.id.toString(),
-      grant.code,
-      client,
-      resourceOwner,
-      scope,
-      grant.created_at,
-      grant.expires_in,
-      redirectUri,
-      codeChallenge,
-      codeChallengeMethod,
-      state
-    )
-  }
-
-  static async get(client: Client, code: string) {
-    const response = await this._get(client, code)
-    if (response) {
-      const [grant, client, resourceOwner] = response
-      if (grant.code_challenge) {
+    return startActiveSpan(
+      "AuthorizationCodePKCEGrant.create",
+      async (span) => {
+        span.setAttributes({
+          scope,
+          redirectUri,
+          codeChallenge,
+          codeChallengeMethod,
+          state,
+          client: client.id,
+          resourceOwner: resourceOwner.id,
+        })
+        const prisma = getPrisma()
+        const code = createRandomString(24)
+        const grant = await prisma.grants.create({
+          data: {
+            code,
+            scope,
+            state,
+            redirect_uri: redirectUri,
+            client: BigInt(client.id),
+            resource_owner: BigInt(resourceOwner.id),
+            code_challenge: codeChallenge,
+            code_challenge_method: codeChallengeMethod,
+          },
+        })
         return new AuthorizationCodePKCEGrant(
           grant.id.toString(),
           grant.code,
           client,
           resourceOwner,
-          grant.scope,
+          scope,
           grant.created_at,
           grant.expires_in,
-          grant.redirect_uri,
-          grant.code_challenge,
-          grant.code_challenge_method as CodeChallengeMethod,
-          grant.state || undefined
+          redirectUri,
+          codeChallenge,
+          codeChallengeMethod,
+          state
         )
-      } else {
-        return AuthorizationCodeGrant._fromResponse(response)
       }
-    }
+    )
+  }
+
+  static async get(client: Client, code: string) {
+    return startActiveSpan("AuthorizationCodePKCEGrant.get", async (span) => {
+      span.setAttributes({
+        code,
+        client: client.id,
+      })
+
+      const response = await this._get(client, code)
+      if (response) {
+        const [grant, client, resourceOwner] = response
+        if (grant.code_challenge) {
+          return new AuthorizationCodePKCEGrant(
+            grant.id.toString(),
+            grant.code,
+            client,
+            resourceOwner,
+            grant.scope,
+            grant.created_at,
+            grant.expires_in,
+            grant.redirect_uri,
+            grant.code_challenge,
+            grant.code_challenge_method as CodeChallengeMethod,
+            grant.state || undefined
+          )
+        } else {
+          return AuthorizationCodeGrant._fromResponse(response)
+        }
+      }
+    })
   }
 }
 
 export type Grant = AuthorizationCodeGrant | AuthorizationCodePKCEGrant
 
 export async function getGrant(client: Client, code: string) {
-  return AuthorizationCodePKCEGrant.get(client, code)
+  return startActiveSpan("getGrant", (span) => {
+    span.setAttributes({
+      code,
+      client: client.id,
+    })
+    return AuthorizationCodePKCEGrant.get(client, code)
+  })
 }

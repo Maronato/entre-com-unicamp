@@ -4,6 +4,7 @@ import { parse } from "url"
 import next from "next"
 
 import { getLogger, creatRequestLogger } from "../src/utils/telemetry/logs"
+import { creatRequestMeter } from "../src/utils/telemetry/metrics"
 
 const dev = process.env.NODE_ENV !== "production"
 const port = process.env.PORT || 3000
@@ -17,11 +18,14 @@ export const startServer = async () => {
   await app.prepare()
 
   const requestLogger = creatRequestLogger()
+  const requestMeter = creatRequestMeter()
 
   const server = createServer(async (req, res) => {
     const parsedUrl = parse(req.url || "", true)
 
     requestLogger(req, res, parsedUrl)
+    requestMeter(req, res, parsedUrl)
+
     await handle(req, res, parsedUrl)
   })
 
