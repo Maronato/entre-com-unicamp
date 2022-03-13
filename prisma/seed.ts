@@ -2,6 +2,9 @@ import { PrismaClient, resource_owners } from "@prisma/client"
 
 import { ClientType } from "../src/oauth2/client"
 import { createClientID, createClientSecret } from "../src/utils/random"
+import { getLogger } from "../src/utils/telemetry/logs"
+
+const logger = getLogger()
 
 const createFirstUser = async (prisma: PrismaClient) => {
   let owner = await prisma.resource_owners.findFirst()
@@ -11,9 +14,9 @@ const createFirstUser = async (prisma: PrismaClient) => {
         email: "admin@entre-com-unicamp.com",
       },
     })
-    console.log("Created first user")
+    logger.info("Created first user")
   } else {
-    console.log("First user already exists - skipping")
+    logger.info("First user already exists - skipping")
   }
   return owner
 }
@@ -38,23 +41,21 @@ const createFirstApp = async (prisma: PrismaClient, user: resource_owners) => {
         redirect_uris,
       },
     })
-    console.log("Created first app")
+    logger.info("Created first app")
   } else {
-    console.log("First app already exists - skipping")
+    logger.info("First app already exists - skipping")
   }
   return app
 }
 
 const seedDatabase = async () => {
   const prisma = new PrismaClient()
-  console.log("got prisma")
-  console.log((await prisma.$executeRaw`SELECT 1;`) === 1)
   try {
-    console.log("Seeding initial data...")
+    logger.info("Seeding initial data...")
     const user = await createFirstUser(prisma)
     await createFirstApp(prisma, user)
   } catch (e) {
-    console.error(e)
+    logger.error(`Failed to seed initial data. ${(e as Error).stack}`)
   } finally {
     await prisma.$disconnect()
   }

@@ -1,6 +1,7 @@
 import { JaegerExporter } from "@opentelemetry/exporter-jaeger"
 import { PrometheusExporter } from "@opentelemetry/exporter-prometheus"
 import { HttpInstrumentation } from "@opentelemetry/instrumentation-http"
+import { WinstonInstrumentation } from "@opentelemetry/instrumentation-winston"
 import { JaegerPropagator } from "@opentelemetry/propagator-jaeger"
 import {
   ConsoleMetricExporter,
@@ -13,6 +14,7 @@ import {
 } from "@opentelemetry/sdk-trace-base"
 
 const sdkRef: { sdk?: NodeSDK } = {}
+const exportConsoleMetrics = false
 
 const getSDK = async () => {
   if (!sdkRef.sdk) {
@@ -27,15 +29,20 @@ const getSDK = async () => {
         : new ConsoleSpanExporter()
 
     // Get Prometheus exporter if in prod. Else, console exporter
-    const metricExporter: MetricExporter =
+    const metricExporter: MetricExporter | undefined =
       process.env.NODE_ENV === "production"
         ? new PrometheusExporter({
             port: 9464,
           })
-        : new ConsoleMetricExporter()
+        : exportConsoleMetrics
+        ? new ConsoleMetricExporter()
+        : undefined
 
-    // Only HTTP calls may be auto-logged
-    const instrumentations = [new HttpInstrumentation({})]
+    // Only HTTP and winston logs calls may be auto-logged
+    const instrumentations = [
+      new HttpInstrumentation({}),
+      new WinstonInstrumentation(),
+    ]
     // Propagate traces using Jaeger
     const textMapPropagator = new JaegerPropagator()
 
