@@ -10,7 +10,7 @@ const port = process.env.PORT || 3000
 
 export const startServer = async () => {
   await app.prepare()
-  const server = await createServer(async (req, res) => {
+  const server = createServer(async (req, res) => {
     const parsedUrl = parse(req.url || "", true)
     await handle(req, res, parsedUrl)
   })
