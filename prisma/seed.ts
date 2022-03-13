@@ -55,7 +55,8 @@ const seedDatabase = async () => {
     const user = await createFirstUser(prisma)
     await createFirstApp(prisma, user)
   } catch (e) {
-    logger.error(`Failed to seed initial data. ${(e as Error).stack}`)
+    logger.error(`Failed to seed initial data.`)
+    logger.error(e)
   } finally {
     await prisma.$disconnect()
   }

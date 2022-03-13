@@ -17,18 +17,21 @@ import { startHostMetrics } from "./metrics"
 
 const sdkRef: { sdk?: NodeSDK } = {}
 const exportConsoleMetrics = false
+const exportConsoleTraces = false
 
 const getSDK = async () => {
   if (!sdkRef.sdk) {
     // Get Jaeger exporter if in prod. Else, console exporter
-    const traceExporter: SpanExporter =
+    const traceExporter: SpanExporter | undefined =
       process.env.NODE_ENV === "production"
         ? new JaegerExporter({
             endpoint: "http://tempo:14268/api/traces",
             host: "tempo",
             port: 14278,
           })
-        : new ConsoleSpanExporter()
+        : exportConsoleTraces
+        ? new ConsoleSpanExporter()
+        : undefined
 
     // Get Prometheus exporter if in prod. Else, console exporter
     const metricExporter: MetricExporter | undefined =
@@ -43,7 +46,7 @@ const getSDK = async () => {
     // Only HTTP and winston logs calls may be auto-logged
     const instrumentations = [
       new HttpInstrumentation({}),
-      new WinstonInstrumentation(),
+      new WinstonInstrumentation({}),
     ]
     // Propagate traces using Jaeger
     const textMapPropagator = new JaegerPropagator()
@@ -65,5 +68,7 @@ export const getContext = () => {
 
 export const startTelemetry = async () => {
   await getSDK()
+  startHostMetrics()
+  const logger = (await import("./logs")).getLogger()
+  logger.info("Started telemetry service")
 }
-startHostMetrics()

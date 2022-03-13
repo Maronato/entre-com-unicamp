@@ -5,7 +5,7 @@
   "scripts": {
     "clean": "rimraf next.config.mjs",
     "predev": "yarn build:config",
-    "dev": "ts-node --project tsconfig.server.json server/index.ts",
+    "dev": "LOG_LEVEL=http ts-node --project tsconfig.server.json server/index.ts",
     "dev:old": "next dev",
     "prebuild": "yarn build:config && yarn build:server",
     "build": "next build",

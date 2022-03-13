@@ -4,8 +4,11 @@ import {
   respondOk,
   respondServiceUnavailable,
 } from "@/utils/serverUtils"
+import { getLogger } from "@/utils/telemetry/logs"
 
 import type { NextApiRequest, NextApiResponse } from "next"
+
+const logger = getLogger()
 
 export default async function handler(
   req: NextApiRequest,
@@ -26,7 +29,7 @@ export default async function handler(
       "Invalid value returned from database test query"
     )
   } catch (e) {
-    console.error(e)
+    logger.error(e)
   }
   return respondServiceUnavailable(res, "Failed to connect to database")
 }

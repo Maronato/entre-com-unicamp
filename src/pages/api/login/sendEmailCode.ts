@@ -3,11 +3,14 @@ import {
   respondMethodNotAllowed,
   respondOk,
 } from "@/utils/serverUtils"
+import { getLogger } from "@/utils/telemetry/logs"
 
 import { getPrisma } from "../../../utils/db"
 import { createRandomString } from "../../../utils/random"
 
 import type { NextApiRequest, NextApiResponse } from "next"
+
+const logger = getLogger()
 
 type RequestData = {
   email?: string
@@ -42,7 +45,7 @@ export default async function handler(
 
   await new Promise((r) =>
     setTimeout(
-      () => r(console.log(`Sent code ${emailCode.code} to ${emailCode.email}`)),
+      () => r(logger.info(`Sent code ${emailCode.code} to ${emailCode.email}`)),
       1000
     )
   )
