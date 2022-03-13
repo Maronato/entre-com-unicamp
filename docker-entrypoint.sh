@@ -2,6 +2,6 @@
 set -e
 
 cd /app
-yarn ts-node --project tsconfig.server.json prisma/seed.ts
+yarn node dist/prisma/seed.ts
 
 exec "$@"
