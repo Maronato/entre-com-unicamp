@@ -4,7 +4,7 @@ import { parse } from "pg-connection-string"
 
 import type { PrismaClient } from "@prisma/client"
 
-import { getTracer } from "."
+import { getTracer } from "./trace"
 
 export type Action =
   | "findOne"
@@ -21,7 +21,7 @@ export type Action =
 
 type Middleware = Parameters<PrismaClient["$use"]>[0]
 
-export function createTracerMiddleware() {
+export function createTelemetryMiddleware() {
   const middleware: Middleware = async (params, next) => {
     const tracer = getTracer()
     return await tracer.startActiveSpan(

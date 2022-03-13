@@ -1,4 +1,3 @@
-import { metrics } from "@opentelemetry/api-metrics"
 import { JaegerExporter } from "@opentelemetry/exporter-jaeger"
 import { PrometheusExporter } from "@opentelemetry/exporter-prometheus"
 import { HttpInstrumentation } from "@opentelemetry/instrumentation-http"
@@ -7,7 +6,7 @@ import {
   ConsoleMetricExporter,
   MetricExporter,
 } from "@opentelemetry/sdk-metrics-base"
-import { NodeSDK, api } from "@opentelemetry/sdk-node"
+import { api, NodeSDK } from "@opentelemetry/sdk-node"
 import {
   ConsoleSpanExporter,
   SpanExporter,
@@ -51,24 +50,8 @@ const getSDK = async () => {
   return sdkRef.sdk
 }
 
-const APP_NAME = "entre-com-unicamp"
-export const getTracer = () => {
-  return api.trace.getTracer(APP_NAME)
-}
 export const getContext = () => {
   return api.context.active()
-}
-export const getMeter = () => {
-  return metrics.getMeter(APP_NAME)
-}
-export const getInstruments = () => {
-  const meter = getMeter()
-  const requests = meter.createCounter("requests", {
-    description: "Counter of requests",
-  })
-  return {
-    requests,
-  }
 }
 
 export const startTelemetry = async () => {
