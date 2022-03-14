@@ -13,7 +13,11 @@ export const getLogger = () => {
       format.errors()
     )
     if (process.env.NODE_ENV === "production") {
-      consoleFormat = format.combine(consoleFormat, format.uncolorize())
+      consoleFormat = format.combine(
+        consoleFormat,
+        format.uncolorize(),
+        format.json()
+      )
     } else {
       consoleFormat = format.combine(consoleFormat, format.simple())
     }
