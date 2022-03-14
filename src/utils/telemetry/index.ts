@@ -3,12 +3,14 @@ import { PrometheusExporter } from "@opentelemetry/exporter-prometheus"
 import { HttpInstrumentation } from "@opentelemetry/instrumentation-http"
 import { WinstonInstrumentation } from "@opentelemetry/instrumentation-winston"
 import { JaegerPropagator } from "@opentelemetry/propagator-jaeger"
-import { api, NodeSDK } from "@opentelemetry/sdk-node"
+import { api, NodeSDK, resources } from "@opentelemetry/sdk-node"
 import {
   ConsoleSpanExporter,
   SpanExporter,
 } from "@opentelemetry/sdk-trace-base"
+import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions"
 
+import { APP_NAME } from "./consts"
 import { startHostMetrics } from "./metrics"
 
 const sdkRef: { sdk?: NodeSDK } = {}
@@ -24,6 +26,12 @@ const getSDK = async () => {
             endpoint: "http://tempo:14268/api/traces",
             host: "tempo",
             port: 14278,
+            tags: [
+              {
+                key: SemanticResourceAttributes.SERVICE_NAME,
+                value: APP_NAME,
+              },
+            ],
           })
         : exportConsoleTraces
         ? new ConsoleSpanExporter()
@@ -50,6 +58,11 @@ const getSDK = async () => {
     })
   }
   await sdkRef.sdk.start()
+  sdkRef.sdk.addResource(
+    new resources.Resource({
+      [SemanticResourceAttributes.SERVICE_NAME]: APP_NAME,
+    })
+  )
   return sdkRef.sdk
 }
 
