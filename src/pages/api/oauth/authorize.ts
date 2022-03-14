@@ -1,10 +1,12 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import { AuthorizationServer } from "@/oauth2"
 import { CodeChallengeMethod } from "@/oauth2/grant"
+import { isAuthenticated } from "@/utils/auth/server"
 import {
   respondInvalidRequest,
   respondMethodNotAllowed,
   respondOk,
+  respondUnauthorized,
 } from "@/utils/serverUtils"
 
 import type { NextApiRequest, NextApiResponse } from "next"
@@ -42,6 +44,10 @@ export default async function handler(
 ) {
   if (req.method !== "POST") {
     return respondMethodNotAllowed(res)
+  }
+  const user = await isAuthenticated(req)
+  if (!user) {
+    return respondUnauthorized(res, "Invalid credentials")
   }
   const server = new AuthorizationServer()
   const data: RequestData = req.body
