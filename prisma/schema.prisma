@@ -20,14 +20,6 @@ model clients {
   revoked_tokens  revoked_tokens[]
 }
 
-model email_codes {
-  id         BigInt   @id @default(autoincrement())
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-  code       String
-  expires_in BigInt   @default(3600)
-  email      String
-}
-
 model resource_owners {
   id             BigInt           @id(map: "resource_owner_pkey") @default(autoincrement())
   created_at     DateTime         @default(now()) @db.Timestamptz(6)

@@ -1,12 +1,10 @@
+import { generateEmailCode } from "@/utils/emailCodes"
 import {
   respondInvalidRequest,
   respondMethodNotAllowed,
   respondOk,
 } from "@/utils/serverUtils"
 import { getLogger } from "@/utils/telemetry/logs"
-
-import { getPrisma } from "../../../utils/db"
-import { createRandomString } from "../../../utils/random"
 
 import type { NextApiRequest, NextApiResponse } from "next"
 
@@ -37,17 +35,10 @@ export default async function handler(
     )
   }
 
-  const prisma = getPrisma()
-  const code = createRandomString(2).toUpperCase()
-  const emailCode = await prisma.email_codes.create({
-    data: { email, code, expires_in: 3600 },
-  })
+  const code = await generateEmailCode(email)
 
   await new Promise((r) =>
-    setTimeout(
-      () => r(logger.info(`Sent code ${emailCode.code} to ${emailCode.email}`)),
-      1000
-    )
+    setTimeout(() => r(logger.info(`Sent code ${code} to ${email}`)), 1000)
   )
 
   return respondOk(res, { success: true })

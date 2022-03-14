@@ -133,6 +133,38 @@ class Redis {
       )
     })
   }
+
+  async getdel(key: RedisCommandArgument) {
+    return startActiveSpan("Redis.getdel", (span) => {
+      span.setAttributes({
+        key: key.toString(),
+      })
+
+      return startActiveSpan(
+        "redis-GETDEL",
+        { kind: SpanKind.CLIENT },
+        async (span) => {
+          span.setAttributes({
+            [SemanticAttributes.DB_SYSTEM]: "redis",
+            [SemanticAttributes.DB_STATEMENT]: `GETDEL ${key}`,
+            [SemanticAttributes.NET_PEER_NAME]: this.host,
+            [SemanticAttributes.NET_PEER_PORT]: this.port.toString(),
+            [SemanticAttributes.DB_CONNECTION_STRING]: this.address,
+          })
+
+          const end = this.startMetric("GETDEL")
+          try {
+            const result = await this.client.getDel(key)
+            end({ status: "success" })
+            return result
+          } catch (e) {
+            end({ status: "failure" })
+            throw e
+          }
+        }
+      )
+    })
+  }
 }
 
 let globalClient: Redis | undefined = undefined

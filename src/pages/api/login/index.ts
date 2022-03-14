@@ -1,6 +1,7 @@
 import { ResourceOwner } from "@/oauth2/resourceOwner"
 import { login } from "@/utils/auth/server"
 import { getPrisma } from "@/utils/db"
+import { emailCodeIsValid } from "@/utils/emailCodes"
 import { delay } from "@/utils/misc"
 import {
   respondInvalidRequest,
@@ -32,14 +33,15 @@ export default async function handler(
     return respondInvalidRequest(res, "Missing code")
   }
 
-  const prisma = getPrisma()
-  const emailCode = await prisma.email_codes.findFirst({
-    where: { AND: { code, email } },
-  })
-  if (!emailCode) {
+  const isValid = await emailCodeIsValid(email, code)
+
+  if (!isValid) {
     await delay(3000)
     return respondUnauthorized(res, "Invalid credentials")
   }
+
+  const prisma = getPrisma()
+
   let resourceOwner = await prisma.resource_owners.findFirst({
     where: { email },
   })
@@ -51,9 +53,6 @@ export default async function handler(
     resourceOwner.email
   )
   await login(res, user)
-
-  // Remove used code
-  await prisma.email_codes.delete({ where: { id: emailCode.id } })
 
   return respondOk(res, { user })
 }
