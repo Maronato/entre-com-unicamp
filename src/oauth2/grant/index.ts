@@ -1,9 +1,7 @@
 import { createHash } from "crypto"
 
-import { SignJWT, jwtVerify } from "jose"
-
-import { ALGORITHM, getJWKS, getPrivateKey, ISSUER, TYPE } from "@/utils/jwk"
-import { createRandomString } from "@/utils/random"
+import { signJWT, verifyJWT } from "@/utils/jwt"
+import { getRedis } from "@/utils/redis"
 import { startActiveSpan } from "@/utils/telemetry/trace"
 
 export type CodeChallengeMethod = "plain" | "S256"
@@ -29,6 +27,9 @@ type CodeChallengeGrantPayload = BaseGrantPayload & {
 type GrantPayload = CodeChallengeGrantPayload | BasicGrantPayload
 
 export type AuthorizationCodeGrant = string
+
+const codeGrantTTL = "2m"
+const codeGrantTTLSeconds = 60 * 2
 
 export async function createCodeGrant(
   clientID: string,
@@ -80,14 +81,7 @@ export async function createCodeGrant(
       state,
     } as GrantPayload
 
-    return new SignJWT({ ...payload })
-      .setProtectedHeader({ alg: ALGORITHM, typ: TYPE })
-      .setIssuedAt()
-      .setIssuer(ISSUER)
-      .setAudience(clientID)
-      .setJti(createRandomString(12))
-      .setExpirationTime("2m")
-      .sign(await getPrivateKey())
+    return await signJWT(payload, clientID, codeGrantTTL)
   })
 }
 
@@ -122,19 +116,19 @@ export async function verifyCodeGrant(
   token: string,
   clientID: string,
   redirectURI: string
-): Promise<BaseGrantPayload | null>
+): Promise<(BaseGrantPayload & { jti: string }) | null>
 export async function verifyCodeGrant(
   token: string,
   clientID: string,
   redirectURI: string,
   codeVerifier: string
-): Promise<CodeChallengeGrantPayload | null>
+): Promise<(CodeChallengeGrantPayload & { jti: string }) | null>
 export async function verifyCodeGrant(
   token: string,
   clientID: string,
   redirectURI: string,
   codeVerifier?: string
-): Promise<GrantPayload | null> {
+): Promise<(GrantPayload & { jti: string }) | null> {
   return startActiveSpan("verifyCodeGrant", async (span, setError) => {
     span.setAttributes({
       clientID,
@@ -142,40 +136,63 @@ export async function verifyCodeGrant(
       codeVerifier,
     })
 
-    const jwks = await getJWKS()
-    try {
-      const result = await jwtVerify(token, jwks, {
-        algorithms: [ALGORITHM],
-        audience: clientID,
-        issuer: ISSUER,
-        typ: TYPE,
-      })
-      const payload = result.payload as unknown as GrantPayload
+    const payload = await verifyJWT<GrantPayload>(token, clientID)
 
-      if (
-        redirectURI !== payload.redirectURI ||
-        clientID !== payload.clientID
-      ) {
-        setError("Invalid redirectURI or clientID")
-        return null
-      }
-
-      if (
-        "codeChallenge" in payload &&
-        payload.codeChallenge &&
-        !verifyCodeChallenge(
-          codeVerifier,
-          payload.codeChallenge,
-          payload.codeChallengeMethod
-        )
-      ) {
-        setError("Invalid code verifier")
-        return null
-      }
-      return payload
-    } catch (e) {
-      setError("Failed to jwtVerify")
+    if (!payload || (await isGrantRevoked(payload.jti))) {
+      setError("Invalid token")
       return null
     }
+
+    if (redirectURI !== payload.redirectURI || clientID !== payload.clientID) {
+      setError("Invalid redirectURI or clientID")
+      return null
+    }
+
+    if (
+      "codeChallenge" in payload &&
+      payload.codeChallenge &&
+      !verifyCodeChallenge(
+        codeVerifier,
+        payload.codeChallenge,
+        payload.codeChallengeMethod
+      )
+    ) {
+      setError("Invalid code verifier")
+      return null
+    }
+    return payload
+  })
+}
+
+const getRevokedGrantKey = (jti: string) => `code-grant-revoked-${jti}`
+
+export const revokeGrant = async (jti: string) => {
+  return startActiveSpan("revokeGrant", async (span) => {
+    span.setAttributes({
+      jti,
+      ex: codeGrantTTLSeconds,
+    })
+
+    const redis = await getRedis()
+
+    const key = getRevokedGrantKey(jti)
+    span.setAttribute("key", key)
+
+    await redis.set(key, "expired", { EX: codeGrantTTLSeconds, NX: true })
+  })
+}
+const isGrantRevoked = async (jti: string) => {
+  return startActiveSpan("isGrantRevoked", async (span) => {
+    span.setAttribute("jti", jti)
+
+    const redis = await getRedis()
+
+    const key = getRevokedGrantKey(jti)
+    span.setAttribute("key", key)
+
+    const value = await redis.get(key)
+    span.setAttribute("is_revoked", value !== null)
+
+    return value !== null
   })
 }

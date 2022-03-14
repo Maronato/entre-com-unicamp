@@ -1,11 +1,10 @@
-import { JWTPayload, jwtVerify, SignJWT } from "jose"
 import { GetServerSideProps, NextApiRequest, NextApiResponse } from "next"
 
 import { ResourceOwner } from "@/oauth2/resourceOwner"
 
 import { removeCookie, setCookie } from "../cookie"
 import { key, UserFallback } from "../hooks/useUser"
-import { ALGORITHM, getJWKS, getPrivateKey } from "../jwk"
+import { signJWT, verifyJWT } from "../jwt"
 import { startActiveSpan } from "../telemetry/trace"
 
 const AUTH_COOKIE_NAME = "jwt-auth"
@@ -22,50 +21,36 @@ export const getAuthCookieOptions = () => ({
   secure: process.env.NODE_ENV === "production",
 })
 
-interface BaseTokenPayload {
+type TokenPayload = {
   user: Pick<ResourceOwner, "email" | "id">
   scope: string[]
 }
-type TokenPayload = BaseTokenPayload &
-  Required<Pick<JWTPayload, "iss" | "aud" | "iat" | "exp">>
 
 async function signAuthToken(resourceOwner: ResourceOwner) {
-  const payload: BaseTokenPayload = {
+  const payload: TokenPayload = {
     user: { id: resourceOwner.id.toString(), email: resourceOwner.email },
     scope: ["email", "id"],
   }
-  return new SignJWT({ ...payload })
-    .setProtectedHeader({ alg: ALGORITHM, typ: "JWT" })
-    .setIssuedAt()
-    .setIssuer(ISSUER)
-    .setAudience(ISSUER)
-    .setExpirationTime("1y")
-    .sign(await getPrivateKey())
+  return signJWT({ ...payload }, ISSUER, "1y")
 }
 
 async function verifyAuthToken(token: string, checkAudience = true) {
   return startActiveSpan("verifyAuthToken", async (span, setError) => {
     span.setAttribute("checkAudience", checkAudience)
 
-    const jwks = await getJWKS()
-    try {
-      const result = await jwtVerify(token, jwks, {
-        algorithms: [ALGORITHM],
-        issuer: ISSUER,
-        audience: checkAudience ? ISSUER : undefined,
-        typ: "JWT",
-      })
-      const { user } = result.payload as unknown as TokenPayload
-      const resourceOwner = await ResourceOwner.get(user.id)
-      if (resourceOwner) {
-        return [resourceOwner, result.payload.scope] as [
-          ResourceOwner,
-          string[]
-        ]
-      }
-    } catch (e) {
+    const result = await verifyJWT<TokenPayload>(
+      token,
+      checkAudience ? ISSUER : undefined
+    )
+    if (!result) {
       setError("Invalid token")
       return
+    }
+
+    const { user, scope } = result
+    const resourceOwner = await ResourceOwner.get(user.id)
+    if (resourceOwner) {
+      return [resourceOwner, scope] as [ResourceOwner, string[]]
     }
   })
 }

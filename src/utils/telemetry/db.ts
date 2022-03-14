@@ -42,9 +42,11 @@ export function createTelemetryMiddleware() {
           const start = new Date().getTime()
           const recordDuration = (success: boolean) => {
             dbRequestDuration.record(new Date().getTime() - start, {
-              model: params.model || "undefined",
+              table: params.model || "undefined",
               action: params.action,
               status: success ? "success" : "failure",
+              system: "postgresql",
+              database: connConfig.database || "undefined",
             })
           }
 

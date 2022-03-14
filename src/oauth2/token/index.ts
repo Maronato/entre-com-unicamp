@@ -1,8 +1,5 @@
-import { SignJWT, jwtVerify, JWTPayload } from "jose"
-
 import { getPrisma } from "@/utils/db"
-import { ALGORITHM, getJWKS, getPrivateKey, ISSUER, TYPE } from "@/utils/jwk"
-import { createRandomString } from "@/utils/random"
+import { signJWT, verifyJWT } from "@/utils/jwt"
 import { startActiveSpan } from "@/utils/telemetry/trace"
 
 import { Client } from "../client"
@@ -12,14 +9,11 @@ export type AccessTokenType = "access_token"
 export type RefreshTokenType = "refresh_token"
 export type TokenType = AccessTokenType | RefreshTokenType
 
-interface BaseTokenPayload {
+type TokenPayload = {
   user: Pick<ResourceOwner, "email" | "id">
   type: TokenType
   scope: string[]
 }
-
-type TokenPayload = BaseTokenPayload &
-  Required<Pick<JWTPayload, "iss" | "aud" | "iat" | "exp" | "jti">>
 
 const createToken =
   (tokenType: TokenType, expirationTime: string | false) =>
@@ -31,25 +25,18 @@ const createToken =
         client: client.id,
         resourceOwner: resourceOwner.id,
         scope,
-        alg: ALGORITHM,
-        issuer: ISSUER,
       })
 
-      const payload: BaseTokenPayload = {
+      const payload: TokenPayload = {
         user: { id: resourceOwner.id, email: resourceOwner.email },
         type: tokenType,
         scope,
       }
-      let token = new SignJWT({ ...payload })
-        .setProtectedHeader({ alg: ALGORITHM, typ: TYPE })
-        .setIssuedAt()
-        .setIssuer(ISSUER)
-        .setAudience(client.clientId)
-        .setJti(createRandomString(12))
-      if (expirationTime) {
-        token = token.setExpirationTime(expirationTime)
-      }
-      return token.sign(await getPrivateKey())
+      return signJWT(
+        { ...payload },
+        client.clientId,
+        expirationTime || undefined
+      )
     })
   }
 
@@ -109,16 +96,16 @@ class Token {
     this: T,
     token: string
   ): Promise<InstanceType<T> | undefined> {
-    return startActiveSpan(`<Token> ${this.name}.parseToken`, async (span) => {
-      const jwks = await getJWKS()
-      try {
-        const result = await jwtVerify(token, jwks, {
-          algorithms: [ALGORITHM],
-          issuer: ISSUER,
-          typ: TYPE,
-        })
-        const { type, user, aud, scope, jti } =
-          result.payload as unknown as TokenPayload
+    return startActiveSpan(
+      `<Token> ${this.name}.parseToken`,
+      async (span, setError) => {
+        const result = await verifyJWT<TokenPayload>(token)
+        if (!result) {
+          setError("Token failed verification")
+          return
+        }
+
+        const { type, user, aud = "", scope, jti } = result
 
         span.setAttributes({
           type,
@@ -146,10 +133,8 @@ class Token {
             ) as InstanceType<T>
           }
         }
-      } catch (e) {
-        return
       }
-    })
+    )
   }
 
   static async verifyToken<T extends typeof Token>(

@@ -7,11 +7,13 @@ networks:
   prom:
     external: true
     name: devops_prom
+  ecu: {}
 
 services:
   entre-com-unicamp:
     image: maronato/entre-com-unicamp:5
     networks:
+      - ecu
       - captain
       - prom
     env_file: .env
@@ -24,3 +26,13 @@ services:
       resources:
         limits:
           memory: 512M
+  redis:
+    image: redis:6-alpine
+    networks:
+      - ecu
+    deploy:
+      mode: replicated
+      replicas: 1
+      resources:
+        limits:
+          memory: 64M

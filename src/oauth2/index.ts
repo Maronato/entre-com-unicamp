@@ -1,4 +1,4 @@
-import { getJSONWebKeySet } from "@/utils/jwk"
+import { getJSONWebKeySet } from "@/utils/jwt"
 import { startActiveSpan } from "@/utils/telemetry/trace"
 
 import { Client } from "./client"
@@ -7,6 +7,7 @@ import {
   AuthorizationCodeGrant,
   verifyCodeGrant,
   CodeChallengeMethod,
+  revokeGrant,
 } from "./grant"
 import { ResourceOwner } from "./resourceOwner"
 import { AccessToken, RefreshToken } from "./token"
@@ -180,6 +181,7 @@ export class AuthorizationServer {
           setError(ErrorCodes.SERVER_ERROR)
           return ErrorCodes.SERVER_ERROR
         }
+        await revokeGrant(grant.jti)
         return this.generateAccessRefreshTokenPair(
           client,
           resourceOwner,
