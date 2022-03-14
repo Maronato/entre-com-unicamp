@@ -1,159 +1,97 @@
 import { createHash } from "crypto"
 
-import { grants } from "@prisma/client"
-import { addSeconds, isAfter } from "date-fns"
+import { SignJWT, jwtVerify } from "jose"
 
-import { getPrisma } from "@/utils/db"
+import { ALGORITHM, getJWKS, getPrivateKey, ISSUER, TYPE } from "@/utils/jwk"
 import { createRandomString } from "@/utils/random"
 import { startActiveSpan } from "@/utils/telemetry/trace"
 
-import { Client } from "../client"
-import { ResourceOwner } from "../resourceOwner"
-
 export type CodeChallengeMethod = "plain" | "S256"
 
-class BaseAuthorizationCodeGrant {
-  id: string
-  client: Client
-  resourceOwner: ResourceOwner
+type BaseGrantPayload = {
+  clientID: string
+  userID: string
   scope: string[]
-  code: string
-  createdAt: Date
-  expiresIn: number
+  redirectURI: string
   state?: string
-  redirectUri: string
-
-  constructor(
-    id: string,
-    code: string,
-    client: Client,
-    resourceOwner: ResourceOwner,
-    scope: string[],
-    createdAt: Date,
-    expiresIn: number,
-    redirectUri: string,
-    state?: string
-  ) {
-    this.id = id
-    this.code = code
-    this.client = client
-    this.resourceOwner = resourceOwner
-    this.scope = scope
-    this.createdAt = createdAt
-    this.expiresIn = expiresIn
-    this.redirectUri = redirectUri
-    this.state = state
-  }
-
-  isExpired(): boolean {
-    return isAfter(new Date(), addSeconds(this.createdAt, this.expiresIn))
-  }
-
-  isValid(redirectUri: string) {
-    return !this.isExpired() && this.redirectUri === redirectUri
-  }
-
-  static async _get(client: Client, code: string) {
-    return startActiveSpan(
-      "BaseAuthorizationCodeGrant._get",
-      async (span, setError) => {
-        span.setAttributes({
-          code,
-          client: client.id,
-        })
-
-        const prisma = getPrisma()
-        const grant = await prisma.grants.findFirst({
-          where: { client: Number(client.id), code },
-        })
-        if (grant) {
-          const [, client, resourceOwner] = await Promise.all([
-            // Prevent replay attacks by deleting the grant
-            prisma.grants.delete({ where: { id: grant.id } }),
-            Client.get(grant.client.toString()),
-            ResourceOwner.get(grant.resource_owner.toString()),
-          ])
-          if (resourceOwner && client) {
-            return [grant, client, resourceOwner] as [
-              grants,
-              Client,
-              ResourceOwner
-            ]
-          } else {
-            setError(`Failed to find client or resourceOwner`)
-          }
-        } else {
-          setError(`Failed to find grant`)
-        }
-      }
-    )
-  }
 }
 
-export class AuthorizationCodeGrant extends BaseAuthorizationCodeGrant {
-  static async create(
-    client: Client,
-    resourceOwner: ResourceOwner,
-    scope: string[],
-    redirectUri: string,
-    state?: string
-  ) {
-    const prisma = getPrisma()
-    const code = createRandomString(24)
-    const grant = await prisma.grants.create({
-      data: {
-        code,
-        scope,
-        state,
-        redirect_uri: redirectUri,
-        client: BigInt(client.id),
-        resource_owner: BigInt(resourceOwner.id),
-      },
-    })
-    return new AuthorizationCodeGrant(
-      grant.id.toString(),
-      grant.code,
-      client,
-      resourceOwner,
+type BasicGrantPayload = BaseGrantPayload & {
+  codeChallenge: undefined
+  codeChallengeMethod: undefined
+}
+
+type CodeChallengeGrantPayload = BaseGrantPayload & {
+  codeChallenge: string
+  codeChallengeMethod: CodeChallengeMethod
+}
+
+type GrantPayload = CodeChallengeGrantPayload | BasicGrantPayload
+
+export type AuthorizationCodeGrant = string
+
+export async function createCodeGrant(
+  clientID: string,
+  userID: string,
+  scope: string[],
+  redirectURI: string,
+  state?: string
+): Promise<AuthorizationCodeGrant>
+export async function createCodeGrant(
+  clientID: string,
+  userID: string,
+  scope: string[],
+  redirectURI: string,
+  codeChallenge: string,
+  codeChallengeMethod: CodeChallengeMethod,
+  state?: string
+): Promise<AuthorizationCodeGrant>
+export async function createCodeGrant(
+  clientID: string,
+  userID: string,
+  scope: string[],
+  redirectURI: string,
+  stateOrCodeChallenge?: string,
+  codeChallengeMethod?: CodeChallengeMethod,
+  maybeState?: string
+): Promise<AuthorizationCodeGrant> {
+  return startActiveSpan("createCodeGrant", async (span) => {
+    const [state, codeChallenge] = codeChallengeMethod
+      ? [maybeState, stateOrCodeChallenge]
+      : [stateOrCodeChallenge, undefined]
+
+    span.setAttributes({
+      clientID,
+      userID,
       scope,
-      grant.created_at,
-      grant.expires_in,
-      redirectUri,
-      state
-    )
-  }
-
-  static async _fromResponse(response: [grants, Client, ResourceOwner]) {
-    const [grant, client, resourceOwner] = response
-    return new AuthorizationCodeGrant(
-      grant.id.toString(),
-      grant.code,
-      client,
-      resourceOwner,
-      grant.scope,
-      grant.created_at,
-      grant.expires_in,
-      grant.redirect_uri,
-      grant.state || undefined
-    )
-  }
-
-  static async get(client: Client, code: string) {
-    return startActiveSpan("AuthorizationCodeGrant.get", async (span) => {
-      span.setAttributes({
-        code,
-        client: client.id,
-      })
-
-      const response = await this._get(client, code)
-      if (response) {
-        return this._fromResponse(response)
-      }
+      redirectURI,
+      state,
+      codeChallenge,
+      codeChallengeMethod,
     })
-  }
+
+    const payload = {
+      clientID,
+      userID,
+      scope,
+      redirectURI,
+      codeChallenge,
+      codeChallengeMethod,
+      state,
+    } as GrantPayload
+
+    return new SignJWT({ ...payload })
+      .setProtectedHeader({ alg: ALGORITHM, typ: TYPE })
+      .setIssuedAt()
+      .setIssuer(ISSUER)
+      .setAudience(clientID)
+      .setJti(createRandomString(12))
+      .setExpirationTime("2m")
+      .sign(await getPrivateKey())
+  })
 }
 
-function generateCodeChallenge(codeVerifier: string): string {
+function generateS256CodeChallenge(codeVerifier: string): string {
   try {
     return createHash("sha256")
       .update(Buffer.from(codeVerifier))
@@ -166,147 +104,78 @@ function generateCodeChallenge(codeVerifier: string): string {
   }
 }
 
-export class AuthorizationCodePKCEGrant extends BaseAuthorizationCodeGrant {
-  codeChallenge: string
+function verifyCodeChallenge(
+  codeVerifier: string | undefined,
+  codeChallenge: string,
   codeChallengeMethod: CodeChallengeMethod
-
-  constructor(
-    id: string,
-    code: string,
-    client: Client,
-    resourceOwner: ResourceOwner,
-    scope: string[],
-    createdAt: Date,
-    expiresIn: number,
-    redirectUri: string,
-    codeChallenge: string,
-    codeChallengeMethod: CodeChallengeMethod,
-    state?: string
-  ) {
-    super(
-      id,
-      code,
-      client,
-      resourceOwner,
-      scope,
-      createdAt,
-      expiresIn,
-      redirectUri,
-      state
-    )
-    this.codeChallenge = codeChallenge
-    this.codeChallengeMethod = codeChallengeMethod
+) {
+  if (!codeVerifier) {
+    return false
   }
-
-  check(codeVerifier?: string): boolean {
-    if (!codeVerifier) {
-      return false
-    }
-    switch (this.codeChallengeMethod) {
-      case "plain":
-        return this.codeChallenge === codeVerifier
-      case "S256":
-        return (
-          codeVerifier.length > 0 &&
-          this.codeChallenge === generateCodeChallenge(codeVerifier)
-        )
-      default:
-        return false
-    }
+  if (codeChallengeMethod === "plain") {
+    return codeVerifier === codeChallenge
   }
-
-  static async create(
-    client: Client,
-    resourceOwner: ResourceOwner,
-    scope: string[],
-    redirectUri: string,
-    codeChallenge: string,
-    codeChallengeMethod: CodeChallengeMethod,
-    state?: string
-  ) {
-    return startActiveSpan(
-      "AuthorizationCodePKCEGrant.create",
-      async (span) => {
-        span.setAttributes({
-          scope,
-          redirectUri,
-          codeChallenge,
-          codeChallengeMethod,
-          state,
-          client: client.id,
-          resourceOwner: resourceOwner.id,
-        })
-        const prisma = getPrisma()
-        const code = createRandomString(24)
-        const grant = await prisma.grants.create({
-          data: {
-            code,
-            scope,
-            state,
-            redirect_uri: redirectUri,
-            client: BigInt(client.id),
-            resource_owner: BigInt(resourceOwner.id),
-            code_challenge: codeChallenge,
-            code_challenge_method: codeChallengeMethod,
-          },
-        })
-        return new AuthorizationCodePKCEGrant(
-          grant.id.toString(),
-          grant.code,
-          client,
-          resourceOwner,
-          scope,
-          grant.created_at,
-          grant.expires_in,
-          redirectUri,
-          codeChallenge,
-          codeChallengeMethod,
-          state
-        )
-      }
-    )
-  }
-
-  static async get(client: Client, code: string) {
-    return startActiveSpan("AuthorizationCodePKCEGrant.get", async (span) => {
-      span.setAttributes({
-        code,
-        client: client.id,
-      })
-
-      const response = await this._get(client, code)
-      if (response) {
-        const [grant, client, resourceOwner] = response
-        if (grant.code_challenge) {
-          return new AuthorizationCodePKCEGrant(
-            grant.id.toString(),
-            grant.code,
-            client,
-            resourceOwner,
-            grant.scope,
-            grant.created_at,
-            grant.expires_in,
-            grant.redirect_uri,
-            grant.code_challenge,
-            grant.code_challenge_method as CodeChallengeMethod,
-            grant.state || undefined
-          )
-        } else {
-          return AuthorizationCodeGrant._fromResponse(response)
-        }
-      }
-    })
-  }
+  return codeChallenge === generateS256CodeChallenge(codeVerifier)
 }
 
-export type Grant = AuthorizationCodeGrant | AuthorizationCodePKCEGrant
-
-export async function getGrant(client: Client, code: string) {
-  return startActiveSpan("getGrant", (span) => {
+export async function verifyCodeGrant(
+  token: string,
+  clientID: string,
+  redirectURI: string
+): Promise<BaseGrantPayload | null>
+export async function verifyCodeGrant(
+  token: string,
+  clientID: string,
+  redirectURI: string,
+  codeVerifier: string
+): Promise<CodeChallengeGrantPayload | null>
+export async function verifyCodeGrant(
+  token: string,
+  clientID: string,
+  redirectURI: string,
+  codeVerifier?: string
+): Promise<GrantPayload | null> {
+  return startActiveSpan("verifyCodeGrant", async (span, setError) => {
     span.setAttributes({
-      code,
-      client: client.id,
+      clientID,
+      redirectURI,
+      codeVerifier,
     })
-    return AuthorizationCodePKCEGrant.get(client, code)
+
+    const jwks = await getJWKS()
+    try {
+      const result = await jwtVerify(token, jwks, {
+        algorithms: [ALGORITHM],
+        audience: clientID,
+        issuer: ISSUER,
+        typ: TYPE,
+      })
+      const payload = result.payload as unknown as GrantPayload
+
+      if (
+        redirectURI !== payload.redirectURI ||
+        clientID !== payload.clientID
+      ) {
+        setError("Invalid redirectURI or clientID")
+        return null
+      }
+
+      if (
+        "codeChallenge" in payload &&
+        payload.codeChallenge &&
+        !verifyCodeChallenge(
+          codeVerifier,
+          payload.codeChallenge,
+          payload.codeChallengeMethod
+        )
+      ) {
+        setError("Invalid code verifier")
+        return null
+      }
+      return payload
+    } catch (e) {
+      setError("Failed to jwtVerify")
+      return null
+    }
   })
 }

@@ -3,9 +3,9 @@ import { startActiveSpan } from "@/utils/telemetry/trace"
 
 import { Client } from "./client"
 import {
+  createCodeGrant,
   AuthorizationCodeGrant,
-  AuthorizationCodePKCEGrant,
-  getGrant,
+  verifyCodeGrant,
   CodeChallengeMethod,
 } from "./grant"
 import { ResourceOwner } from "./resourceOwner"
@@ -19,7 +19,12 @@ enum ErrorCodes {
   INVALID_REQUEST = "invalid_request",
   INVALID_GRANT = "invalid_grant",
   INVALID_CLIENT = "invalid_client",
+  SERVER_ERROR = "server_error",
 }
+
+export const isErrorCode = (value: unknown): value is ErrorCodes =>
+  typeof value === "string" &&
+  Object.values(ErrorCodes).includes(value as ErrorCodes)
 
 type ResponseType = "code"
 export type AuthorizationCodeGrantType = "authorization_code"
@@ -51,7 +56,7 @@ export class AuthorizationServer {
     redirectUri: string,
     scope?: string[],
     state?: string
-  ): Promise<AuthorizationCodePKCEGrant | ErrorCodes>
+  ): Promise<AuthorizationCodeGrant | ErrorCodes>
   async authorize(
     responseType: ResponseType,
     auth: ConfidentialAuth | PublicAuth,
@@ -59,7 +64,7 @@ export class AuthorizationServer {
     redirectUri: string,
     scope?: string[],
     state?: string
-  ): Promise<AuthorizationCodeGrant | AuthorizationCodePKCEGrant | ErrorCodes> {
+  ): Promise<AuthorizationCodeGrant | ErrorCodes> {
     return startActiveSpan(
       "AuthorizationServer.authorize",
       async (span, setError) => {
@@ -90,9 +95,9 @@ export class AuthorizationServer {
           scope = ["email"]
         }
         if (client.type === "confidential") {
-          return AuthorizationCodeGrant.create(
-            client,
-            resourceOwner,
+          return createCodeGrant(
+            client.id,
+            resourceOwner.id,
             scope,
             redirectUri,
             state
@@ -102,9 +107,9 @@ export class AuthorizationServer {
           setError(ErrorCodes.INVALID_REQUEST)
           return ErrorCodes.INVALID_REQUEST
         }
-        return AuthorizationCodePKCEGrant.create(
-          client,
-          resourceOwner,
+        return createCodeGrant(
+          client.clientId,
+          resourceOwner.id,
           scope,
           redirectUri,
           auth.codeChallenge,
@@ -138,30 +143,46 @@ export class AuthorizationServer {
   }
 
   private async exchangeAuthorizationCode(
-    grant: AuthorizationCodeGrant | AuthorizationCodePKCEGrant,
+    code: string,
     client: Client,
+    redirectURI: string,
     codeVerifierOrClientSecret?: string
   ): Promise<[AccessToken, RefreshToken] | ErrorCodes> {
     return startActiveSpan(
       "AuthorizationServer.exchangeAuthorizationCode",
       async (span, setError) => {
         span.setAttributes({
-          grant: grant.id,
+          code,
           client: client.id,
         })
 
-        if ("codeChallenge" in grant) {
-          if (!grant.check(codeVerifierOrClientSecret)) {
-            setError(ErrorCodes.INVALID_GRANT)
-            return ErrorCodes.INVALID_GRANT
-          }
-        } else if (client.clientSecret !== codeVerifierOrClientSecret) {
+        const grant = await (codeVerifierOrClientSecret
+          ? verifyCodeGrant(
+              code,
+              client.clientId,
+              redirectURI,
+              codeVerifierOrClientSecret
+            )
+          : verifyCodeGrant(code, client.clientId, redirectURI))
+
+        if (!grant) {
+          setError(ErrorCodes.INVALID_GRANT)
+          return ErrorCodes.INVALID_GRANT
+        } else if (
+          !("codeChallenge" in grant) &&
+          client.clientSecret !== codeVerifierOrClientSecret
+        ) {
           setError(ErrorCodes.INVALID_CLIENT)
           return ErrorCodes.INVALID_CLIENT
         }
+        const resourceOwner = await ResourceOwner.get(grant.userID)
+        if (!resourceOwner) {
+          setError(ErrorCodes.SERVER_ERROR)
+          return ErrorCodes.SERVER_ERROR
+        }
         return this.generateAccessRefreshTokenPair(
           client,
-          grant.resourceOwner,
+          resourceOwner,
           grant.scope
         )
       }
@@ -238,14 +259,10 @@ export class AuthorizationServer {
             setError(ErrorCodes.INVALID_REQUEST)
             return ErrorCodes.INVALID_REQUEST
           }
-          const grant = await getGrant(client, codeOrRefreshToken)
-          if (!grant || !grant.isValid(redirectUri)) {
-            setError(ErrorCodes.INVALID_GRANT)
-            return ErrorCodes.INVALID_GRANT
-          }
           return this.exchangeAuthorizationCode(
-            grant,
+            codeOrRefreshToken,
             client,
+            redirectUri,
             clientSecretOrCodeVerifier
           )
         } else if (grantType === "refresh_token") {

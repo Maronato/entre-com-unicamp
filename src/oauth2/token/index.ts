@@ -1,14 +1,12 @@
 import { SignJWT, jwtVerify, JWTPayload } from "jose"
 
 import { getPrisma } from "@/utils/db"
-import { ALGORITHM, getJWKS, getPrivateKey } from "@/utils/jwk"
+import { ALGORITHM, getJWKS, getPrivateKey, ISSUER, TYPE } from "@/utils/jwk"
 import { createRandomString } from "@/utils/random"
 import { startActiveSpan } from "@/utils/telemetry/trace"
 
 import { Client } from "../client"
 import { ResourceOwner } from "../resourceOwner"
-
-const issuer = "entre-com-unicamp.app"
 
 export type AccessTokenType = "access_token"
 export type RefreshTokenType = "refresh_token"
@@ -34,7 +32,7 @@ const createToken =
         resourceOwner: resourceOwner.id,
         scope,
         alg: ALGORITHM,
-        issuer,
+        issuer: ISSUER,
       })
 
       const payload: BaseTokenPayload = {
@@ -43,9 +41,9 @@ const createToken =
         scope,
       }
       let token = new SignJWT({ ...payload })
-        .setProtectedHeader({ alg: ALGORITHM, typ: "JWT" })
+        .setProtectedHeader({ alg: ALGORITHM, typ: TYPE })
         .setIssuedAt()
-        .setIssuer(issuer)
+        .setIssuer(ISSUER)
         .setAudience(client.clientId)
         .setJti(createRandomString(12))
       if (expirationTime) {
@@ -116,8 +114,8 @@ class Token {
       try {
         const result = await jwtVerify(token, jwks, {
           algorithms: [ALGORITHM],
-          issuer,
-          typ: "JWT",
+          issuer: ISSUER,
+          typ: TYPE,
         })
         const { type, user, aud, scope, jti } =
           result.payload as unknown as TokenPayload

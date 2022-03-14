@@ -1,5 +1,5 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
-import { AuthorizationServer } from "@/oauth2"
+import { AuthorizationServer, isErrorCode } from "@/oauth2"
 import { CodeChallengeMethod } from "@/oauth2/grant"
 import { isAuthenticated } from "@/utils/auth/server"
 import {
@@ -53,7 +53,7 @@ export default async function handler(
   const data: RequestData = req.body
 
   if ("codeChallenge" in data) {
-    const auth = await server.authorize(
+    const code = await server.authorize(
       data.responseType,
       {
         clientId: data.clientId,
@@ -65,12 +65,12 @@ export default async function handler(
       data.scope,
       data.state
     )
-    if (typeof auth === "string") {
-      return respondInvalidRequest(res, { error: auth, state: data.state })
+    if (isErrorCode(code)) {
+      return respondInvalidRequest(res, { error: code, state: data.state })
     }
-    return respondOk(res, { code: auth.code, state: data.state })
+    return respondOk(res, { code, state: data.state })
   }
-  const auth = await server.authorize(
+  const code = await server.authorize(
     data.responseType,
     { clientId: data.clientId },
     data.resourceOwnerId,
@@ -78,8 +78,8 @@ export default async function handler(
     data.scope,
     data.state
   )
-  if (typeof auth === "string") {
-    return respondInvalidRequest(res, { error: auth, state: data.state })
+  if (isErrorCode(code)) {
+    return respondInvalidRequest(res, { error: code, state: data.state })
   }
-  return respondOk(res, { code: auth.code, state: data.state })
+  return respondOk(res, { code, state: data.state })
 }

@@ -17,7 +17,6 @@ model clients {
   name            String
   owner           BigInt
   resource_owners resource_owners  @relation(fields: [owner], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  grants          grants[]
   revoked_tokens  revoked_tokens[]
 }
 
@@ -29,28 +28,11 @@ model email_codes {
   email      String
 }
 
-model grants {
-  id                    BigInt          @id(map: "grant_pkey") @default(autoincrement())
-  created_at            DateTime        @default(now()) @db.Timestamptz(6)
-  client                BigInt
-  expires_in            Int             @default(60)
-  code                  String          @unique(map: "grant_code_key")
-  code_challenge        String?
-  code_challenge_method String          @default("S256")
-  resource_owner        BigInt
-  redirect_uri          String
-  scope                 String[]
-  state                 String?
-  clients               clients         @relation(fields: [client], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "grant_client_fkey")
-  resource_owners       resource_owners @relation(fields: [resource_owner], references: [id], onDelete: NoAction, onUpdate: NoAction)
-}
-
 model resource_owners {
   id             BigInt           @id(map: "resource_owner_pkey") @default(autoincrement())
   created_at     DateTime         @default(now()) @db.Timestamptz(6)
   email          String
   clients        clients[]
-  grants         grants[]
   revoked_tokens revoked_tokens[]
 }
 

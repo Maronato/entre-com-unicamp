@@ -5,6 +5,8 @@ import { importJWK, createLocalJWKSet, exportJWK, JSONWebKeySet } from "jose"
 import { startActiveSpan } from "./telemetry/trace"
 
 export const ALGORITHM = "ES256"
+export const ISSUER = "entre-com-unicamp.com"
+export const TYPE = "JWT"
 
 export function getPrivateKey(): Promise<KeyObject> {
   return startActiveSpan(
