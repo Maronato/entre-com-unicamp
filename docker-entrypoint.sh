@@ -2,6 +2,6 @@
 set -e
 
 cd /app
-yarn node dist/prisma/seed.ts
+yarn node dist/prisma/seed.js
 
 exec "$@"
