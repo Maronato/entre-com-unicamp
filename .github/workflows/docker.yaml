@@ -29,5 +29,5 @@ jobs:
           platforms: linux/amd64,linux/arm64/v8
           push: true
           tags: maronato/entre-com-unicamp:${{ steps.prepare.outputs.version }},maronato/entre-com-unicamp:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=registry,ref=maronato/entre-com-unicamp:buildcache
+          cache-to: type=registry,ref=maronato/entre-com-unicamp:buildcache,mode=max
