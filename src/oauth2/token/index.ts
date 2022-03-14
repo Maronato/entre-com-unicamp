@@ -1,195 +1,215 @@
 import { getPrisma } from "@/utils/db"
-import { signJWT, verifyJWT } from "@/utils/jwt"
+import { ExtendJWTPayload, signJWT, verifyJWT } from "@/utils/jwt"
+import { getRedis } from "@/utils/redis"
 import { startActiveSpan } from "@/utils/telemetry/trace"
 
-import { Client } from "../client"
-import { ResourceOwner } from "../resourceOwner"
+import { User } from "../resourceOwner"
 
 export type AccessTokenType = "access_token"
 export type RefreshTokenType = "refresh_token"
 export type TokenType = AccessTokenType | RefreshTokenType
+export type AccessToken = string
+export type RefreshToken = string
+export type Token = AccessToken | RefreshToken
 
-type TokenPayload = {
-  user: Pick<ResourceOwner, "email" | "id">
+type BaseTokenPayload = {
+  user: Omit<User, "id"> & { id: string }
   type: TokenType
   scope: string[]
 }
 
-const createToken =
-  (tokenType: TokenType, expirationTime: string | false) =>
-  async (client: Client, resourceOwner: ResourceOwner, scope: string[]) => {
-    return startActiveSpan(`createToken`, async (span) => {
-      span.setAttributes({
-        tokenType,
-        expirationTime,
-        client: client.id,
-        resourceOwner: resourceOwner.id,
-        scope,
-      })
+type BaseAccessTokenPayload = BaseTokenPayload & {
+  type: AccessTokenType
+  aud: string
+}
+type AccessTokenPayload = ExtendJWTPayload<BaseAccessTokenPayload>
 
-      const payload: TokenPayload = {
-        user: { id: resourceOwner.id, email: resourceOwner.email },
-        type: tokenType,
-        scope,
-      }
-      return signJWT(
-        { ...payload },
-        client.clientId,
-        expirationTime || undefined
-      )
-    })
-  }
+type BaseRefreshTokenPayload = BaseTokenPayload & {
+  type: RefreshTokenType
+  aud: string
+}
+export type RefreshTokenPayload = ExtendJWTPayload<BaseRefreshTokenPayload>
 
-const createAccessToken = createToken("access_token", "2h")
+export type TokenPayload = AccessTokenPayload | RefreshTokenPayload
 
-const createRefreshToken = createToken("refresh_token", false)
-
-const createTokenByType = (type: TokenType) =>
-  type === "access_token" ? createAccessToken : createRefreshToken
-
-class Token {
-  static type: TokenType
-  token: string
+const REFRESH_TOKEN_JTI_SEPARATOR = ":"
+type RefreshTokenJTI = {
   jti: string
-  scope: string[]
-  client: Client
-  resourceOwner: ResourceOwner
-
-  constructor(
-    token: string,
-    jti: string,
-    client: Client,
-    resourceOwner: ResourceOwner,
-    scope: string[]
-  ) {
-    this.token = token
-    this.jti = jti
-    this.scope = scope
-    this.client = client
-    this.resourceOwner = resourceOwner
-  }
-
-  static async create<T extends typeof Token>(
-    this: T,
-    client: Client,
-    resourceOwner: ResourceOwner,
-    scope: string[]
-  ): Promise<InstanceType<T>> {
-    return startActiveSpan(`<Token> ${this.name}.create`, async (span) => {
-      span.setAttributes({
-        client: client.id,
-        resourceOwner: resourceOwner.id,
-        scope,
-      })
-
-      const factory = createTokenByType(this.type)
-      const tokenString = await factory(client, resourceOwner, scope)
-      const token = await this.parseToken(tokenString)
-      if (!token) {
-        throw new Error("Error creating token")
-      }
-      return token
-    })
-  }
-
-  static async parseToken<T extends typeof Token>(
-    this: T,
-    token: string
-  ): Promise<InstanceType<T> | undefined> {
-    return startActiveSpan(
-      `<Token> ${this.name}.parseToken`,
-      async (span, setError) => {
-        const result = await verifyJWT<TokenPayload>(token)
-        if (!result) {
-          setError("Token failed verification")
-          return
-        }
-
-        const { type, user, aud = "", scope, jti } = result
-
-        span.setAttributes({
-          type,
-          user: user.id,
-          aud,
-          scope,
-          jti,
-          valid: false,
-        })
-
-        if (type === this.type) {
-          const [resourceOwner, client] = await Promise.all([
-            ResourceOwner.get(user.id),
-            Client.getByClientID(Array.isArray(aud) ? aud[0] : aud),
-          ])
-          if (resourceOwner && client) {
-            span.setAttribute("valid", true)
-
-            return new this(
-              token,
-              jti,
-              client,
-              resourceOwner,
-              scope
-            ) as InstanceType<T>
-          }
-        }
-      }
-    )
-  }
-
-  static async verifyToken<T extends typeof Token>(
-    this: T,
-    token: string
-  ): Promise<InstanceType<T> | undefined> {
-    return startActiveSpan(`<Token> ${this.name}.verifyToken`, async () => {
-      const tokenInstance = await this.parseToken(token)
-      if (!tokenInstance) {
-        return
-      }
-      const prisma = getPrisma()
-      const revoked = await prisma.revoked_tokens.count({
-        where: { jti: tokenInstance.jti },
-      })
-      if (revoked > 0) {
-        return
-      }
-      return tokenInstance
-    })
-  }
-
-  static async revoke(token: string) {
-    return startActiveSpan(`<Token> ${this.name}.revoke`, async () => {
-      const tokenInstance = await this.verifyToken(token)
-      if (tokenInstance) {
-        const prisma = getPrisma()
-        await prisma.revoked_tokens.create({
-          data: {
-            jti: tokenInstance.jti,
-            type: this.type,
-            client: BigInt(tokenInstance.client.id),
-            resource_owner: BigInt(tokenInstance.resourceOwner.id),
-          },
-        })
-      }
-    })
-  }
+  counter: number
 }
-
-export class AccessToken extends Token {
-  static type: AccessTokenType = "access_token"
+/**
+ * Parses refresh token JTIs for revocation
+ *
+ * @param previousJTI Previous token JTI
+ * @returns the new token JTI
+ */
+const parseRefreshTokenCounter = (previousJTI: string): RefreshTokenJTI => {
+  const [jti, countS] = previousJTI.split(REFRESH_TOKEN_JTI_SEPARATOR)
+  const counter = parseInt(countS) || 1
+  return { jti, counter }
 }
-
-export class RefreshToken extends Token {
-  static type: RefreshTokenType = "refresh_token"
+const joinRefreshTokenCounter = (jti: RefreshTokenJTI): string => {
+  return `${jti.jti}${REFRESH_TOKEN_JTI_SEPARATOR}${jti.counter}`
 }
-
-export async function verifyToken(token: string) {
-  return startActiveSpan("verifyToken", async () => {
-    let tokenInstance: AccessToken | RefreshToken | undefined =
-      await AccessToken.verifyToken(token)
-    if (!tokenInstance) {
-      tokenInstance = await RefreshToken.verifyToken(token)
-    }
-    return tokenInstance
+const getJTIRedisKey = (jti: string) => `refresh-token-revoke-${jti}`
+const getLastJTISeen = async (jtiString: string) => {
+  return startActiveSpan("getLastJTISeen", async (span) => {
+    const redis = await getRedis()
+    const { jti, counter } = parseRefreshTokenCounter(jtiString)
+    const key = getJTIRedisKey(jti)
+    const value = (await redis.get(key)) || "0"
+    const currValue = Math.max(parseInt(value) || 0, counter)
+    span.setAttributes({
+      current_value: currValue,
+      jti: jti,
+      value,
+      key,
+    })
+    return currValue
   })
 }
+const updateLastJTISeen = async (jtiString: string): Promise<string> => {
+  return startActiveSpan("updateLastJTISeen", async (span) => {
+    const redis = await getRedis()
+    const { jti } = parseRefreshTokenCounter(jtiString)
+    const lastSeen = await getLastJTISeen(jtiString)
+    span.setAttributes({
+      jti,
+      lastSeen,
+    })
+    const key = getJTIRedisKey(jti)
+    const counter = lastSeen + 1
+    const newJTI = joinRefreshTokenCounter({ jti, counter })
+    await redis.set(key, counter)
+    return newJTI
+  })
+}
+
+const createToken =
+  <T extends TokenType>(type: T, expirationTime: string | false) =>
+  async (
+    clientID: string,
+    user: User,
+    scope: string[],
+    jti?: string
+  ): Promise<T extends AccessTokenType ? AccessToken : RefreshToken> => {
+    return startActiveSpan(`createToken - ${type}`, async (span) => {
+      span.setAttributes({
+        type,
+        expirationTime,
+        clientID,
+        user: JSON.stringify({ email: user.email, id: user.id.toString() }),
+        scope,
+      })
+
+      const payload: BaseTokenPayload = {
+        user: { email: user.email, id: user.id.toString() },
+        type,
+        scope,
+      }
+      return signJWT({ ...payload, jti }, clientID, expirationTime || undefined)
+    })
+  }
+
+export const createAccessToken = createToken("access_token", "2h")
+
+export const createRefreshToken = createToken("refresh_token", false)
+export const rotateRefreshToken = async (
+  previousJTI: string,
+  ...args: Parameters<typeof createRefreshToken>
+) => {
+  return startActiveSpan("rotateRefreshToken", async (span) => {
+    span.setAttribute("jti", previousJTI)
+    // Increment JTI by one
+    const jti = await updateLastJTISeen(previousJTI)
+    return createRefreshToken(args[0], args[1], args[2], jti)
+  })
+}
+
+export async function parseToken<
+  T extends Token,
+  R extends TokenPayload = T extends AccessToken
+    ? AccessTokenPayload
+    : RefreshTokenPayload
+>(token: T) {
+  const result = await verifyJWT<R>(token)
+  return result
+}
+
+type ValidateData = {
+  clientID?: string
+  userID: User["id"]
+  scope?: string[]
+}
+
+export async function verifyToken(
+  token: Token,
+  type: TokenType,
+  validate?: ValidateData
+): Promise<boolean>
+export async function verifyToken(
+  token: TokenPayload,
+  type: TokenType,
+  validate?: ValidateData
+): Promise<boolean>
+export async function verifyToken(
+  token: Token | TokenPayload,
+  type: TokenType,
+  validate?: ValidateData
+): Promise<boolean> {
+  return startActiveSpan("verifyToken", async (span, setError) => {
+    span.setAttributes({ type, validate: JSON.stringify(validate) })
+
+    if (!token) {
+      setError("Token type is falsy")
+      return false
+    }
+
+    const parsed = typeof token === "string" ? await parseToken(token) : token
+    if (!parsed) {
+      setError("Failed to parse")
+      return false
+    }
+    if (parsed.type !== type) {
+      setError("Type mismatch")
+      return false
+    }
+    if (type === "refresh_token") {
+      // Check for invalidated
+      const currentCounter = await getLastJTISeen(parsed.jti)
+      const { counter } = parseRefreshTokenCounter(parsed.jti)
+      if (currentCounter > counter) {
+        setError("Refresh token has been revoked")
+        return false
+      }
+    }
+    if (validate) {
+      const res = await Promise.all([
+        checkUserID(validate.userID)(BigInt(parsed.user.id)),
+        checkClientID(validate.clientID)(parsed.aud),
+        checkScope(validate.scope)(parsed.scope),
+      ])
+      const isValid = res.every((r) => !!r)
+      if (!isValid) {
+        setError(`Invalid batch check result: ${res}`)
+        return false
+      }
+    }
+    return true
+  })
+}
+
+const checkUserID = (u1?: bigint) => async (u2: bigint) =>
+  !u1 ||
+  (u1 === u2 &&
+    (await getPrisma().resource_owners.count({
+      where: { id: u1 },
+    })) === 1)
+
+const checkClientID = (c1?: string) => async (c2: string) =>
+  !c1 ||
+  (c1 === c2 &&
+    (await getPrisma().clients.count({ where: { client_id: c1 } })) === 1)
+
+const checkScope = (s1?: string[]) => async (s2: string[]) =>
+  !s1 || (s1.length === s2.length && s1.every((v, i) => v === s2[i]))

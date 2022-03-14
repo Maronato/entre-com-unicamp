@@ -1,3 +1,5 @@
+import { resource_owners } from "@prisma/client"
+
 import { getPrisma } from "@/utils/db"
 import { startActiveSpan } from "@/utils/telemetry/trace"
 
@@ -51,3 +53,10 @@ export class ResourceOwner {
     )
   }
 }
+
+export type User = Pick<resource_owners, "id" | "email">
+
+export const asUser = (resourceOwner: ResourceOwner): User => ({
+  email: resourceOwner.email,
+  id: BigInt(resourceOwner.id),
+})

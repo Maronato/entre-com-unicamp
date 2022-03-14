@@ -76,8 +76,8 @@ function respondExchange(
   refreshToken: RefreshToken
 ) {
   return respondOk(res, {
-    access_token: accessToken.token,
-    refresh_token: refreshToken.token,
+    access_token: accessToken,
+    refresh_token: refreshToken,
     token_type: "Bearer",
   })
 }

@@ -71,7 +71,7 @@ export async function signJWT(
       returnJTI,
     })
 
-    const jti = createRandomString(12)
+    const jti = payload.jti || createRandomString(12)
     span.setAttribute("jti", jti)
 
     let token = new SignJWT({ ...payload })
@@ -96,13 +96,14 @@ export async function signJWT(
 
 type Audience = JWTPayload["aud"]
 
-type ExtendedJWTPayload = JWTPayload &
+export type ExtendJWTPayload<T> = T &
+  JWTPayload &
   Required<Pick<JWTPayload, "jti" | "iss" | "iat">>
 
 export async function verifyJWT<T extends JWTPayload = JWTPayload>(
   token: string,
   audience?: Audience
-): Promise<(T & ExtendedJWTPayload) | null> {
+): Promise<ExtendJWTPayload<T> | null> {
   return startActiveSpan("verifyJWT", async (span, setError) => {
     span.setAttributes({
       audience,
@@ -119,7 +120,7 @@ export async function verifyJWT<T extends JWTPayload = JWTPayload>(
         issuer: ISSUER,
         typ: TYPE,
       })
-      return payload as unknown as T & ExtendedJWTPayload
+      return payload as unknown as T & ExtendJWTPayload<T>
     } catch (e) {
       setError("Token verification failed")
       return null
