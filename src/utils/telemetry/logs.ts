@@ -10,11 +10,12 @@ export const getLogger = () => {
     let consoleFormat = format.combine(
       format.colorize(),
       format.timestamp(),
-      format.errors(),
-      format.simple()
+      format.errors()
     )
     if (process.env.NODE_ENV === "production") {
       consoleFormat = format.combine(consoleFormat, format.uncolorize())
+    } else {
+      consoleFormat = format.combine(consoleFormat, format.simple())
     }
 
     logger = createLogger({
