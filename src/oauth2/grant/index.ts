@@ -67,26 +67,20 @@ class BaseAuthorizationCodeGrant {
           where: { client: Number(client.id), code },
         })
         if (grant) {
-          // Prevent replay attacks by deleting the grant
-          await prisma.grants.delete({ where: { id: grant.id } })
-          const client = await Client.get(grant.client.toString())
-          if (client) {
-            const resourceOwner = await ResourceOwner.get(
-              grant.resource_owner.toString()
-            )
-            if (resourceOwner) {
-              return [grant, client, resourceOwner] as [
-                grants,
-                Client,
-                ResourceOwner
-              ]
-            } else {
-              setError(`Failed to get resourceOwner: ${grant.resource_owner}`)
-            }
+          const [, client, resourceOwner] = await Promise.all([
+            // Prevent replay attacks by deleting the grant
+            prisma.grants.delete({ where: { id: grant.id } }),
+            Client.get(grant.client.toString()),
+            ResourceOwner.get(grant.resource_owner.toString()),
+          ])
+          if (resourceOwner && client) {
+            return [grant, client, resourceOwner] as [
+              grants,
+              Client,
+              ResourceOwner
+            ]
           } else {
-            setError(
-              `Failed to delete grant or to find client: ${grant.client}`
-            )
+            setError(`Failed to find client or resourceOwner`)
           }
         } else {
           setError(`Failed to find grant`)

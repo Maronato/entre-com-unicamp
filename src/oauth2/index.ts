@@ -128,17 +128,10 @@ export class AuthorizationServer {
           resourceOwner: resourceOwner.id,
           scope,
         })
-
-        const accessToken = await AccessToken.create(
-          client,
-          resourceOwner,
-          scope
-        )
-        const refreshToken = await RefreshToken.create(
-          client,
-          resourceOwner,
-          scope
-        )
+        const [accessToken, refreshToken] = await Promise.all([
+          AccessToken.create(client, resourceOwner, scope),
+          RefreshToken.create(client, resourceOwner, scope),
+        ])
         return [accessToken, refreshToken] as [AccessToken, RefreshToken]
       }
     )
@@ -192,13 +185,16 @@ export class AuthorizationServer {
           setError(ErrorCodes.INVALID_REQUEST)
           return ErrorCodes.INVALID_REQUEST
         }
-        // Revoke current token
-        await RefreshToken.revoke(refreshToken.token)
-        return this.generateAccessRefreshTokenPair(
-          refreshToken.client,
-          refreshToken.resourceOwner,
-          refreshToken.scope
-        )
+        // Revoke current token and return new pair
+        const [, pair] = await Promise.all([
+          RefreshToken.revoke(refreshToken.token),
+          this.generateAccessRefreshTokenPair(
+            refreshToken.client,
+            refreshToken.resourceOwner,
+            refreshToken.scope
+          ),
+        ])
+        return pair
       }
     )
   }

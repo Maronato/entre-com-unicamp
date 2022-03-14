@@ -132,21 +132,20 @@ class Token {
         })
 
         if (type === this.type) {
-          const resourceOwner = await ResourceOwner.get(user.id)
-          if (resourceOwner) {
-            const clientId = Array.isArray(aud) ? aud[0] : aud
-            const client = await Client.getByClientID(clientId)
-            if (client) {
-              span.setAttribute("valid", true)
+          const [resourceOwner, client] = await Promise.all([
+            ResourceOwner.get(user.id),
+            Client.getByClientID(Array.isArray(aud) ? aud[0] : aud),
+          ])
+          if (resourceOwner && client) {
+            span.setAttribute("valid", true)
 
-              return new this(
-                token,
-                jti,
-                client,
-                resourceOwner,
-                scope
-              ) as InstanceType<T>
-            }
+            return new this(
+              token,
+              jti,
+              client,
+              resourceOwner,
+              scope
+            ) as InstanceType<T>
           }
         }
       } catch (e) {
