@@ -38,6 +38,6 @@ ENTRYPOINT ["/app/docker-entrypoint.sh"]
 
 EXPOSE 3000
 HEALTHCHECK --interval=1m --timeout=5s \
-  CMD curl --HEAD --fail http://localhost:3000/api/health || exit 1
+  CMD curl --fail http://localhost:3000/api/health || exit 1
 
 CMD ["yarn", "serve"]
