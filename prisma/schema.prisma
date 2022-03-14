@@ -17,7 +17,6 @@ model clients {
   name            String
   owner           BigInt
   resource_owners resource_owners  @relation(fields: [owner], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  revoked_tokens  revoked_tokens[]
 }
 
 model resource_owners {
@@ -25,15 +24,4 @@ model resource_owners {
   created_at     DateTime         @default(now()) @db.Timestamptz(6)
   email          String
   clients        clients[]
-  revoked_tokens revoked_tokens[]
-}
-
-model revoked_tokens {
-  created_at      DateTime        @default(now()) @db.Timestamptz(6)
-  jti             String          @id @unique
-  resource_owner  BigInt
-  client          BigInt
-  type            String
-  clients         clients         @relation(fields: [client], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  resource_owners resource_owners @relation(fields: [resource_owner], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
