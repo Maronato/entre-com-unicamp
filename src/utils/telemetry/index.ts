@@ -60,6 +60,12 @@ export const getContext = () => {
 export const startTelemetry = async () => {
   await getSDK()
   startHostMetrics()
+  api.diag.setLogger(
+    new api.DiagConsoleLogger(),
+    process.env.LOG_LEVEL === "debug"
+      ? api.DiagLogLevel.ALL
+      : api.DiagLogLevel.INFO
+  )
 
   const logger = (await import("./logs")).getLogger()
   logger.info("Started telemetry service")
