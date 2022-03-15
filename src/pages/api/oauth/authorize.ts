@@ -1,6 +1,7 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import { AuthorizationServer, isErrorCode } from "@/oauth2"
 import { CodeChallengeMethod } from "@/oauth2/grant"
+import { SerializedUser } from "@/oauth2/user"
 import { isAuthenticated } from "@/utils/auth/server"
 import {
   respondInvalidRequest,
@@ -12,8 +13,8 @@ import {
 import type { NextApiRequest, NextApiResponse } from "next"
 
 type CodeRequestData = {
-  clientId: string
-  resourceOwnerId: string
+  clientID: string
+  userID: SerializedUser["id"]
   responseType: "code"
   redirectUri: string
   scope?: string[]
@@ -56,11 +57,11 @@ export default async function handler(
     const code = await server.authorize(
       data.responseType,
       {
-        clientId: data.clientId,
+        clientID: data.clientID,
         codeChallenge: data.codeChallenge,
         codeChallengeMethod: data.codeChallengeMethod,
       },
-      data.resourceOwnerId,
+      BigInt(data.userID),
       data.redirectUri,
       data.scope,
       data.state
@@ -72,8 +73,8 @@ export default async function handler(
   }
   const code = await server.authorize(
     data.responseType,
-    { clientId: data.clientId },
-    data.resourceOwnerId,
+    { clientID: data.clientID },
+    BigInt(data.userID),
     data.redirectUri,
     data.scope,
     data.state

@@ -1,6 +1,6 @@
 import { ExtendJWTPayload } from "@/utils/jwt"
 
-import { User } from "../resourceOwner"
+import { User } from "../user"
 
 export type AccessTokenType = "access_token"
 export type RefreshTokenType = "refresh_token"

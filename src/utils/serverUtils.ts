@@ -8,21 +8,23 @@ const statusIsOk = (
 
 export type StatusCode = StatusOk | StatusError
 
-export function respond(
+export async function respond(
   res: NextApiResponse,
   statusCode: StatusOk,
   data?: unknown
-): void
-export function respond(
+): Promise<void>
+export async function respond(
   res: NextApiResponse,
   statusCode: StatusError,
   errorMessage: unknown
-): void
-export function respond(
+): Promise<void>
+export async function respond(
   res: NextApiResponse,
   statusCode: StatusCode,
   dataOrError?: unknown
-): void {
+): Promise<void> {
+  dataOrError = await dataOrError
+
   if (statusIsOk(statusCode)) {
     dataOrError = dataOrError ?? "success"
     return res

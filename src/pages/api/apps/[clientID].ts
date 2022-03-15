@@ -1,7 +1,6 @@
-import { Client } from "@/oauth2/client"
-import { ResourceOwner } from "@/oauth2/resourceOwner"
+import { deleteApp, getAppByClientID, serializeApp } from "@/oauth2/app"
+import { User } from "@/oauth2/user"
 import { isAuthenticated } from "@/utils/auth/server"
-import { getPrisma } from "@/utils/db"
 import {
   respondMethodNotAllowed,
   respondNoContent,
@@ -12,11 +11,11 @@ import {
 
 import type { NextApiRequest, NextApiResponse } from "next"
 
-async function getUserApp(req: NextApiRequest, user: ResourceOwner) {
-  const { appId } = req.query as { appId: string }
-  const app = await Client.get(appId)
+async function getUserApp(req: NextApiRequest, user: User) {
+  const { clientID } = req.query as { clientID: string }
+  const app = await getAppByClientID(clientID)
 
-  if (app && app.owner.id === user.id) {
+  if (app && app.owner === user.id) {
     return app
   }
 }
@@ -24,7 +23,7 @@ async function getUserApp(req: NextApiRequest, user: ResourceOwner) {
 async function getHandler(
   req: NextApiRequest,
   res: NextApiResponse,
-  user: ResourceOwner
+  user: User
 ) {
   const app = await getUserApp(req, user)
 
@@ -32,20 +31,19 @@ async function getHandler(
     return respondNotFound(res, "App not found")
   }
 
-  return respondOk(res, app.toJSON(true))
+  return respondOk(res, serializeApp(app, true))
 }
 
 async function deleteHandler(
   req: NextApiRequest,
   res: NextApiResponse,
-  user: ResourceOwner
+  user: User
 ) {
   const app = await getUserApp(req, user)
   if (!app) {
     return respondNotFound(res, "App not found")
   }
-  const prisma = getPrisma()
-  await prisma.clients.delete({ where: { id: BigInt(app.id) } })
+  await deleteApp(app.id)
 
   return respondNoContent(res)
 }

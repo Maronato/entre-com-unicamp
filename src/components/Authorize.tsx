@@ -3,6 +3,7 @@ import { FC, useState } from "react"
 import Image from "next/image"
 import { useRouter } from "next/router"
 
+import { SerializedApp } from "@/oauth2/app"
 import {
   RequestData,
   ValidResponseData,
@@ -21,21 +22,14 @@ export type AuthorizeProps = Omit<
 > &
   Partial<Pick<ChallengeRequestData, "codeChallenge" | "codeChallengeMethod">>
 
-export type ClientData = {
-  name: string
-  owner: {
-    email: string
-  }
-}
-
-const Authorize: FC<AuthorizeProps & { client: ClientData }> = ({
-  clientId,
+const Authorize: FC<AuthorizeProps & { app: SerializedApp }> = ({
+  clientID,
   redirectUri,
   scope,
   state,
   codeChallengeMethod,
   codeChallenge,
-  client,
+  app,
 }) => {
   const { user } = useAuth()
   const [loading, setLoading] = useState(false)
@@ -45,8 +39,8 @@ const Authorize: FC<AuthorizeProps & { client: ClientData }> = ({
     return null
   }
 
-  const appName = client.name
-  const appOwner = client.owner.email
+  const appName = app.name
+  const appOwner = app.owner.email
 
   const url = new URL(redirectUri)
   if (state) {
@@ -58,11 +52,11 @@ const Authorize: FC<AuthorizeProps & { client: ClientData }> = ({
     setLoading(true)
     try {
       const payload: Partial<ChallengeRequestData> = {
-        clientId,
+        clientID,
         codeChallenge,
         codeChallengeMethod,
         redirectUri,
-        resourceOwnerId: user.id,
+        userID: user.id,
         responseType: "code",
         scope,
         state,

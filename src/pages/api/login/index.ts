@@ -1,6 +1,10 @@
-import { ResourceOwner } from "@/oauth2/resourceOwner"
+import {
+  createUser,
+  getUserByEmail,
+  SerializedUser,
+  serializeUser,
+} from "@/oauth2/user"
 import { login } from "@/utils/auth/server"
-import { getPrisma } from "@/utils/db"
 import { emailCodeIsValid } from "@/utils/emailCodes"
 import { delay } from "@/utils/misc"
 import {
@@ -19,7 +23,7 @@ type RequestData = {
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<{ user: ResourceOwner } | string>
+  res: NextApiResponse<{ user: SerializedUser<true> }>
 ) {
   if (req.method !== "POST") {
     return respondMethodNotAllowed(res)
@@ -40,19 +44,11 @@ export default async function handler(
     return respondUnauthorized(res, "Invalid credentials")
   }
 
-  const prisma = getPrisma()
-
-  let resourceOwner = await prisma.resource_owners.findFirst({
-    where: { email },
-  })
-  if (!resourceOwner) {
-    resourceOwner = await prisma.resource_owners.create({ data: { email } })
+  let user = await getUserByEmail(email)
+  if (!user) {
+    user = await createUser(email)
   }
-  const user = new ResourceOwner(
-    resourceOwner.id.toString(),
-    resourceOwner.email
-  )
   await login(res, user)
 
-  return respondOk(res, { user })
+  return respondOk(res, { user: serializeUser(user, true) })
 }

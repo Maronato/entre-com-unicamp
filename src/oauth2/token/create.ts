@@ -1,7 +1,7 @@
 import { signJWT } from "@/utils/jwt"
 import { startActiveSpan } from "@/utils/telemetry/trace"
 
-import { User } from "../resourceOwner"
+import { User } from "../user"
 
 import { revokePreviousRefreshToken } from "./revoke"
 import {

@@ -2,10 +2,15 @@ import { FunctionComponent } from "react"
 
 import { GetServerSideProps, NextPage } from "next"
 
-import Authorize, { AuthorizeProps, ClientData } from "@/components/Authorize"
+import Authorize, { AuthorizeProps } from "@/components/Authorize"
 import InvalidAuthorize from "@/components/InvalidAuthorize"
 import Login from "@/components/Login"
-import { Client } from "@/oauth2/client"
+import {
+  App,
+  getAppByClientID,
+  serializeApp,
+  SerializedApp,
+} from "@/oauth2/app"
 import { CodeChallengeMethod } from "@/oauth2/grant"
 import { serverFetch } from "@/utils/auth/server"
 
@@ -16,7 +21,7 @@ type BaseProps = {
 }
 type ValidProps = {
   query: AuthorizeProps
-  client: ClientData
+  app: SerializedApp
 }
 type ErrorProps = {
   error: string
@@ -36,7 +41,7 @@ const AuthorizePage: FunctionComponent<ValidProps | ErrorProps> = (props) => {
       <button onClick={() => logout()}>Logout</button>
       <div className="min-h-full flex items-center justify-center py-20 px-4">
         {!!user || <Login />}
-        {!!user && <Authorize {...props.query} client={props.client} />}
+        {!!user && <Authorize {...props.query} app={props.app} />}
       </div>
     </div>
   )
@@ -67,14 +72,14 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({
     state,
   } = query
 
-  let client: Client | undefined
+  let app: App | null
 
   if (
     !client_id ||
     !redirect_uri ||
     Array.isArray(client_id) ||
     Array.isArray(redirect_uri) ||
-    !(client = await Client.getByClientID(client_id))?.redirectIsValid(
+    !(app = await getAppByClientID(client_id))?.redirect_uris.includes(
       redirect_uri
     )
   ) {
@@ -111,7 +116,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({
   }
 
   const authQuery: Partial<AuthorizeProps> = {
-    clientId: client_id,
+    clientID: client_id,
     redirectUri: redirect_uri,
   }
   if (scope) {
@@ -127,11 +132,13 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({
     authQuery.state = state
   }
 
+  const serializedApp = await serializeApp(app)
+
   return {
     props: {
       fallback: { ...user },
       query: authQuery as AuthorizeProps,
-      client: client.toJSON() as ClientData,
+      app: serializedApp,
     },
   }
 }

@@ -1,6 +1,11 @@
 import { GetServerSideProps, NextApiRequest, NextApiResponse } from "next"
 
-import { ResourceOwner } from "@/oauth2/resourceOwner"
+import {
+  SerializedUser,
+  serializeUser,
+  unserializeUser,
+  User,
+} from "@/oauth2/user"
 
 import { removeCookie, setCookie } from "../cookie"
 import { key, UserFallback } from "../hooks/useUser"
@@ -22,13 +27,13 @@ export const getAuthCookieOptions = () => ({
 })
 
 type TokenPayload = {
-  user: Pick<ResourceOwner, "email" | "id">
+  user: SerializedUser<true>
   scope: string[]
 }
 
-async function signAuthToken(resourceOwner: ResourceOwner) {
+async function signAuthToken(user: User) {
   const payload: TokenPayload = {
-    user: { id: resourceOwner.id.toString(), email: resourceOwner.email },
+    user: serializeUser(user, true),
     scope: ["email", "id"],
   }
   return signJWT({ ...payload }, ISSUER, "1y")
@@ -47,10 +52,12 @@ async function verifyAuthToken(token: string, checkAudience = true) {
       return
     }
 
-    const { user, scope } = result
-    const resourceOwner = await ResourceOwner.get(user.id)
-    if (resourceOwner) {
-      return [resourceOwner, scope] as [ResourceOwner, string[]]
+    const { user: serializedUser, scope } = result
+    const user = await unserializeUser(
+      serializedUser as unknown as SerializedUser<false>
+    )
+    if (user) {
+      return [user, scope] as [User, string[]]
     }
   })
 }
@@ -72,14 +79,11 @@ export function isAuthenticated(
   })
 }
 
-export async function login(
-  res: NextApiResponse,
-  resourceOwner: ResourceOwner
-) {
+export async function login(res: NextApiResponse, user: User) {
   return startActiveSpan("login", async (span) => {
-    span.setAttribute("resourceOwner", resourceOwner.id)
+    span.setAttribute("user", user.id.toString())
 
-    const authToken = await signAuthToken(resourceOwner)
+    const authToken = await signAuthToken(user)
     setCookie(res, AUTH_COOKIE_NAME, authToken, getAuthCookieOptions())
   })
 }
@@ -95,6 +99,6 @@ export const serverFetch = async (
 ): Promise<UserFallback> => {
   const user = (await isAuthenticated(req)) || null
   return {
-    [key]: user ? user[0].toJSON(true) : user,
+    [key]: user ? serializeUser(user[0], true) : user,
   }
 }

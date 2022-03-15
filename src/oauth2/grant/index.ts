@@ -4,7 +4,7 @@ import { signJWT, verifyJWT } from "@/utils/jwt"
 import { getRedis } from "@/utils/redis"
 import { startActiveSpan } from "@/utils/telemetry/trace"
 
-import { User } from "../resourceOwner"
+import { User } from "../user"
 
 export type CodeChallengeMethod = "plain" | "S256"
 

@@ -4,13 +4,13 @@ import useSWR, { SWRConfig } from "swr"
 
 import { getFetch, postFetch } from "../fetch"
 
-import type { ResourceOwner } from "@/oauth2/resourceOwner"
+import type { SerializedUser } from "@/oauth2/user"
 
 export const key = "user"
 
-export type UserFallback = { [key]: ReturnType<ResourceOwner["toJSON"]> | null }
+export type UserFallback = { [key]: SerializedUser<true> | null }
 
-const clientFetch = () => getFetch<ResourceOwner>("/api/me").catch(() => null)
+const clientFetch = () => getFetch<SerializedUser>("/api/me").catch(() => null)
 
 export const useUser = () => {
   const { data, mutate, error } = useSWR(key, clientFetch)
@@ -37,7 +37,7 @@ export const useAuth = () => {
   }
   const login = async (email: string, code: string): Promise<boolean> => {
     try {
-      const { user } = await postFetch<{ user: ResourceOwner }>("/api/login", {
+      const { user } = await postFetch<{ user: SerializedUser }>("/api/login", {
         email,
         code,
       })

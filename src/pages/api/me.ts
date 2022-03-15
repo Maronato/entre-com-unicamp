@@ -1,4 +1,4 @@
-import { ResourceOwner } from "@/oauth2/resourceOwner"
+import { SerializedUser, serializeUser } from "@/oauth2/user"
 import { isAuthenticated } from "@/utils/auth/server"
 import {
   respondMethodNotAllowed,
@@ -8,7 +8,7 @@ import {
 
 import type { NextApiRequest, NextApiResponse } from "next"
 
-type ResponseData = ResourceOwner
+type ResponseData = SerializedUser
 
 export default async function handler(
   req: NextApiRequest,
@@ -24,7 +24,7 @@ export default async function handler(
   const [user, scope] = auth
 
   if (scope.includes("id")) {
-    return respondOk(res, user.toJSON(true) as ResourceOwner)
+    return respondOk(res, serializeUser(user, true))
   }
-  return respondOk(res, user.toJSON(false) as ResourceOwner)
+  return respondOk(res, serializeUser(user))
 }

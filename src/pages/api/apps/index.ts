@@ -1,7 +1,12 @@
-import { Client, ClientType } from "@/oauth2/client"
-import { ResourceOwner } from "@/oauth2/resourceOwner"
+import {
+  AppType,
+  createApp,
+  getUserApps,
+  serializeApp,
+  SerializedApp,
+} from "@/oauth2/app"
+import { User } from "@/oauth2/user"
 import { isAuthenticated } from "@/utils/auth/server"
-import { getPrisma } from "@/utils/db"
 import {
   respondCreated,
   respondInvalidRequest,
@@ -14,16 +19,16 @@ import type { NextApiRequest, NextApiResponse } from "next"
 
 type CreateRequestData = {
   name?: string
-  type?: ClientType
+  type?: AppType
   redirect_uris?: string[]
 }
 
-type CreateResponseData = Client
+type CreateResponseData = SerializedApp<true>
 
 async function createHandler(
   req: NextApiRequest,
   res: NextApiResponse<CreateResponseData | string>,
-  user: ResourceOwner
+  user: User
 ) {
   const { name, redirect_uris, type }: CreateRequestData = req.body
 
@@ -37,28 +42,20 @@ async function createHandler(
     return respondInvalidRequest(res, "Missing type")
   }
 
-  const client = await Client.create(name, user, type, redirect_uris)
+  const app = await createApp(name, user.id, type, redirect_uris)
 
-  return respondCreated(res, client.toJSON(true) as Client)
+  return respondCreated(res, serializeApp(app, true))
 }
 
-type ListResponseData = Pick<Client, "clientId" | "id" | "name" | "type">[]
+type ListResponseData = SerializedApp[]
 async function listHandler(
   _req: NextApiRequest,
   res: NextApiResponse<ListResponseData | string>,
-  user: ResourceOwner
+  user: User
 ) {
-  const prisma = getPrisma()
-  const apps = await prisma.clients.findMany({
-    where: { owner: BigInt(user.id) },
-  })
+  const apps = await getUserApps(user.id)
 
-  const resData: ListResponseData = apps.map((app) => ({
-    clientId: app.client_id,
-    id: app.id.toString(),
-    name: app.name,
-    type: app.type as ClientType,
-  }))
+  const resData = await Promise.all(apps.map((app) => serializeApp(app)))
 
   return respondOk(res, resData)
 }

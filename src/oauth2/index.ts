@@ -1,7 +1,7 @@
 import { getJSONWebKeySet } from "@/utils/jwt"
 import { startActiveSpan } from "@/utils/telemetry/trace"
 
-import { Client } from "./client"
+import { App, getAppByClientID } from "./app"
 import {
   createCodeGrant,
   AuthorizationCodeGrant,
@@ -9,7 +9,6 @@ import {
   CodeChallengeMethod,
   revokeGrant,
 } from "./grant"
-import { asUser, ResourceOwner, User } from "./resourceOwner"
 import {
   createAccessToken,
   createRefreshToken,
@@ -20,6 +19,7 @@ import {
   parseToken,
   rotateRefreshToken,
 } from "./token"
+import { getUser, User } from "./user"
 
 enum ErrorCodes {
   INVALID_CLIENT_OR_REDIRECT_URI = "INVALID_CLIENT_OR_REDIRECT_URI",
@@ -42,11 +42,11 @@ export type RefreshTokenGrantType = "refresh_token"
 export type GrantType = AuthorizationCodeGrantType | RefreshTokenGrantType
 
 type ConfidentialAuth = {
-  clientId: string
+  clientID: App["client_id"]
 }
 
 type PublicAuth = {
-  clientId: string
+  clientID: App["client_id"]
   codeChallenge: string
   codeChallengeMethod: CodeChallengeMethod
 }
@@ -54,24 +54,24 @@ export class AuthorizationServer {
   async authorize(
     responseType: ResponseType,
     auth: ConfidentialAuth,
-    resourceOwnerId: string,
-    redirectUri: string,
+    userID: User["id"],
+    redirectURI: string,
     scope?: string[],
     state?: string
   ): Promise<AuthorizationCodeGrant | ErrorCodes>
   async authorize(
     responseType: ResponseType,
     auth: PublicAuth,
-    resourceOwnerId: string,
-    redirectUri: string,
+    userID: User["id"],
+    redirectURI: string,
     scope?: string[],
     state?: string
   ): Promise<AuthorizationCodeGrant | ErrorCodes>
   async authorize(
     responseType: ResponseType,
     auth: ConfidentialAuth | PublicAuth,
-    resourceOwnerId: string,
-    redirectUri: string,
+    userID: User["id"],
+    redirectURI: string,
     scope?: string[],
     state?: string
   ): Promise<AuthorizationCodeGrant | ErrorCodes> {
@@ -80,20 +80,20 @@ export class AuthorizationServer {
       async (span, setError) => {
         span.setAttributes({
           responseType,
-          clientId: auth.clientId,
-          resourceOwnerId,
-          redirectUri,
+          clientID: auth.clientID,
+          userID: userID.toString(),
+          redirectURI,
           scope,
           state,
         })
 
-        const client = await Client.getByClientID(auth.clientId)
-        if (!client || !client.redirectIsValid(redirectUri)) {
+        const app = await getAppByClientID(auth.clientID)
+        if (!app || !app.redirect_uris.includes(redirectURI)) {
           setError(ErrorCodes.INVALID_CLIENT_OR_REDIRECT_URI)
           return ErrorCodes.INVALID_CLIENT_OR_REDIRECT_URI
         }
-        const resourceOwner = await ResourceOwner.get(resourceOwnerId)
-        if (!resourceOwner) {
+        const user = await getUser(userID)
+        if (!user) {
           setError(ErrorCodes.INVALID_RESOURCE_OWNER)
           return ErrorCodes.INVALID_RESOURCE_OWNER
         }
@@ -104,12 +104,12 @@ export class AuthorizationServer {
         if (!scope) {
           scope = ["email"]
         }
-        if (client.type === "confidential") {
+        if (app.type === "confidential") {
           return createCodeGrant(
-            client.id,
-            asUser(resourceOwner).id,
+            app.client_id,
+            user.id,
             scope,
-            redirectUri,
+            redirectURI,
             state
           )
         }
@@ -118,10 +118,10 @@ export class AuthorizationServer {
           return ErrorCodes.INVALID_REQUEST
         }
         return createCodeGrant(
-          client.clientId,
-          asUser(resourceOwner).id,
+          auth.clientID,
+          user.id,
           scope,
-          redirectUri,
+          redirectURI,
           auth.codeChallenge,
           auth.codeChallengeMethod,
           state
@@ -131,7 +131,7 @@ export class AuthorizationServer {
   }
 
   private async generateAccessRefreshTokenPair(
-    client: Client,
+    app: App,
     user: User,
     scope: string[],
     previousJTI?: string
@@ -140,19 +140,19 @@ export class AuthorizationServer {
       "AuthorizationServer.generateAccessRefreshTokenPair",
       async (span) => {
         span.setAttributes({
-          client: client.id,
+          app: app.client_id,
           user: user.id.toString(),
           scope,
         })
         if (!previousJTI) {
           return Promise.all([
-            createAccessToken(client.clientId, user, scope),
-            createRefreshToken(client.clientId, user, scope),
+            createAccessToken(app.client_id, user, scope),
+            createRefreshToken(app.client_id, user, scope),
           ])
         }
         return Promise.all([
-          createAccessToken(client.clientId, user, scope),
-          rotateRefreshToken(previousJTI, client.clientId, user, scope),
+          createAccessToken(app.client_id, user, scope),
+          rotateRefreshToken(previousJTI, app.client_id, user, scope),
         ])
       }
     )
@@ -160,7 +160,7 @@ export class AuthorizationServer {
 
   private async exchangeAuthorizationCode(
     code: string,
-    client: Client,
+    app: App,
     redirectURI: string,
     codeVerifierOrClientSecret?: string
   ): Promise<[AccessToken, RefreshToken] | ErrorCodes> {
@@ -169,39 +169,35 @@ export class AuthorizationServer {
       async (span, setError) => {
         span.setAttributes({
           code,
-          client: client.id,
+          app: app.client_id,
         })
 
         const grant = await (codeVerifierOrClientSecret
           ? verifyCodeGrant(
               code,
-              client.clientId,
+              app.client_id,
               redirectURI,
               codeVerifierOrClientSecret
             )
-          : verifyCodeGrant(code, client.clientId, redirectURI))
+          : verifyCodeGrant(code, app.client_id, redirectURI))
 
         if (!grant) {
           setError(ErrorCodes.INVALID_GRANT)
           return ErrorCodes.INVALID_GRANT
         } else if (
           !("codeChallenge" in grant) &&
-          client.clientSecret !== codeVerifierOrClientSecret
+          app.client_secret !== codeVerifierOrClientSecret
         ) {
           setError(ErrorCodes.INVALID_CLIENT)
           return ErrorCodes.INVALID_CLIENT
         }
-        const resourceOwner = await ResourceOwner.get(grant.userID.toString())
-        if (!resourceOwner) {
+        const user = await getUser(BigInt(grant.userID))
+        if (!user) {
           setError(ErrorCodes.SERVER_ERROR)
           return ErrorCodes.SERVER_ERROR
         }
         const [pair] = await Promise.all([
-          this.generateAccessRefreshTokenPair(
-            client,
-            asUser(resourceOwner),
-            grant.scope
-          ),
+          this.generateAccessRefreshTokenPair(app, user, grant.scope),
           revokeGrant(grant.jti),
         ])
         return pair
@@ -211,7 +207,7 @@ export class AuthorizationServer {
 
   private async exchangeRefreshToken(
     refreshToken: RefreshTokenPayload,
-    client: Client,
+    app: App,
     clientSecret?: string
   ): Promise<[AccessToken, RefreshToken] | ErrorCodes> {
     return startActiveSpan(
@@ -219,15 +215,15 @@ export class AuthorizationServer {
       async (span, setError) => {
         span.setAttributes({
           refreshToken: refreshToken.jti,
-          client: client.id,
+          app: app.client_id,
         })
 
-        if (client.type === "confidential" && !clientSecret) {
+        if (app.type === "confidential" && !clientSecret) {
           setError(ErrorCodes.INVALID_REQUEST)
           return ErrorCodes.INVALID_REQUEST
         }
         return this.generateAccessRefreshTokenPair(
-          client,
+          app,
           {
             email: refreshToken.user.email,
             id: BigInt(refreshToken.user.id),
@@ -242,46 +238,46 @@ export class AuthorizationServer {
   async exchangeToken(
     grantType: AuthorizationCodeGrantType,
     code: string,
-    clientId: string,
+    clientID: string,
     clientSecretOrCodeVerifier: string,
-    redirectUri: string
+    redirectURI: string
   ): Promise<[AccessToken, RefreshToken] | ErrorCodes>
   async exchangeToken(
     grantType: RefreshTokenGrantType,
     refreshToken: string,
-    clientId: string,
+    clientID: string,
     clientSecret?: string
   ): Promise<[AccessToken, RefreshToken] | ErrorCodes>
   async exchangeToken(
     grantType: GrantType,
     codeOrRefreshToken: string,
-    clientId: string,
+    clientID: string,
     clientSecretOrCodeVerifier?: string,
-    redirectUri?: string
+    redirectURI?: string
   ): Promise<[AccessToken, RefreshToken] | ErrorCodes> {
     return startActiveSpan(
       "AuthorizationServer.exchangeToken",
       async (span, setError) => {
         span.setAttributes({
           grantType,
-          clientId,
-          redirectUri,
+          clientID,
+          redirectURI,
         })
 
-        const client = await Client.getByClientID(clientId)
-        if (!client) {
+        const app = await getAppByClientID(clientID)
+        if (!app) {
           setError(ErrorCodes.INVALID_CLIENT)
           return ErrorCodes.INVALID_CLIENT
         }
         if (grantType === "authorization_code") {
-          if (!redirectUri) {
+          if (!redirectURI) {
             setError(ErrorCodes.INVALID_REQUEST)
             return ErrorCodes.INVALID_REQUEST
           }
           return this.exchangeAuthorizationCode(
             codeOrRefreshToken,
-            client,
-            redirectUri,
+            app,
+            redirectURI,
             clientSecretOrCodeVerifier
           )
         } else if (grantType === "refresh_token") {
@@ -303,7 +299,7 @@ export class AuthorizationServer {
           }
           return this.exchangeRefreshToken(
             refreshToken,
-            client,
+            app,
             clientSecretOrCodeVerifier
           )
         } else {

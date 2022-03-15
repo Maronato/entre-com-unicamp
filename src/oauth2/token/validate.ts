@@ -2,7 +2,7 @@ import { getPrisma } from "@/utils/db"
 import { verifyJWT } from "@/utils/jwt"
 import { startActiveSpan } from "@/utils/telemetry/trace"
 
-import { User } from "../resourceOwner"
+import { User } from "../user"
 
 import { isRevoked } from "./revoke"
 import {
