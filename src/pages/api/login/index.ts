@@ -17,8 +17,8 @@ import {
 import type { NextApiRequest, NextApiResponse } from "next"
 
 type RequestData = {
-  code?: string
-  email?: string
+  code: string
+  email: string
 }
 
 export default async function handler(
@@ -28,7 +28,7 @@ export default async function handler(
   if (req.method !== "POST") {
     return respondMethodNotAllowed(res)
   }
-  const { email, code }: RequestData = req.body
+  const { email, code }: Partial<RequestData> = req.body
 
   if (!email) {
     return respondInvalidRequest(res, "Missing email")

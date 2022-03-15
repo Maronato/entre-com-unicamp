@@ -61,7 +61,7 @@ export default async function handler(
     return respondMethodNotAllowed(res)
   }
 
-  const data: RequestData = req.body
+  const data: Partial<RequestData> = req.body
   if (data.grant_type === "authorization_code") {
     return accessTokenHandler(req, res)
   } else if (data.grant_type === "refresh_token") {

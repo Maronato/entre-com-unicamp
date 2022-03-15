@@ -92,9 +92,9 @@ export class AuthorizationServer {
           setError(ErrorCodes.UNSUPPORTED_RESPONSE_TYPE)
           return ErrorCodes.UNSUPPORTED_RESPONSE_TYPE
         }
-        if (!scope) {
-          scope = [Scope.EMAIL_READ]
-        }
+
+        scope = scope ?? [Scope.EMAIL_READ]
+
         if (!scope.every((s) => app.scope.includes(s))) {
           setError(ErrorCodes.INVALID_SCOPE)
           return ErrorCodes.INVALID_SCOPE

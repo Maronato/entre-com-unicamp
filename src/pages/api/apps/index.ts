@@ -18,9 +18,9 @@ import {
 import type { NextApiRequest, NextApiResponse } from "next"
 
 type CreateRequestData = {
-  name?: string
-  type?: AppType
-  redirect_uris?: string[]
+  name: string
+  type: AppType
+  redirect_uris: string[]
 }
 
 type CreateResponseData = SerializedApp<true>
@@ -30,7 +30,7 @@ async function createHandler(
   res: NextApiResponse<CreateResponseData | string>,
   user: User
 ) {
-  const { name, redirect_uris, type }: CreateRequestData = req.body
+  const { name, redirect_uris, type }: Partial<CreateRequestData> = req.body
 
   if (!name) {
     return respondInvalidRequest(res, "Missing name")

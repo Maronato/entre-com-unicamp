@@ -3,6 +3,7 @@ import { AuthorizationServer, isErrorCode } from "@/oauth2"
 import { CodeChallengeMethod } from "@/oauth2/grant"
 import { Scope } from "@/oauth2/scope"
 import { isAuthenticated } from "@/utils/auth/server"
+import { ErrorCodes } from "@/utils/errorCode"
 import {
   respondInvalidRequest,
   respondMethodNotAllowed,
@@ -50,9 +51,20 @@ export default async function handler(
     return respondUnauthorized(res, "Invalid credentials")
   }
   const server = new AuthorizationServer()
-  const data: RequestData = req.body
+  const data: Partial<RequestData> = req.body
 
-  if ("codeChallenge" in data) {
+  if (!data.responseType || !data.clientID || !data.redirectUri) {
+    return respondInvalidRequest(res, {
+      error: ErrorCodes.INVALID_REQUEST,
+      state: data.state,
+    })
+  }
+
+  if (
+    "codeChallenge" in data &&
+    data.codeChallenge &&
+    data.codeChallengeMethod
+  ) {
     const code = await server.authorize(
       data.responseType,
       {
