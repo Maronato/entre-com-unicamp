@@ -11,7 +11,7 @@ networks:
 
 services:
   entre-com-unicamp:
-    image: maronato/entre-com-unicamp:5
+    image: maronato/entre-com-unicamp:latest
     networks:
       - ecu
       - captain
