@@ -1,6 +1,7 @@
 import { signJWT } from "@/utils/jwt"
 import { startActiveSpan } from "@/utils/telemetry/trace"
 
+import { Scope } from "../scope"
 import { User } from "../user"
 
 import { revokePreviousRefreshToken } from "./revoke"
@@ -17,7 +18,7 @@ const createToken =
   async (
     clientID: string,
     user: User,
-    scope: string[],
+    scope: Scope[],
     jti?: string
   ): Promise<T extends AccessTokenType ? AccessToken : RefreshToken> => {
     return startActiveSpan(`createToken - ${type}`, async (span) => {
@@ -25,12 +26,12 @@ const createToken =
         type,
         expirationTime,
         clientID,
-        user: JSON.stringify({ email: user.email, id: user.id.toString() }),
+        user: JSON.stringify({ email: user.email, id: user.id }),
         scope,
       })
 
       const payload: BaseTokenPayload = {
-        user: { email: user.email, id: user.id.toString() },
+        user: { email: user.email, id: user.id },
         type,
         scope,
       }

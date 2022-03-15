@@ -1,3 +1,4 @@
+import { ErrorCodes } from "@/utils/errorCode"
 import { getJSONWebKeySet } from "@/utils/jwt"
 import { startActiveSpan } from "@/utils/telemetry/trace"
 
@@ -9,6 +10,7 @@ import {
   CodeChallengeMethod,
   revokeGrant,
 } from "./grant"
+import { Scope } from "./scope"
 import {
   createAccessToken,
   createRefreshToken,
@@ -20,17 +22,6 @@ import {
   rotateRefreshToken,
 } from "./token"
 import { getUser, User } from "./user"
-
-enum ErrorCodes {
-  INVALID_CLIENT_OR_REDIRECT_URI = "INVALID_CLIENT_OR_REDIRECT_URI",
-  INVALID_RESOURCE_OWNER = "INVALID_RESOURCE_OWNER",
-  UNSUPPORTED_RESPONSE_TYPE = "unsupported_response_type",
-  UNSUPPORTED_GRANT_TYPE = "unsupported_grant_type",
-  INVALID_REQUEST = "invalid_request",
-  INVALID_GRANT = "invalid_grant",
-  INVALID_CLIENT = "invalid_client",
-  SERVER_ERROR = "server_error",
-}
 
 export const isErrorCode = (value: unknown): value is ErrorCodes =>
   typeof value === "string" &&
@@ -56,7 +47,7 @@ export class AuthorizationServer {
     auth: ConfidentialAuth,
     userID: User["id"],
     redirectURI: string,
-    scope?: string[],
+    scope?: Scope[],
     state?: string
   ): Promise<AuthorizationCodeGrant | ErrorCodes>
   async authorize(
@@ -64,7 +55,7 @@ export class AuthorizationServer {
     auth: PublicAuth,
     userID: User["id"],
     redirectURI: string,
-    scope?: string[],
+    scope?: Scope[],
     state?: string
   ): Promise<AuthorizationCodeGrant | ErrorCodes>
   async authorize(
@@ -72,7 +63,7 @@ export class AuthorizationServer {
     auth: ConfidentialAuth | PublicAuth,
     userID: User["id"],
     redirectURI: string,
-    scope?: string[],
+    scope?: Scope[],
     state?: string
   ): Promise<AuthorizationCodeGrant | ErrorCodes> {
     return startActiveSpan(
@@ -81,7 +72,7 @@ export class AuthorizationServer {
         span.setAttributes({
           responseType,
           clientID: auth.clientID,
-          userID: userID.toString(),
+          userID: userID,
           redirectURI,
           scope,
           state,
@@ -102,7 +93,11 @@ export class AuthorizationServer {
           return ErrorCodes.UNSUPPORTED_RESPONSE_TYPE
         }
         if (!scope) {
-          scope = ["email"]
+          scope = [Scope.EMAIL_READ]
+        }
+        if (!scope.every((s) => app.scope.includes(s))) {
+          setError(ErrorCodes.INVALID_SCOPE)
+          return ErrorCodes.INVALID_SCOPE
         }
         if (app.type === "confidential") {
           return createCodeGrant(
@@ -133,7 +128,7 @@ export class AuthorizationServer {
   private async generateAccessRefreshTokenPair(
     app: App,
     user: User,
-    scope: string[],
+    scope: Scope[],
     previousJTI?: string
   ): Promise<[AccessToken, RefreshToken]> {
     return startActiveSpan(
@@ -141,7 +136,7 @@ export class AuthorizationServer {
       async (span) => {
         span.setAttributes({
           app: app.client_id,
-          user: user.id.toString(),
+          user: user.id,
           scope,
         })
         if (!previousJTI) {

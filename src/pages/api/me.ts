@@ -1,3 +1,4 @@
+import { Scope } from "@/oauth2/scope"
 import { SerializedUser, serializeUser } from "@/oauth2/user"
 import { isAuthenticated } from "@/utils/auth/server"
 import {
@@ -14,16 +15,17 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ResponseData | string>
 ) {
-  const auth = await isAuthenticated(req, false)
-  if (!auth) {
+  const user = await isAuthenticated(req, false)
+  const withID = await isAuthenticated(req, false, [Scope.ID_READ])
+
+  if (!user) {
     return respondUnauthorized(res, "Invalid credentials")
   }
   if (req.method !== "GET") {
     return respondMethodNotAllowed(res)
   }
-  const [user, scope] = auth
 
-  if (scope.includes("id")) {
+  if (withID) {
     return respondOk(res, serializeUser(user, true))
   }
   return respondOk(res, serializeUser(user))

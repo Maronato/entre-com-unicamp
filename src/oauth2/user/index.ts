@@ -31,16 +31,12 @@ export async function getFirstUser(): Promise<User | null> {
 }
 
 export async function getUser(userID: User["id"]): Promise<User | null> {
-  return startActiveSpan(
-    "getUser",
-    { attributes: { userID: userID.toString() } },
-    async () => {
-      const prisma = getPrisma()
-      return prisma.users.findUnique({
-        where: { id: userID },
-      })
-    }
-  )
+  return startActiveSpan("getUser", { attributes: { userID } }, async () => {
+    const prisma = getPrisma()
+    return prisma.users.findUnique({
+      where: { id: userID },
+    })
+  })
 }
 
 export async function getUserByEmail(
@@ -64,7 +60,7 @@ export function serializeUser<P extends boolean = false>(
 ): SerializedUser<P> {
   return startActiveSpan(
     "serializeUser",
-    { attributes: { user: user.id.toString() } },
+    { attributes: { user: user.id } },
     () => {
       const keys: (keyof User)[] = ["email"]
 

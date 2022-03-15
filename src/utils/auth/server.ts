@@ -7,6 +7,7 @@ import {
   User,
 } from "@/oauth2/user"
 
+import { Scope } from "../../oauth2/scope"
 import { removeCookie, setCookie } from "../cookie"
 import { key, UserFallback } from "../hooks/useUser"
 import { signJWT, verifyJWT } from "../jwt"
@@ -28,18 +29,22 @@ export const getAuthCookieOptions = () => ({
 
 type TokenPayload = {
   user: SerializedUser<true>
-  scope: string[]
+  scope: Scope[]
 }
 
 async function signAuthToken(user: User) {
   const payload: TokenPayload = {
     user: serializeUser(user, true),
-    scope: ["email", "id"],
+    scope: Object.values(Scope),
   }
   return signJWT({ ...payload }, ISSUER, "1y")
 }
 
-async function verifyAuthToken(token: string, checkAudience = true) {
+async function verifyAuthToken(
+  token: string,
+  checkAudience = true,
+  scope = [Scope.EMAIL_READ]
+): Promise<User | undefined> {
   return startActiveSpan("verifyAuthToken", async (span, setError) => {
     span.setAttribute("checkAudience", checkAudience)
 
@@ -52,20 +57,21 @@ async function verifyAuthToken(token: string, checkAudience = true) {
       return
     }
 
-    const { user: serializedUser, scope } = result
+    const { user: serializedUser, scope: tokenScope } = result
     const user = await unserializeUser(
       serializedUser as unknown as SerializedUser<false>
     )
-    if (user) {
-      return [user, scope] as [User, string[]]
+    if (user && scope.every((s) => tokenScope.includes(s))) {
+      return user
     }
   })
 }
 
 export function isAuthenticated(
   req: Pick<NextApiRequest, "cookies" | "headers">,
-  checkAudience = true
-) {
+  checkAudience = true,
+  scope = [Scope.EMAIL_READ]
+): Promise<User | undefined> {
   return startActiveSpan("isAuthenticated", async (span) => {
     span.setAttribute("checkAudience", checkAudience)
 
@@ -75,13 +81,13 @@ export function isAuthenticated(
     if (!token) {
       token = req.cookies[AUTH_COOKIE_NAME]
     }
-    return verifyAuthToken(token, checkAudience)
+    return verifyAuthToken(token, checkAudience, scope)
   })
 }
 
 export async function login(res: NextApiResponse, user: User) {
   return startActiveSpan("login", async (span) => {
-    span.setAttribute("user", user.id.toString())
+    span.setAttribute("user", user.id)
 
     const authToken = await signAuthToken(user)
     setCookie(res, AUTH_COOKIE_NAME, authToken, getAuthCookieOptions())
@@ -99,6 +105,6 @@ export const serverFetch = async (
 ): Promise<UserFallback> => {
   const user = (await isAuthenticated(req)) || null
   return {
-    [key]: user ? serializeUser(user[0], true) : user,
+    [key]: user ? serializeUser(user, true) : user,
   }
 }

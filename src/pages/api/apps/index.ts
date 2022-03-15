@@ -64,12 +64,10 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const auth = await isAuthenticated(req)
-  if (!auth) {
+  const user = await isAuthenticated(req)
+  if (!user) {
     return respondUnauthorized(res, "Invalid credentials")
   }
-
-  const [user] = auth
 
   switch (req.method) {
     case "POST":

@@ -1,5 +1,6 @@
 import { ExtendJWTPayload } from "@/utils/jwt"
 
+import { Scope } from "../scope"
 import { User } from "../user"
 
 export type AccessTokenType = "access_token"
@@ -12,7 +13,7 @@ export type Token = AccessToken | RefreshToken
 export type BaseTokenPayload = {
   user: Omit<User, "id"> & { id: string }
   type: TokenType
-  scope: string[]
+  scope: Scope[]
 }
 
 type BaseAccessTokenPayload = BaseTokenPayload & {

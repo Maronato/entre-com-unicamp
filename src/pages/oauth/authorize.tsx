@@ -12,7 +12,9 @@ import {
   SerializedApp,
 } from "@/oauth2/app"
 import { CodeChallengeMethod } from "@/oauth2/grant"
+import { isScope, Scope } from "@/oauth2/scope"
 import { serverFetch } from "@/utils/auth/server"
+import { ErrorCodes } from "@/utils/errorCode"
 
 import { UserFallback, UserProvicer, useAuth } from "../../utils/hooks/useUser"
 
@@ -106,12 +108,15 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({
     Array.isArray(code_challenge_method) ||
     Array.isArray(state)
   ) {
-    redirectUrl.searchParams.append("error", "invalid_request")
+    redirectUrl.searchParams.append("error", ErrorCodes.INVALID_REQUEST)
     return respondRedirect()
   }
 
   if (response_type !== "code") {
-    redirectUrl.searchParams.append("error", "unsupported_response_type")
+    redirectUrl.searchParams.append(
+      "error",
+      ErrorCodes.UNSUPPORTED_RESPONSE_TYPE
+    )
     return respondRedirect()
   }
 
@@ -119,9 +124,21 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({
     clientID: client_id,
     redirectUri: redirect_uri,
   }
-  if (scope) {
-    authQuery.scope = Array.isArray(scope) ? scope : [scope]
+  const scopeArr = scope
+    ? Array.isArray(scope)
+      ? scope
+      : scope.split(" ")
+    : [Scope.APPS_READ]
+
+  if (!scopeArr.every(isScope)) {
+    redirectUrl.searchParams.append("error", ErrorCodes.INVALID_SCOPE)
+    return respondRedirect()
   }
+  if (!scopeArr.every((s) => app?.scope.includes(s))) {
+    redirectUrl.searchParams.append("error", ErrorCodes.INVALID_SCOPE)
+    return respondRedirect()
+  }
+
   if (code_challenge) {
     authQuery.codeChallenge = code_challenge
   }

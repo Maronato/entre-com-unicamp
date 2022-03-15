@@ -4,6 +4,7 @@ import { startActiveSpan } from "@/utils/telemetry/trace"
 
 import { getPrisma } from "../../utils/db"
 import { createClientID, createClientSecret } from "../../utils/random"
+import { Scope } from "../scope"
 import { getUser, SerializedUser, serializeUser, User } from "../user"
 
 export enum AppType {
@@ -20,6 +21,7 @@ export type App = Pick<
   | "owner"
   | "redirect_uris"
   | "type"
+  | "scope"
 >
 
 type SerializedPrivateAppInfo = {
@@ -27,6 +29,7 @@ type SerializedPrivateAppInfo = {
   redirect_uris: string
   id: string
   type: AppType
+  scope: Scope[]
 }
 export type SerializedApp<Private extends boolean = false> =
   (Private extends true ? SerializedPrivateAppInfo : Record<string, never>) & {
@@ -39,11 +42,12 @@ export function createApp(
   name: string,
   ownerID: User["id"],
   type: AppType,
-  redirectURIs: string[]
+  redirectURIs: string[],
+  scope: Scope[] = [Scope.EMAIL_READ]
 ): Promise<App> {
   return startActiveSpan(
     "createApp",
-    { attributes: { name, type, ownerID: ownerID.toString() } },
+    { attributes: { name, type, ownerID: ownerID } },
     async () => {
       const prisma = getPrisma()
       const client_id = createClientID()
@@ -57,7 +61,7 @@ export function createApp(
           type,
           owner: ownerID,
           redirect_uris: redirectURIs,
-          scope: ["email"],
+          scope,
         },
       })
       return app
@@ -75,7 +79,7 @@ export function getFirstApp(): Promise<App | null> {
 export function getApp(appID: App["id"]): Promise<App | null> {
   return startActiveSpan(
     "getApp",
-    { attributes: { appID: appID.toString() } },
+    { attributes: { appID: appID } },
     async () => {
       const prisma = getPrisma()
       return prisma.apps.findUnique({
@@ -103,7 +107,7 @@ export function getAppByClientID(
 export function getUserApps(owner: User["id"]) {
   return startActiveSpan(
     "getAppByClientID",
-    { attributes: { owner: owner.toString() } },
+    { attributes: { owner: owner } },
     async () => {
       const prisma = getPrisma()
       return prisma.apps.findMany({
@@ -118,7 +122,7 @@ export function getUserApps(owner: User["id"]) {
 export function deleteApp(appID: App["id"]) {
   return startActiveSpan(
     "deleteApp",
-    { attributes: { appID: appID.toString() } },
+    { attributes: { appID: appID } },
     async () => {
       const prisma = getPrisma()
       return prisma.apps.delete({ where: { id: appID } })
@@ -132,7 +136,7 @@ export function serializeApp<P extends boolean = false>(
 ): Promise<SerializedApp<P>> {
   return startActiveSpan(
     "serializeApp",
-    { attributes: { app: app.id.toString() } },
+    { attributes: { app: app.id } },
     async () => {
       const keys: (keyof App)[] = ["name", "owner", "client_id"]
 

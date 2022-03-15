@@ -56,7 +56,6 @@ const Authorize: FC<AuthorizeProps & { app: SerializedApp }> = ({
         codeChallenge,
         codeChallengeMethod,
         redirectUri,
-        userID: user.id,
         responseType: "code",
         scope,
         state,

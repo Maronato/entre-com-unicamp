@@ -2,6 +2,7 @@ import { getPrisma } from "@/utils/db"
 import { verifyJWT } from "@/utils/jwt"
 import { startActiveSpan } from "@/utils/telemetry/trace"
 
+import { Scope } from "../scope"
 import { User } from "../user"
 
 import { isRevoked } from "./revoke"
@@ -27,7 +28,7 @@ export async function parseToken<
 type ValidateData = {
   clientID?: string
   userID: User["id"]
-  scope?: string[]
+  scope?: Scope[]
 }
 
 export async function verifyToken(
@@ -97,5 +98,5 @@ const checkClientID = (c1?: string) => async (c2: string) =>
   (c1 === c2 &&
     (await getPrisma().apps.count({ where: { client_id: c1 } })) === 1)
 
-const checkScope = (s1?: string[]) => async (s2: string[]) =>
-  !s1 || (s1.length === s2.length && s1.every((v, i) => v === s2[i]))
+const checkScope = (s1?: Scope[]) => async (s2: Scope[]) =>
+  !s1 || (s1.length === s2.length && s1.every((v) => s2.includes(v)))

@@ -4,6 +4,7 @@ import { signJWT, verifyJWT } from "@/utils/jwt"
 import { getRedis } from "@/utils/redis"
 import { startActiveSpan } from "@/utils/telemetry/trace"
 
+import { Scope } from "../scope"
 import { User } from "../user"
 
 export type CodeChallengeMethod = "plain" | "S256"
@@ -11,7 +12,7 @@ export type CodeChallengeMethod = "plain" | "S256"
 type BaseGrantPayload = {
   clientID: string
   userID: string
-  scope: string[]
+  scope: Scope[]
   redirectURI: string
   state?: string
 }
@@ -36,14 +37,14 @@ const codeGrantTTLSeconds = 60 * 2
 export async function createCodeGrant(
   clientID: string,
   userID: User["id"],
-  scope: string[],
+  scope: Scope[],
   redirectURI: string,
   state?: string
 ): Promise<AuthorizationCodeGrant>
 export async function createCodeGrant(
   clientID: string,
   userID: User["id"],
-  scope: string[],
+  scope: Scope[],
   redirectURI: string,
   codeChallenge: string,
   codeChallengeMethod: CodeChallengeMethod,
@@ -52,7 +53,7 @@ export async function createCodeGrant(
 export async function createCodeGrant(
   clientID: string,
   userID: User["id"],
-  scope: string[],
+  scope: Scope[],
   redirectURI: string,
   stateOrCodeChallenge?: string,
   codeChallengeMethod?: CodeChallengeMethod,
@@ -65,7 +66,7 @@ export async function createCodeGrant(
 
     span.setAttributes({
       clientID,
-      userID: userID.toString(),
+      userID,
       scope,
       redirectURI,
       state,
@@ -75,7 +76,7 @@ export async function createCodeGrant(
 
     const payload = {
       clientID,
-      userID: userID.toString(),
+      userID,
       scope,
       redirectURI,
       codeChallenge,
