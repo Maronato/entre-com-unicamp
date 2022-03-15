@@ -1,4 +1,4 @@
-import { clients } from "@prisma/client"
+import { apps } from "@prisma/client"
 
 import { startActiveSpan } from "@/utils/telemetry/trace"
 
@@ -12,7 +12,7 @@ export enum AppType {
 }
 
 export type App = Pick<
-  clients,
+  apps,
   | "client_id"
   | "client_secret"
   | "id"
@@ -49,7 +49,7 @@ export function createApp(
       const client_id = createClientID()
       const client_secret = createClientSecret()
 
-      const app = await prisma.clients.create({
+      const app = await prisma.apps.create({
         data: {
           client_id,
           client_secret,
@@ -57,6 +57,7 @@ export function createApp(
           type,
           owner: ownerID,
           redirect_uris: redirectURIs,
+          scope: ["email"],
         },
       })
       return app
@@ -67,7 +68,7 @@ export function createApp(
 export function getFirstApp(): Promise<App | null> {
   return startActiveSpan("getFirstApp", async () => {
     const prisma = getPrisma()
-    return prisma.clients.findFirst()
+    return prisma.apps.findFirst()
   })
 }
 
@@ -77,7 +78,7 @@ export function getApp(appID: App["id"]): Promise<App | null> {
     { attributes: { appID: appID.toString() } },
     async () => {
       const prisma = getPrisma()
-      return prisma.clients.findUnique({
+      return prisma.apps.findUnique({
         where: { id: appID },
       })
     }
@@ -92,7 +93,7 @@ export function getAppByClientID(
     { attributes: { clientID } },
     async () => {
       const prisma = getPrisma()
-      return prisma.clients.findFirst({
+      return prisma.apps.findUnique({
         where: { client_id: clientID },
       })
     }
@@ -105,7 +106,7 @@ export function getUserApps(owner: User["id"]) {
     { attributes: { owner: owner.toString() } },
     async () => {
       const prisma = getPrisma()
-      return prisma.clients.findMany({
+      return prisma.apps.findMany({
         where: {
           owner,
         },
@@ -120,7 +121,7 @@ export function deleteApp(appID: App["id"]) {
     { attributes: { appID: appID.toString() } },
     async () => {
       const prisma = getPrisma()
-      return prisma.clients.delete({ where: { id: appID } })
+      return prisma.apps.delete({ where: { id: appID } })
     }
   )
 }
@@ -165,7 +166,7 @@ export function unserializeApp(app: SerializedApp): Promise<App | null> {
     { attributes: { app: app.client_id } },
     async () => {
       if ("id" in app) {
-        return getApp(BigInt(app.id))
+        return getApp(app.id)
       }
       return getAppByClientID(app.client_id)
     }

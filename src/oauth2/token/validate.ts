@@ -71,7 +71,7 @@ export async function verifyToken(
     }
     if (validate) {
       const res = await Promise.all([
-        checkUserID(validate.userID)(BigInt(parsed.user.id)),
+        checkUserID(validate.userID)(parsed.user.id),
         checkClientID(validate.clientID)(parsed.aud),
         checkScope(validate.scope)(parsed.scope),
       ])
@@ -85,17 +85,17 @@ export async function verifyToken(
   })
 }
 
-const checkUserID = (u1?: bigint) => async (u2: bigint) =>
+const checkUserID = (u1?: string) => async (u2: string) =>
   !u1 ||
   (u1 === u2 &&
-    (await getPrisma().resource_owners.count({
+    (await getPrisma().users.count({
       where: { id: u1 },
     })) === 1)
 
 const checkClientID = (c1?: string) => async (c2: string) =>
   !c1 ||
   (c1 === c2 &&
-    (await getPrisma().clients.count({ where: { client_id: c1 } })) === 1)
+    (await getPrisma().apps.count({ where: { client_id: c1 } })) === 1)
 
 const checkScope = (s1?: string[]) => async (s2: string[]) =>
   !s1 || (s1.length === s2.length && s1.every((v, i) => v === s2[i]))

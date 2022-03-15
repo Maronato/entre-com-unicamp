@@ -1,9 +1,9 @@
-import { resource_owners } from "@prisma/client"
+import { users } from "@prisma/client"
 
 import { getPrisma } from "@/utils/db"
 import { startActiveSpan } from "@/utils/telemetry/trace"
 
-export type User = Pick<resource_owners, "id" | "email">
+export type User = Pick<users, "id" | "email">
 type SerializedPrivateUserInfo = {
   id: string
 }
@@ -16,7 +16,7 @@ export async function createUser(email: string): Promise<User> {
   return startActiveSpan("createUser", { attributes: { email } }, async () => {
     const prisma = getPrisma()
 
-    const user = await prisma.resource_owners.create({
+    const user = await prisma.users.create({
       data: { email },
     })
     return user
@@ -26,7 +26,7 @@ export async function createUser(email: string): Promise<User> {
 export async function getFirstUser(): Promise<User | null> {
   return startActiveSpan("getFirstUser", async () => {
     const prisma = getPrisma()
-    return prisma.resource_owners.findFirst()
+    return prisma.users.findFirst()
   })
 }
 
@@ -36,7 +36,7 @@ export async function getUser(userID: User["id"]): Promise<User | null> {
     { attributes: { userID: userID.toString() } },
     async () => {
       const prisma = getPrisma()
-      return prisma.resource_owners.findUnique({
+      return prisma.users.findUnique({
         where: { id: userID },
       })
     }
@@ -51,7 +51,7 @@ export async function getUserByEmail(
     { attributes: { email } },
     async () => {
       const prisma = getPrisma()
-      return prisma.resource_owners.findFirst({
+      return prisma.users.findUnique({
         where: { email },
       })
     }
@@ -87,7 +87,7 @@ export function unserializeUser<U extends SerializedUser>(
     "unserializeUser",
     { attributes: { email: user.email } },
     async () => {
-      return getUser(BigInt(user.id))
+      return getUser(user.id)
     }
   )
 }

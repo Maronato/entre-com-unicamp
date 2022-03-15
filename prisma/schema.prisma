@@ -7,21 +7,27 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model clients {
-  id              BigInt           @id(map: "client_pkey") @default(autoincrement())
-  created_at      DateTime         @default(now()) @db.Timestamptz(6)
-  type            String
-  client_id       String
-  client_secret   String
-  redirect_uris   String[]
-  name            String
-  owner           BigInt
-  resource_owners resource_owners  @relation(fields: [owner], references: [id], onDelete: NoAction, onUpdate: NoAction)
+enum AppType {
+  public
+  confidential
 }
 
-model resource_owners {
-  id             BigInt           @id(map: "resource_owner_pkey") @default(autoincrement())
-  created_at     DateTime         @default(now()) @db.Timestamptz(6)
-  email          String
-  clients        clients[]
+model apps {
+  id            String   @id(map: "app_pkey") @default(cuid())
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+  name          String
+  type          AppType  @default(public)
+  client_id     String   @unique
+  client_secret String   @unique
+  redirect_uris String[]
+  scope         String[]
+  owner         String
+  users         users    @relation(fields: [owner], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model users {
+  id         String   @id(map: "user_pkey") @default(cuid())
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  email      String   @unique
+  apps       apps[]
 }

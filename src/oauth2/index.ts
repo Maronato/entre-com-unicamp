@@ -191,7 +191,7 @@ export class AuthorizationServer {
           setError(ErrorCodes.INVALID_CLIENT)
           return ErrorCodes.INVALID_CLIENT
         }
-        const user = await getUser(BigInt(grant.userID))
+        const user = await getUser(grant.userID)
         if (!user) {
           setError(ErrorCodes.SERVER_ERROR)
           return ErrorCodes.SERVER_ERROR
@@ -226,7 +226,7 @@ export class AuthorizationServer {
           app,
           {
             email: refreshToken.user.email,
-            id: BigInt(refreshToken.user.id),
+            id: refreshToken.user.id,
           },
           refreshToken.scope,
           refreshToken.jti

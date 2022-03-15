@@ -61,7 +61,7 @@ export default async function handler(
         codeChallenge: data.codeChallenge,
         codeChallengeMethod: data.codeChallengeMethod,
       },
-      BigInt(data.userID),
+      data.userID,
       data.redirectUri,
       data.scope,
       data.state
@@ -74,7 +74,7 @@ export default async function handler(
   const code = await server.authorize(
     data.responseType,
     { clientID: data.clientID },
-    BigInt(data.userID),
+    data.userID,
     data.redirectUri,
     data.scope,
     data.state

@@ -1,31 +1,46 @@
-import { getPrisma } from "@/utils/db"
+import { PrismaClient } from "@prisma/client"
 
-import { AppType, createApp, getFirstApp } from "../src/oauth2/app"
-import { createUser, getFirstUser, User } from "../src/oauth2/user"
+import { createClientID, createClientSecret } from "../src/utils/random"
 import { getLogger } from "../src/utils/telemetry/logs"
+
+import type { User } from "../src/oauth2/user"
 
 const logger = getLogger()
 
-const createFirstUser = async () => {
-  let owner = await getFirstUser()
-  if (!owner) {
-    owner = await createUser("admin@entre-com-unicamp.com")
+const createFirstUser = async (prisma: PrismaClient) => {
+  let user = await prisma.users.findFirst()
+  if (!user) {
+    user = await prisma.users.create({
+      data: { email: "admin@entre-com-unicamp.com" },
+    })
     logger.info("Created first user")
   } else {
     logger.info("First user already exists - skipping")
   }
-  return owner
+  return user
 }
 
-const createFirstApp = async (user: User) => {
-  let app = await getFirstApp()
+const createFirstApp = async (prisma: PrismaClient, user: User) => {
+  let app = await prisma.apps.findFirst()
   if (!app) {
     const name = "Entre com Unicamp"
-    const type = AppType.PUBLIC
+    const type = "public"
     const owner = user.id
     const redirect_uris = ["https://entre-com-unicamp.com/oauth/callback"]
+    const client_id = createClientID()
+    const client_secret = createClientSecret()
 
-    app = await createApp(name, owner, type, redirect_uris)
+    app = await prisma.apps.create({
+      data: {
+        name,
+        owner,
+        type,
+        redirect_uris,
+        client_id,
+        client_secret,
+        scope: ["email:read", "apps:read", "apps:write", "id:read"],
+      },
+    })
     logger.info("Created first app")
   } else {
     logger.info("First app already exists - skipping")
@@ -34,11 +49,11 @@ const createFirstApp = async (user: User) => {
 }
 
 const seedDatabase = async () => {
-  const prisma = getPrisma()
+  const prisma = new PrismaClient()
   try {
     logger.info("Seeding initial data...")
-    const user = await createFirstUser()
-    await createFirstApp(user)
+    const user = await createFirstUser(prisma)
+    await createFirstApp(prisma, user)
   } catch (e) {
     logger.error(`Failed to seed initial data.`)
     logger.error(e)
