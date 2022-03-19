@@ -13,7 +13,7 @@ module.exports = {
         background: {
           lightest: colors.white,
           lighter: "#F9F9FB",
-          light: colors.slate["400"],
+          light: colors.slate["100"],
           dark: "#22252A",
           darker: "#16181D",
           darkest: colors.black,
