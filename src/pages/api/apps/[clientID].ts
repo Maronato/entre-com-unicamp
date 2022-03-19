@@ -31,7 +31,7 @@ async function getHandler(
     return respondNotFound(res, "App not found")
   }
 
-  return respondOk(res, serializeApp(app, true))
+  return respondOk(res, serializeApp(app, true, user))
 }
 
 async function deleteHandler(

@@ -17,13 +17,13 @@ import {
 
 import type { NextApiRequest, NextApiResponse } from "next"
 
-type CreateRequestData = {
+export type CreateRequestData = {
   name: string
   type: AppType
   redirect_uris: string[]
 }
 
-type CreateResponseData = SerializedApp<true>
+export type CreateResponseData = SerializedApp<true>
 
 async function createHandler(
   req: NextApiRequest,
@@ -55,7 +55,9 @@ async function listHandler(
 ) {
   const apps = await getUserApps(user.id)
 
-  const resData = await Promise.all(apps.map((app) => serializeApp(app)))
+  const resData = await Promise.all(
+    apps.map((app) => serializeApp(app, false, user))
+  )
 
   return respondOk(res, resData)
 }
