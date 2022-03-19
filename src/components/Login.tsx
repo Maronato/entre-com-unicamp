@@ -5,15 +5,11 @@ import {
   ExclamationCircleIcon,
   PaperAirplaneIcon,
 } from "@heroicons/react/solid"
-import Image from "next/image"
 
-import LogoDark from "@/public/logo/dark.png"
-import LogoLight from "@/public/logo/light.png"
 import { InputHandler, useInput } from "@/utils/hooks/useInput"
 import { useAuth } from "@/utils/hooks/useUser"
 
 import Button from "./Button"
-import UnofficialPopover from "./UnofficialPopover"
 
 const EmailForm: FC<{
   email: string
@@ -155,28 +151,8 @@ const Login: FC = () => {
   }
 
   return (
-    <div className="max-w-md w-full space-y-4 bg-background-lightest dark:bg-background-darker py-12 px-4 sm:px-6 lg:px-8 rounded-md shadow-md">
-      <div>
-        <div className="flex justify-center">
-          <div className="w-20 hidden justify-center dark:flex">
-            <Image src={LogoDark} alt="Logo" />
-          </div>
-          <div className="w-20 flex justify-center dark:hidden">
-            <Image src={LogoLight} alt="Logo" />
-          </div>
-        </div>
-        <h2 className="mt-4 text-center text-3xl font-extrabold text-slate-900 dark:text-slate-100">
-          Entre com Unicamp!
-        </h2>
-        <div className="text-center mx-auto w-full">
-          <UnofficialPopover>
-            <p className="mt-2 text-center text-sm text-slate-600 dark:text-slate-300 underline decoration-dashed">
-              não oficial 🙊
-            </p>
-          </UnofficialPopover>
-        </div>
-      </div>
-      <form className="mt-8 relative" onSubmit={submit}>
+    <div>
+      <form className="relative" onSubmit={submit}>
         <div className="flex space-y-3 flex-col">
           {readyForCode || (
             <EmailForm email={email} setEmail={setEmail} loading={loading} />

@@ -1,6 +1,5 @@
 import { FC, useState } from "react"
 
-import Image from "next/image"
 import { useRouter } from "next/router"
 
 import { SerializedApp } from "@/oauth2/app"
@@ -9,12 +8,12 @@ import {
   ValidResponseData,
   ChallengeRequestData,
 } from "@/pages/api/oauth/authorize"
-import LogoDark from "@/public/logo/dark.png"
-import LogoLight from "@/public/logo/light.png"
 import { postFetch } from "@/utils/fetch"
 import { useAuth } from "@/utils/hooks/useUser"
 
 import Button from "./Button"
+import TitleHeader from "./TitleHeader"
+import Window from "./Window"
 
 export type AuthorizeProps = Omit<
   RequestData,
@@ -85,22 +84,8 @@ const Authorize: FC<AuthorizeProps & { app: SerializedApp }> = ({
   }
 
   return (
-    <div className="max-w-md w-full space-y-4 bg-background-lightest dark:bg-background-darker py-12 px-4 sm:px-6 lg:px-8 rounded-md shadow-md">
-      <div>
-        <div className="flex justify-center">
-          <div className="w-20 hidden justify-center dark:flex">
-            <Image src={LogoDark} alt="Logo" />
-          </div>
-          <div className="w-20 flex justify-center dark:hidden">
-            <Image src={LogoLight} alt="Logo" />
-          </div>
-        </div>
-        <h2
-          className="mt-4 text-center text-3xl font-extrabold text-slate-900 dark:text-slate-100"
-          onClick={() => authorize()}>
-          Entre com Unicamp!
-        </h2>
-      </div>
+    <Window>
+      <TitleHeader />
       {appName}
       {appOwner}
       <Button
@@ -114,7 +99,7 @@ const Authorize: FC<AuthorizeProps & { app: SerializedApp }> = ({
       <Button type="button" color="red" wide onClick={reject} loading={loading}>
         Rejeitar
       </Button>
-    </div>
+    </Window>
   )
 }
 
