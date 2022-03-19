@@ -37,7 +37,6 @@
     "@opentelemetry/propagator-jaeger": "^1.0.1",
     "@opentelemetry/sdk-metrics-base": "^0.27.0",
     "@opentelemetry/sdk-node": "^0.27.0",
-    "@opentelemetry/sdk-trace-base": "^1.0.1",
     "@opentelemetry/semantic-conventions": "^1.0.1",
     "@popperjs/core": "^2.11.2",
     "@prisma/client": "3.10.0",
