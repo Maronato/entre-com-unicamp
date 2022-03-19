@@ -4,10 +4,6 @@ import { HttpInstrumentation } from "@opentelemetry/instrumentation-http"
 import { WinstonInstrumentation } from "@opentelemetry/instrumentation-winston"
 import { JaegerPropagator } from "@opentelemetry/propagator-jaeger"
 import { api, NodeSDK, resources } from "@opentelemetry/sdk-node"
-import {
-  ConsoleSpanExporter,
-  SpanExporter,
-} from "@opentelemetry/sdk-trace-base"
 import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions"
 
 import { APP_NAME } from "./consts"
@@ -15,27 +11,15 @@ import { startHostMetrics } from "./metrics"
 
 const sdkRef: { sdk?: NodeSDK } = {}
 
-const exportConsoleTraces = true
-
 const getSDK = async () => {
   if (!sdkRef.sdk) {
     // Get Jaeger exporter if in prod. Else, console exporter
-    const traceExporter: SpanExporter | undefined =
-      process.env.NODE_ENV === "production"
-        ? new JaegerExporter({
-            endpoint: "http://tempo:14268/api/traces",
-            host: "tempo",
-            port: 14278,
-            tags: [
-              {
-                key: SemanticResourceAttributes.SERVICE_NAME,
-                value: APP_NAME,
-              },
-            ],
-          })
-        : exportConsoleTraces
-        ? new ConsoleSpanExporter()
-        : undefined
+    const jaegerEndpoint =
+      process.env.JAEGER_ENDPOINT ?? "http://tempo:14268/api/traces"
+
+    const traceExporter = new JaegerExporter({
+      endpoint: jaegerEndpoint,
+    })
 
     // Get Prometheus exporter if in prod. Else, console exporter
     const metricExporter = new PrometheusExporter({
@@ -55,14 +39,12 @@ const getSDK = async () => {
       metricExporter,
       instrumentations,
       textMapPropagator,
+      resource: new resources.Resource({
+        [SemanticResourceAttributes.SERVICE_NAME]: APP_NAME,
+      }),
     })
   }
   await sdkRef.sdk.start()
-  sdkRef.sdk.addResource(
-    new resources.Resource({
-      [SemanticResourceAttributes.SERVICE_NAME]: APP_NAME,
-    })
-  )
   return sdkRef.sdk
 }
 

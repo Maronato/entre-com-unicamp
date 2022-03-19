@@ -3,5 +3,6 @@ declare namespace NodeJS {
     DATABASE_URL?: string
     JWT_PRIVATE_KEY?: string
     LOG_LEVEL?: string
+    JAEGER_ENDPOINT?: string
   }
 }
