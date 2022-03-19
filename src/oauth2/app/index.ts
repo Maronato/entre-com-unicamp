@@ -26,7 +26,7 @@ export type App = Pick<
 
 type SerializedPrivateAppInfo = {
   client_secret: string
-  redirect_uris: string
+  redirect_uris: string[]
   id: string
   type: AppType
   scope: Scope[]
@@ -132,7 +132,8 @@ export function deleteApp(appID: App["id"]) {
 
 export function serializeApp<P extends boolean = false>(
   app: App,
-  includePrivateInfo: P = false as P
+  includePrivateInfo: P = false as P,
+  owner?: User
 ): Promise<SerializedApp<P>> {
   return startActiveSpan(
     "serializeApp",
@@ -141,20 +142,23 @@ export function serializeApp<P extends boolean = false>(
       const keys: (keyof App)[] = ["name", "owner", "client_id"]
 
       if (includePrivateInfo) {
-        keys.push("id", "type", "client_secret", "redirect_uris")
+        keys.push("id", "type", "client_secret", "redirect_uris", "scope")
       }
 
       const result: Partial<SerializedApp<P>> = {}
 
       for (const key of keys) {
-        let value: SerializedApp[typeof key] = app[key].toString()
+        let value: SerializedApp<true>[typeof key] = app[key]
         if (key === "owner") {
-          const user = await getUser(app[key])
+          let user = owner ?? null
+          if (!user) {
+            user = await getUser(app[key])
+          }
           if (user) {
             value = serializeUser(
               user,
               includePrivateInfo
-            ) as SerializedApp["owner"]
+            ) as SerializedApp<true>["owner"]
           }
         }
         Object.assign(result, { [key]: value })
