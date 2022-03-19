@@ -14,7 +14,6 @@ specifiers:
   '@opentelemetry/propagator-jaeger': ^1.0.1
   '@opentelemetry/sdk-metrics-base': ^0.27.0
   '@opentelemetry/sdk-node': ^0.27.0
-  '@opentelemetry/sdk-trace-base': ^1.0.1
   '@opentelemetry/semantic-conventions': ^1.0.1
   '@popperjs/core': ^2.11.2
   '@prisma/client': 3.10.0
@@ -26,6 +25,7 @@ specifiers:
   classnames: ^2.3.1
   cookie: ^0.4.2
   date-fns: ^2.28.0
+  dotenv: ^16.0.0
   esbuild: ^0.14.25
   eslint: ^8.10.0
   express: ^4.17.3
@@ -64,7 +64,6 @@ dependencies:
   '@opentelemetry/propagator-jaeger': 1.0.1_@opentelemetry+api@1.0.4
   '@opentelemetry/sdk-metrics-base': 0.27.0_@opentelemetry+api@1.0.4
   '@opentelemetry/sdk-node': 0.27.0_@opentelemetry+api@1.0.4
-  '@opentelemetry/sdk-trace-base': 1.0.1_@opentelemetry+api@1.0.4
   '@opentelemetry/semantic-conventions': 1.0.1
   '@popperjs/core': 2.11.2
   '@prisma/client': 3.10.0_prisma@3.10.0
@@ -90,6 +89,7 @@ devDependencies:
   '@types/node': 17.0.21
   '@types/react': 17.0.39
   autoprefixer: 10.4.2_postcss@8.4.8
+  dotenv: 16.0.0
   esbuild: 0.14.25
   eslint: 8.11.0
   husky: 7.0.4
@@ -1742,6 +1742,11 @@ packages:
   /dotenv/10.0.0:
     resolution: {integrity: sha512-rlBi9d8jpv9Sf1klPjNfFAuWDjKLwTIJJ/VxtoTwIR6hnZxcEOQCZg2oIL3MWBYw5GpUDKOEnND7LXTbIpQ03Q==}
     engines: {node: '>=10'}
+    dev: true
+
+  /dotenv/16.0.0:
+    resolution: {integrity: sha512-qD9WU0MPM4SWLPJy/r2Be+2WgQj8plChsyrCNQzW/0WjvcJQiKQJ9mH3ZgB3fxbUUxgc/11ZJ0Fi5KiimWGz2Q==}
+    engines: {node: '>=12'}
     dev: true
 
   /eastasianwidth/0.2.0:
