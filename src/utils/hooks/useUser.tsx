@@ -41,7 +41,7 @@ export const useAuth = () => {
         email,
         code,
       })
-      await mutate(user)
+      mutate(user)
       return true
     } catch (e) {
       return false
