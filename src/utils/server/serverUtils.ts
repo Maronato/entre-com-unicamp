@@ -1,4 +1,10 @@
-import { NextApiResponse } from "next"
+/* eslint-disable @next/next/no-server-import-in-page */
+import { NextApiRequest, NextApiResponse } from "next"
+
+export type Handler<R = unknown> = (
+  req: NextApiRequest,
+  res: NextApiResponse
+) => Promise<R>
 
 export type StatusOk = 200 | 201 | 202 | 203 | 204
 export type StatusError = 400 | 401 | 403 | 404 | 405 | 500 | 503

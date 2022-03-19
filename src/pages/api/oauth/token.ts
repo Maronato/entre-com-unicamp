@@ -4,11 +4,8 @@ import {
   AuthorizationCodeGrantType,
 } from "@/oauth"
 import { AccessToken, RefreshToken } from "@/oauth/token"
-import {
-  respondInvalidRequest,
-  respondMethodNotAllowed,
-  respondOk,
-} from "@/utils/server/serverUtils"
+import { handleRequest, withDefaultMiddleware } from "@/utils/server/middleware"
+import { respondInvalidRequest, respondOk } from "@/utils/server/serverUtils"
 
 import type { NextApiRequest, NextApiResponse } from "next"
 
@@ -53,14 +50,10 @@ type ErrorResponseData = {
 
 type ResponseData = ValidResponseData | ErrorResponseData
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ResponseData | string>
 ) {
-  if (req.method !== "POST") {
-    return respondMethodNotAllowed(res)
-  }
-
   const data: Partial<RequestData> = req.body
   if (data.grant_type === "authorization_code") {
     return accessTokenHandler(req, res)
@@ -135,3 +128,5 @@ async function refreshTokenHandler(
   const [accessToken, refreshToken] = auth
   return respondExchange(res, accessToken, refreshToken)
 }
+
+export default withDefaultMiddleware(handleRequest(handler), ["POST"])

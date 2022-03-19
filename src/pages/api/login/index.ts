@@ -6,10 +6,10 @@ import {
 } from "@/oauth/user"
 import { login } from "@/utils/server/auth"
 import { emailCodeIsValid } from "@/utils/server/emailCodes"
+import { handleRequest, withDefaultMiddleware } from "@/utils/server/middleware"
 import { delay } from "@/utils/server/misc"
 import {
   respondInvalidRequest,
-  respondMethodNotAllowed,
   respondOk,
   respondUnauthorized,
 } from "@/utils/server/serverUtils"
@@ -21,13 +21,10 @@ type RequestData = {
   email: string
 }
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse<{ user: SerializedUser<true> }>
 ) {
-  if (req.method !== "POST") {
-    return respondMethodNotAllowed(res)
-  }
   const { email, code }: Partial<RequestData> = req.body
 
   if (!email) {
@@ -52,3 +49,5 @@ export default async function handler(
 
   return respondOk(res, { user: serializeUser(user, true) })
 }
+
+export default withDefaultMiddleware(handleRequest(handler), ["POST"])

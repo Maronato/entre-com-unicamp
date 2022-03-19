@@ -6,13 +6,14 @@ import {
   SerializedApp,
 } from "@/oauth/app"
 import { User } from "@/oauth/user"
-import { isAuthenticated } from "@/utils/server/auth"
+import { getRequestUser } from "@/utils/server/auth"
+import { handleRequest, withDefaultMiddleware } from "@/utils/server/middleware"
+import { withAuthMiddleware } from "@/utils/server/middleware/auth"
 import {
   respondCreated,
   respondInvalidRequest,
   respondMethodNotAllowed,
   respondOk,
-  respondUnauthorized,
 } from "@/utils/server/serverUtils"
 
 import type { NextApiRequest, NextApiResponse } from "next"
@@ -62,14 +63,8 @@ async function listHandler(
   return respondOk(res, resData)
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  const user = await isAuthenticated(req)
-  if (!user) {
-    return respondUnauthorized(res, "Invalid credentials")
-  }
+async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const user = getRequestUser(req)
 
   switch (req.method) {
     case "POST":
@@ -80,3 +75,8 @@ export default async function handler(
       return respondMethodNotAllowed(res)
   }
 }
+
+export default withDefaultMiddleware(
+  withAuthMiddleware(handleRequest(handler)),
+  ["GET", "POST"]
+)

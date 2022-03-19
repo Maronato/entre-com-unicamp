@@ -1,9 +1,6 @@
 import { getAppByClientID, serializeApp, SerializedApp } from "@/oauth/app"
-import {
-  respondMethodNotAllowed,
-  respondNotFound,
-  respondOk,
-} from "@/utils/server/serverUtils"
+import { handleRequest, withDefaultMiddleware } from "@/utils/server/middleware"
+import { respondNotFound, respondOk } from "@/utils/server/serverUtils"
 
 import type { NextApiRequest, NextApiResponse } from "next"
 
@@ -13,13 +10,10 @@ async function findApp(req: NextApiRequest) {
   return app
 }
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse<SerializedApp>
 ) {
-  if (req.method !== "GET") {
-    return respondMethodNotAllowed(res)
-  }
   const app = await findApp(req)
 
   if (!app) {
@@ -28,3 +22,5 @@ export default async function handler(
 
   return respondOk(res, serializeApp(app))
 }
+
+export default withDefaultMiddleware(handleRequest(handler), ["GET"])

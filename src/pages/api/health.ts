@@ -1,6 +1,6 @@
 import { getPrisma } from "@/prisma/db"
+import { handleRequest, withDefaultMiddleware } from "@/utils/server/middleware"
 import {
-  respondMethodNotAllowed,
   respondOk,
   respondServiceUnavailable,
 } from "@/utils/server/serverUtils"
@@ -10,14 +10,7 @@ import type { NextApiRequest, NextApiResponse } from "next"
 
 const logger = getLogger()
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  if (req.method !== "GET") {
-    return respondMethodNotAllowed(res)
-  }
-
+async function handler(_req: NextApiRequest, res: NextApiResponse) {
   const prisma = getPrisma()
   try {
     const test = await prisma.$executeRaw`SELECT 1;`
@@ -33,3 +26,5 @@ export default async function handler(
   }
   return respondServiceUnavailable(res, "Failed to connect to database")
 }
+
+export default withDefaultMiddleware(handleRequest(handler), ["GET", "HEAD"])

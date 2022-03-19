@@ -1,12 +1,13 @@
 import { deleteApp, getAppByClientID, serializeApp } from "@/oauth/app"
 import { User } from "@/oauth/user"
-import { isAuthenticated } from "@/utils/server/auth"
+import { getRequestUser } from "@/utils/server/auth"
+import { handleRequest, withDefaultMiddleware } from "@/utils/server/middleware"
+import { withAuthMiddleware } from "@/utils/server/middleware/auth"
 import {
   respondMethodNotAllowed,
   respondNoContent,
   respondNotFound,
   respondOk,
-  respondUnauthorized,
 } from "@/utils/server/serverUtils"
 
 import type { NextApiRequest, NextApiResponse } from "next"
@@ -48,14 +49,8 @@ async function deleteHandler(
   return respondNoContent(res)
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  const user = await isAuthenticated(req)
-  if (!user) {
-    return respondUnauthorized(res, "Invalid credentials")
-  }
+async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const user = getRequestUser(req)
 
   switch (req.method) {
     case "GET":
@@ -66,3 +61,8 @@ export default async function handler(
       return respondMethodNotAllowed(res)
   }
 }
+
+export default withDefaultMiddleware(
+  withAuthMiddleware(handleRequest(handler)),
+  ["GET", "DELETE"]
+)

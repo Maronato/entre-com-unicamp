@@ -1,9 +1,6 @@
 import { generateEmailCode } from "@/utils/server/emailCodes"
-import {
-  respondInvalidRequest,
-  respondMethodNotAllowed,
-  respondOk,
-} from "@/utils/server/serverUtils"
+import { handleRequest, withDefaultMiddleware } from "@/utils/server/middleware"
+import { respondInvalidRequest, respondOk } from "@/utils/server/serverUtils"
 import { getLogger } from "@/utils/server/telemetry/logs"
 
 import type { NextApiRequest, NextApiResponse } from "next"
@@ -14,13 +11,7 @@ type RequestData = {
   email: string
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  if (req.method !== "POST") {
-    return respondMethodNotAllowed(res)
-  }
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { email }: Partial<RequestData> = req.body
 
   if (!email) {
@@ -43,3 +34,5 @@ export default async function handler(
 
   return respondOk(res, { success: true })
 }
+
+export default withDefaultMiddleware(handleRequest(handler), ["POST"])

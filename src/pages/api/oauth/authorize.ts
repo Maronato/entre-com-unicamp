@@ -3,13 +3,10 @@ import { AuthorizationServer, isErrorCode } from "@/oauth"
 import { CodeChallengeMethod } from "@/oauth/grant"
 import { Scope } from "@/oauth/scope"
 import { ErrorCodes } from "@/utils/common/errorCode"
-import { isAuthenticated } from "@/utils/server/auth"
-import {
-  respondInvalidRequest,
-  respondMethodNotAllowed,
-  respondOk,
-  respondUnauthorized,
-} from "@/utils/server/serverUtils"
+import { getRequestUser } from "@/utils/server/auth"
+import { handleRequest, withDefaultMiddleware } from "@/utils/server/middleware"
+import { withAuthMiddleware } from "@/utils/server/middleware/auth"
+import { respondInvalidRequest, respondOk } from "@/utils/server/serverUtils"
 
 import type { NextApiRequest, NextApiResponse } from "next"
 
@@ -39,17 +36,12 @@ export type ErrorResponseData = {
 
 type ResponseData = ValidResponseData | ErrorResponseData
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ResponseData | string>
 ) {
-  if (req.method !== "POST") {
-    return respondMethodNotAllowed(res)
-  }
-  const user = await isAuthenticated(req)
-  if (!user) {
-    return respondUnauthorized(res, "Invalid credentials")
-  }
+  const user = getRequestUser(req)
+
   const server = new AuthorizationServer()
   const data: Partial<RequestData> = req.body
 
@@ -95,3 +87,8 @@ export default async function handler(
   }
   return respondOk(res, { code, state: data.state })
 }
+
+export default withDefaultMiddleware(
+  withAuthMiddleware(handleRequest(handler), true),
+  ["POST"]
+)
