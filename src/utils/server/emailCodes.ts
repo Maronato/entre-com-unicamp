@@ -1,4 +1,5 @@
-import { createRandomString } from "./random"
+import { createRandomString } from "@/utils/common/random"
+
 import { getRedis } from "./redis"
 import { startActiveSpan } from "./telemetry/trace"
 

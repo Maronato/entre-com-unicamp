@@ -1,15 +1,15 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
-import { AuthorizationServer, isErrorCode } from "@/oauth2"
-import { CodeChallengeMethod } from "@/oauth2/grant"
-import { Scope } from "@/oauth2/scope"
-import { isAuthenticated } from "@/utils/auth/server"
-import { ErrorCodes } from "@/utils/errorCode"
+import { AuthorizationServer, isErrorCode } from "@/oauth"
+import { CodeChallengeMethod } from "@/oauth/grant"
+import { Scope } from "@/oauth/scope"
+import { ErrorCodes } from "@/utils/common/errorCode"
+import { isAuthenticated } from "@/utils/server/auth"
 import {
   respondInvalidRequest,
   respondMethodNotAllowed,
   respondOk,
   respondUnauthorized,
-} from "@/utils/serverUtils"
+} from "@/utils/server/serverUtils"
 
 import type { NextApiRequest, NextApiResponse } from "next"
 

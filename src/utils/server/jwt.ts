@@ -10,7 +10,8 @@ import {
   jwtVerify,
 } from "jose"
 
-import { createRandomString } from "./random"
+import { createRandomString } from "@/utils/common/random"
+
 import { startActiveSpan } from "./telemetry/trace"
 
 export const ALGORITHM = "ES256"

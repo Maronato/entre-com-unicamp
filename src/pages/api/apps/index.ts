@@ -4,16 +4,16 @@ import {
   getUserApps,
   serializeApp,
   SerializedApp,
-} from "@/oauth2/app"
-import { User } from "@/oauth2/user"
-import { isAuthenticated } from "@/utils/auth/server"
+} from "@/oauth/app"
+import { User } from "@/oauth/user"
+import { isAuthenticated } from "@/utils/server/auth"
 import {
   respondCreated,
   respondInvalidRequest,
   respondMethodNotAllowed,
   respondOk,
   respondUnauthorized,
-} from "@/utils/serverUtils"
+} from "@/utils/server/serverUtils"
 
 import type { NextApiRequest, NextApiResponse } from "next"
 

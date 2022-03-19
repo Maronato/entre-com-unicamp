@@ -4,8 +4,8 @@ import { GetServerSideProps, NextPage } from "next"
 
 import Layout from "@/components/Layout"
 import LogoTitle from "@/components/LogoTitle"
-import { serverFetch } from "@/utils/auth/server"
-import { UserFallback, UserProvicer } from "@/utils/hooks/useUser"
+import { UserFallback, UserProvicer } from "@/utils/browser/hooks/useUser"
+import { serverFetch } from "@/utils/server/auth"
 
 type Props = {
   fallback: UserFallback

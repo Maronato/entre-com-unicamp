@@ -2,10 +2,10 @@ import { FunctionComponent } from "react"
 
 import useSWR from "swr"
 
-import { getScopeDescription } from "@/oauth2/scope"
-import { getFetch } from "@/utils/fetch"
+import { getScopeDescription } from "@/oauth/scope"
+import { getFetch } from "@/utils/browser/fetch"
 
-import type { SerializedApp } from "@/oauth2/app"
+import type { SerializedApp } from "@/oauth/app"
 
 const ViewApp: FunctionComponent<{ clientID: string }> = ({ clientID }) => {
   const { data, error } = useSWR(`/api/apps/${clientID}`, (url) =>

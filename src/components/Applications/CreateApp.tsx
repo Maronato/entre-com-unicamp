@@ -1,10 +1,10 @@
 import { FormEvent, FunctionComponent, useState } from "react"
 
-import { postFetch } from "@/utils/fetch"
+import { postFetch } from "@/utils/browser/fetch"
 
 import Button from "../Button"
 
-import type { AppType } from "@/oauth2/app"
+import type { AppType } from "@/oauth/app"
 import type { CreateRequestData, CreateResponseData } from "@/pages/api/apps"
 
 const CreateApp: FunctionComponent<{

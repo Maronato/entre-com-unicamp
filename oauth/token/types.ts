@@ -1,4 +1,4 @@
-import { ExtendJWTPayload } from "@/utils/jwt"
+import { ExtendJWTPayload } from "@/utils/server/jwt"
 
 import { Scope } from "../scope"
 import { User } from "../user"

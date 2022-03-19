@@ -3,8 +3,11 @@ import { parse } from "url"
 
 import next from "next"
 
-import { getLogger, creatRequestLogger } from "../src/utils/telemetry/logs"
-import { creatRequestMeter } from "../src/utils/telemetry/metrics"
+import {
+  getLogger,
+  creatRequestLogger,
+} from "../src/utils/server/telemetry/logs"
+import { creatRequestMeter } from "../src/utils/server/telemetry/metrics"
 
 const dev = process.env.NODE_ENV !== "production"
 const port = process.env.PORT || 3000

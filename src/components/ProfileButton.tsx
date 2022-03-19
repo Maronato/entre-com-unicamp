@@ -1,6 +1,6 @@
 import { FunctionComponent } from "react"
 
-import { useUser } from "@/utils/hooks/useUser"
+import { useUser } from "@/utils/browser/hooks/useUser"
 
 import OutlineLink from "./OutlineButton"
 

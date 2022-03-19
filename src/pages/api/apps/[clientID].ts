@@ -1,13 +1,13 @@
-import { deleteApp, getAppByClientID, serializeApp } from "@/oauth2/app"
-import { User } from "@/oauth2/user"
-import { isAuthenticated } from "@/utils/auth/server"
+import { deleteApp, getAppByClientID, serializeApp } from "@/oauth/app"
+import { User } from "@/oauth/user"
+import { isAuthenticated } from "@/utils/server/auth"
 import {
   respondMethodNotAllowed,
   respondNoContent,
   respondNotFound,
   respondOk,
   respondUnauthorized,
-} from "@/utils/serverUtils"
+} from "@/utils/server/serverUtils"
 
 import type { NextApiRequest, NextApiResponse } from "next"
 

@@ -1,6 +1,6 @@
-import { ErrorCodes } from "@/utils/errorCode"
-import { getJSONWebKeySet } from "@/utils/jwt"
-import { startActiveSpan } from "@/utils/telemetry/trace"
+import { ErrorCodes } from "@/utils/common/errorCode"
+import { getJSONWebKeySet } from "@/utils/server/jwt"
+import { startActiveSpan } from "@/utils/server/telemetry/trace"
 
 import { App, getAppByClientID } from "./app"
 import {

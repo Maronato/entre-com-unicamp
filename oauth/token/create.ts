@@ -1,5 +1,5 @@
-import { signJWT } from "@/utils/jwt"
-import { startActiveSpan } from "@/utils/telemetry/trace"
+import { signJWT } from "@/utils/server/jwt"
+import { startActiveSpan } from "@/utils/server/telemetry/trace"
 
 import { Scope } from "../scope"
 import { User } from "../user"

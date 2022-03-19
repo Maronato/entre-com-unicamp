@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client"
 
-import { createTelemetryMiddleware } from "./telemetry/db"
+import { createTelemetryMiddleware } from "@/utils/server/telemetry/db"
 
 let client: PrismaClient | undefined = undefined
 

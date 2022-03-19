@@ -2,11 +2,11 @@ import { FunctionComponent } from "react"
 
 import useSWR from "swr"
 
-import { getFetch } from "@/utils/fetch"
+import { getFetch } from "@/utils/browser/fetch"
 
 import Button from "../Button"
 
-import type { SerializedApp } from "@/oauth2/app"
+import type { SerializedApp } from "@/oauth/app"
 
 const AppList: FunctionComponent<{ viewApp: (clientID: string) => void }> = ({
   viewApp,

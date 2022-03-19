@@ -4,7 +4,7 @@ import useSWR, { SWRConfig } from "swr"
 
 import { getFetch, postFetch } from "../fetch"
 
-import type { SerializedUser } from "@/oauth2/user"
+import type { SerializedUser } from "@/oauth/user"
 
 export const key = "user"
 

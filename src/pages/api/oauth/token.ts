@@ -2,13 +2,13 @@ import {
   AuthorizationServer,
   GrantType,
   AuthorizationCodeGrantType,
-} from "@/oauth2"
-import { AccessToken, RefreshToken } from "@/oauth2/token"
+} from "@/oauth"
+import { AccessToken, RefreshToken } from "@/oauth/token"
 import {
   respondInvalidRequest,
   respondMethodNotAllowed,
   respondOk,
-} from "@/utils/serverUtils"
+} from "@/utils/server/serverUtils"
 
 import type { NextApiRequest, NextApiResponse } from "next"
 

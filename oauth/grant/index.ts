@@ -1,8 +1,8 @@
 import { createHash } from "crypto"
 
-import { signJWT, verifyJWT } from "@/utils/jwt"
-import { getRedis } from "@/utils/redis"
-import { startActiveSpan } from "@/utils/telemetry/trace"
+import { signJWT, verifyJWT } from "@/utils/server/jwt"
+import { getRedis } from "@/utils/server/redis"
+import { startActiveSpan } from "@/utils/server/telemetry/trace"
 
 import { Scope } from "../scope"
 import { User } from "../user"

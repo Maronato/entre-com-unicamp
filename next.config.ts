@@ -7,6 +7,12 @@ const config: NextConfig = {
   images: {
     domains: ["tailwindui.com"],
   },
+  rewrites: async () => [
+    {
+      source: "/oauth/token",
+      destination: "/api/oauth/token",
+    },
+  ],
 }
 
 export default config

@@ -1,7 +1,7 @@
 import { users } from "@prisma/client"
 
-import { getPrisma } from "@/utils/db"
-import { startActiveSpan } from "@/utils/telemetry/trace"
+import { getPrisma } from "@/prisma/db"
+import { startActiveSpan } from "@/utils/server/telemetry/trace"
 
 export type User = Pick<users, "id" | "email">
 type SerializedPrivateUserInfo = {

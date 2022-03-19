@@ -1,10 +1,10 @@
-import { generateEmailCode } from "@/utils/emailCodes"
+import { generateEmailCode } from "@/utils/server/emailCodes"
 import {
   respondInvalidRequest,
   respondMethodNotAllowed,
   respondOk,
-} from "@/utils/serverUtils"
-import { getLogger } from "@/utils/telemetry/logs"
+} from "@/utils/server/serverUtils"
+import { getLogger } from "@/utils/server/telemetry/logs"
 
 import type { NextApiRequest, NextApiResponse } from "next"
 

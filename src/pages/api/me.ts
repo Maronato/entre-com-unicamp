@@ -1,11 +1,11 @@
-import { Scope } from "@/oauth2/scope"
-import { SerializedUser, serializeUser } from "@/oauth2/user"
-import { isAuthenticated } from "@/utils/auth/server"
+import { Scope } from "@/oauth/scope"
+import { SerializedUser, serializeUser } from "@/oauth/user"
+import { isAuthenticated } from "@/utils/server/auth"
 import {
   respondMethodNotAllowed,
   respondOk,
   respondUnauthorized,
-} from "@/utils/serverUtils"
+} from "@/utils/server/serverUtils"
 
 import type { NextApiRequest, NextApiResponse } from "next"
 

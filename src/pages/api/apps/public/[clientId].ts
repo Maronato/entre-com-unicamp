@@ -1,9 +1,9 @@
-import { getAppByClientID, serializeApp, SerializedApp } from "@/oauth2/app"
+import { getAppByClientID, serializeApp, SerializedApp } from "@/oauth/app"
 import {
   respondMethodNotAllowed,
   respondNotFound,
   respondOk,
-} from "@/utils/serverUtils"
+} from "@/utils/server/serverUtils"
 
 import type { NextApiRequest, NextApiResponse } from "next"
 

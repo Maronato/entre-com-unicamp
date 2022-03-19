@@ -20,9 +20,10 @@
       "@/pages/*": ["src/pages/*"],
       "@/public/*": ["public/*"],
       "@/styles/*": ["src/styles/*"],
-      "@/oauth2": ["src/oauth2/index"],
-      "@/oauth2/*": ["src/oauth2/*"],
-      "@/utils/*": ["src/utils/*"]
+      "@/utils/*": ["src/utils/*"],
+      "@/oauth": ["oauth/index"],
+      "@/oauth/*": ["oauth/*"],
+      "@/prisma/*": ["prisma/*"]
     },
     "plugins": [{ "name": "typescript-plugin-css-modules" }]
   },

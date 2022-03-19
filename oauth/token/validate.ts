@@ -1,6 +1,6 @@
-import { getPrisma } from "@/utils/db"
-import { verifyJWT } from "@/utils/jwt"
-import { startActiveSpan } from "@/utils/telemetry/trace"
+import { getPrisma } from "@/prisma/db"
+import { verifyJWT } from "@/utils/server/jwt"
+import { startActiveSpan } from "@/utils/server/telemetry/trace"
 
 import { Scope } from "../scope"
 import { User } from "../user"

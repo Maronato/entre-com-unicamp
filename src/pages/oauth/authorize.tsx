@@ -5,18 +5,17 @@ import { GetServerSideProps, NextPage } from "next"
 import Authorize, { AuthorizeProps } from "@/components/Authorize"
 import InvalidAuthorize from "@/components/InvalidAuthorize"
 import Login from "@/components/Login"
-import {
-  App,
-  getAppByClientID,
-  serializeApp,
-  SerializedApp,
-} from "@/oauth2/app"
-import { CodeChallengeMethod } from "@/oauth2/grant"
-import { isScope, Scope } from "@/oauth2/scope"
-import { serverFetch } from "@/utils/auth/server"
-import { ErrorCodes } from "@/utils/errorCode"
+import { App, getAppByClientID, serializeApp, SerializedApp } from "@/oauth/app"
+import { CodeChallengeMethod } from "@/oauth/grant"
+import { isScope, Scope } from "@/oauth/scope"
+import { ErrorCodes } from "@/utils/common/errorCode"
+import { serverFetch } from "@/utils/server/auth"
 
-import { UserFallback, UserProvicer, useAuth } from "../../utils/hooks/useUser"
+import {
+  UserFallback,
+  UserProvicer,
+  useAuth,
+} from "../../utils/browser/hooks/useUser"
 
 type BaseProps = {
   fallback: UserFallback

@@ -4,7 +4,7 @@ export const start = async () => {
     dotenv.config()
   }
 
-  const { startTelemetry } = await import("../src/utils/telemetry")
+  const { startTelemetry } = await import("../src/utils/server/telemetry")
   await startTelemetry()
   const { startServer } = await import("./server")
   await startServer()

@@ -1,6 +1,6 @@
-import { respondMethodNotAllowed, respondOk } from "@/utils/serverUtils"
+import { respondMethodNotAllowed, respondOk } from "@/utils/server/serverUtils"
 
-import { logout } from "../../utils/auth/server"
+import { logout } from "../../utils/server/auth"
 
 import type { NextApiRequest, NextApiResponse } from "next"
 

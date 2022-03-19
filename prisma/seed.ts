@@ -1,9 +1,9 @@
 import { PrismaClient } from "@prisma/client"
 
-import { createClientID, createClientSecret } from "../src/utils/random"
-import { getLogger } from "../src/utils/telemetry/logs"
+import { createClientID, createClientSecret } from "../src/utils/common/random"
+import { getLogger } from "../src/utils/server/telemetry/logs"
 
-import type { User } from "../src/oauth2/user"
+import type { User } from "../oauth/user"
 
 const logger = getLogger()
 

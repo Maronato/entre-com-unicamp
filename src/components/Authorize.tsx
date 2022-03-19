@@ -2,14 +2,14 @@ import { FC, useState } from "react"
 
 import { useRouter } from "next/router"
 
-import { SerializedApp } from "@/oauth2/app"
+import { SerializedApp } from "@/oauth/app"
 import {
   RequestData,
   ValidResponseData,
   ChallengeRequestData,
 } from "@/pages/api/oauth/authorize"
-import { postFetch } from "@/utils/fetch"
-import { useAuth } from "@/utils/hooks/useUser"
+import { postFetch } from "@/utils/browser/fetch"
+import { useAuth } from "@/utils/browser/hooks/useUser"
 
 import Button from "./Button"
 import TitleHeader from "./TitleHeader"

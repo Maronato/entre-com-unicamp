@@ -1,10 +1,10 @@
-import { getPrisma } from "@/utils/db"
+import { getPrisma } from "@/prisma/db"
 import {
   respondMethodNotAllowed,
   respondOk,
   respondServiceUnavailable,
-} from "@/utils/serverUtils"
-import { getLogger } from "@/utils/telemetry/logs"
+} from "@/utils/server/serverUtils"
+import { getLogger } from "@/utils/server/telemetry/logs"
 
 import type { NextApiRequest, NextApiResponse } from "next"
 

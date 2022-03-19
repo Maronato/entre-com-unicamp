@@ -1,5 +1,5 @@
-import { getRedis } from "@/utils/redis"
-import { startActiveSpan } from "@/utils/telemetry/trace"
+import { getRedis } from "@/utils/server/redis"
+import { startActiveSpan } from "@/utils/server/telemetry/trace"
 
 import { RefreshTokenPayload } from "./types"
 

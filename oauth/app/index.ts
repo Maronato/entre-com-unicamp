@@ -1,9 +1,9 @@
 import { apps } from "@prisma/client"
 
-import { startActiveSpan } from "@/utils/telemetry/trace"
+import { getPrisma } from "@/prisma/db"
+import { createClientID, createClientSecret } from "@/utils/common/random"
+import { startActiveSpan } from "@/utils/server/telemetry/trace"
 
-import { getPrisma } from "../../utils/db"
-import { createClientID, createClientSecret } from "../../utils/random"
 import { Scope } from "../scope"
 import { getUser, SerializedUser, serializeUser, User } from "../user"
 

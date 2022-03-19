@@ -1,7 +1,7 @@
 import { JSONWebKeySet } from "jose"
 
-import { AuthorizationServer } from "@/oauth2"
-import { respondMethodNotAllowed, respondOk } from "@/utils/serverUtils"
+import { AuthorizationServer } from "@/oauth"
+import { respondMethodNotAllowed, respondOk } from "@/utils/server/serverUtils"
 
 import type { NextApiRequest, NextApiResponse } from "next"
 

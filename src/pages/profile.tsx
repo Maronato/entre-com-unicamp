@@ -4,8 +4,13 @@ import { GetServerSideProps, NextPage } from "next"
 import { useRouter } from "next/router"
 
 import Applications from "@/components/Applications"
-import { serverFetch } from "@/utils/auth/server"
-import { key, UserFallback, UserProvicer, useAuth } from "@/utils/hooks/useUser"
+import {
+  key,
+  UserFallback,
+  UserProvicer,
+  useAuth,
+} from "@/utils/browser/hooks/useUser"
+import { serverFetch } from "@/utils/server/auth"
 
 type Props = {
   fallback: UserFallback

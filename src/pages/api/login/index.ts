@@ -3,16 +3,16 @@ import {
   getUserByEmail,
   SerializedUser,
   serializeUser,
-} from "@/oauth2/user"
-import { login } from "@/utils/auth/server"
-import { emailCodeIsValid } from "@/utils/emailCodes"
-import { delay } from "@/utils/misc"
+} from "@/oauth/user"
+import { login } from "@/utils/server/auth"
+import { emailCodeIsValid } from "@/utils/server/emailCodes"
+import { delay } from "@/utils/server/misc"
 import {
   respondInvalidRequest,
   respondMethodNotAllowed,
   respondOk,
   respondUnauthorized,
-} from "@/utils/serverUtils"
+} from "@/utils/server/serverUtils"
 
 import type { NextApiRequest, NextApiResponse } from "next"
 

@@ -6,8 +6,8 @@ import {
   PaperAirplaneIcon,
 } from "@heroicons/react/solid"
 
-import { InputHandler, useInput } from "@/utils/hooks/useInput"
-import { useAuth } from "@/utils/hooks/useUser"
+import { InputHandler, useInput } from "@/utils/browser/hooks/useInput"
+import { useAuth } from "@/utils/browser/hooks/useUser"
 
 import Button from "./Button"
 

@@ -5,8 +5,8 @@ import { useRouter } from "next/router"
 
 import Layout from "@/components/Layout"
 import Login from "@/components/Login"
-import { serverFetch } from "@/utils/auth/server"
-import { useUser } from "@/utils/hooks/useUser"
+import { useUser } from "@/utils/browser/hooks/useUser"
+import { serverFetch } from "@/utils/server/auth"
 
 type Props = Record<string, never>
 

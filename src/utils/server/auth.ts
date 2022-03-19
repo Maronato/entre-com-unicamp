@@ -1,17 +1,17 @@
 import { GetServerSideProps, NextApiRequest, NextApiResponse } from "next"
 
+import { Scope } from "@/oauth/scope"
 import {
   SerializedUser,
   serializeUser,
   unserializeUser,
   User,
-} from "@/oauth2/user"
+} from "@/oauth/user"
+import { key, UserFallback } from "@/utils/browser/hooks/useUser"
 
-import { Scope } from "../../oauth2/scope"
-import { removeCookie, setCookie } from "../cookie"
-import { key, UserFallback } from "../hooks/useUser"
-import { signJWT, verifyJWT } from "../jwt"
-import { startActiveSpan } from "../telemetry/trace"
+import { removeCookie, setCookie } from "./cookie"
+import { signJWT, verifyJWT } from "./jwt"
+import { startActiveSpan } from "./telemetry/trace"
 
 const AUTH_COOKIE_NAME = "jwt-auth"
 
