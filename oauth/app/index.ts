@@ -1,49 +1,20 @@
-import { apps } from "@prisma/client"
-
 import { getPrisma } from "@/prisma/db"
+import { SSRIdenticon } from "@/utils/browser/identicon/ssr"
 import { createClientID, createClientSecret } from "@/utils/common/random"
 import { startActiveSpan } from "@/utils/server/telemetry/trace"
 
-import { Scope } from "../scope"
-import { getUser, SerializedUser, serializeUser, User } from "../user"
+import { REQUIRED_SCOPE, Scope } from "../scope"
+import { getUser, serializeUser, User } from "../user"
 
-export enum AppType {
-  PUBLIC = "public",
-  CONFIDENTIAL = "confidential",
-}
-
-export type App = Pick<
-  apps,
-  | "client_id"
-  | "client_secret"
-  | "id"
-  | "name"
-  | "owner"
-  | "redirect_uris"
-  | "type"
-  | "scope"
->
-
-type SerializedPrivateAppInfo = {
-  client_secret: string
-  redirect_uris: string[]
-  id: string
-  type: AppType
-  scope: Scope[]
-}
-export type SerializedApp<Private extends boolean = false> =
-  (Private extends true ? SerializedPrivateAppInfo : Record<string, never>) & {
-    client_id: string
-    name: string
-    owner: SerializedUser<Private>
-  }
+import { App, AppType, SerializedApp } from "./types"
 
 export function createApp(
   name: string,
   ownerID: User["id"],
   type: AppType,
   redirectURIs: string[],
-  scope: Scope[] = [Scope.EMAIL_READ]
+  logo?: string,
+  scope: Scope[] = REQUIRED_SCOPE
 ): Promise<App> {
   return startActiveSpan(
     "createApp",
@@ -52,12 +23,16 @@ export function createApp(
       const prisma = getPrisma()
       const client_id = createClientID()
       const client_secret = createClientSecret()
+      if (!logo) {
+        logo = new SSRIdenticon(name).render().toBase64()
+      }
 
-      const app = await prisma.apps.create({
+      const app = await prisma.app.create({
         data: {
           client_id,
           client_secret,
           name,
+          logo,
           type,
           owner: ownerID,
           redirect_uris: redirectURIs,
@@ -72,7 +47,7 @@ export function createApp(
 export function getFirstApp(): Promise<App | null> {
   return startActiveSpan("getFirstApp", async () => {
     const prisma = getPrisma()
-    return prisma.apps.findFirst()
+    return prisma.app.findFirst()
   })
 }
 
@@ -82,7 +57,7 @@ export function getApp(appID: App["id"]): Promise<App | null> {
     { attributes: { appID: appID } },
     async () => {
       const prisma = getPrisma()
-      return prisma.apps.findUnique({
+      return prisma.app.findUnique({
         where: { id: appID },
       })
     }
@@ -97,7 +72,7 @@ export function getAppByClientID(
     { attributes: { clientID } },
     async () => {
       const prisma = getPrisma()
-      return prisma.apps.findUnique({
+      return prisma.app.findUnique({
         where: { client_id: clientID },
       })
     }
@@ -110,11 +85,31 @@ export function getUserApps(owner: User["id"]) {
     { attributes: { owner: owner } },
     async () => {
       const prisma = getPrisma()
-      return prisma.apps.findMany({
+      return prisma.app.findMany({
         where: {
           owner,
         },
       })
+    }
+  )
+}
+
+export function updateApp(
+  appID: App["id"],
+  update: Partial<
+    Pick<App, "name" | "redirect_uris" | "scope" | "type" | "logo">
+  >
+) {
+  return startActiveSpan(
+    "updateApp",
+    { attributes: { appID: appID, ...update } },
+    async () => {
+      const prisma = getPrisma()
+      if ("name" in update && update.name) {
+        update.logo = new SSRIdenticon(update.name).render().toBase64()
+      }
+
+      return prisma.app.update({ data: { ...update }, where: { id: appID } })
     }
   )
 }
@@ -125,7 +120,7 @@ export function deleteApp(appID: App["id"]) {
     { attributes: { appID: appID } },
     async () => {
       const prisma = getPrisma()
-      return prisma.apps.delete({ where: { id: appID } })
+      return prisma.app.delete({ where: { id: appID } })
     }
   )
 }
@@ -139,7 +134,7 @@ export function serializeApp<P extends boolean = false>(
     "serializeApp",
     { attributes: { app: app.id } },
     async () => {
-      const keys: (keyof App)[] = ["name", "owner", "client_id"]
+      const keys: (keyof App)[] = ["name", "owner", "client_id", "logo"]
 
       if (includePrivateInfo) {
         keys.push("id", "type", "client_secret", "redirect_uris", "scope")

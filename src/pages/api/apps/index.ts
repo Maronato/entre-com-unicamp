@@ -1,10 +1,5 @@
-import {
-  AppType,
-  createApp,
-  getUserApps,
-  serializeApp,
-  SerializedApp,
-} from "@/oauth/app"
+import { createApp, getUserApps, serializeApp } from "@/oauth/app"
+import { AppType, SerializedApp } from "@/oauth/app/types"
 import { User } from "@/oauth/user"
 import { getRequestUser } from "@/utils/server/auth"
 import { handleRequest, withDefaultMiddleware } from "@/utils/server/middleware"
@@ -20,6 +15,7 @@ import type { NextApiRequest, NextApiResponse } from "next"
 
 export type CreateRequestData = {
   name: string
+  logo: string
   type: AppType
   redirect_uris: string[]
 }
@@ -31,7 +27,8 @@ async function createHandler(
   res: NextApiResponse<CreateResponseData | string>,
   user: User
 ) {
-  const { name, redirect_uris, type }: Partial<CreateRequestData> = req.body
+  const { name, redirect_uris, type, logo }: Partial<CreateRequestData> =
+    req.body
 
   if (!name) {
     return respondInvalidRequest(res, "Missing name")
@@ -43,7 +40,7 @@ async function createHandler(
     return respondInvalidRequest(res, "Missing type")
   }
 
-  const app = await createApp(name, user.id, type, redirect_uris)
+  const app = await createApp(name, user.id, type, redirect_uris, logo)
 
   return respondCreated(res, serializeApp(app, true))
 }
@@ -57,7 +54,9 @@ async function listHandler(
   const apps = await getUserApps(user.id)
 
   const resData = await Promise.all(
-    apps.map((app) => serializeApp(app, false, user))
+    apps
+      .sort((a, b) => a.created_at.getTime() - b.created_at.getTime())
+      .map((app) => serializeApp(app, false, user))
   )
 
   return respondOk(res, resData)

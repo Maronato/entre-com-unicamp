@@ -16,10 +16,12 @@ async function handler(
   const user = getRequestUser(req)
   const scope = getRequestScope(req)
 
-  if (scope.includes(Scope.ID_READ)) {
+  if (scope.includes(Scope.APPS_READ)) {
     return respondOk(res, serializeUser(user, true))
   }
   return respondOk(res, serializeUser(user))
 }
 
-export default withDefaultMiddleware(withAuthMiddleware(handleRequest(handler)))
+export default withDefaultMiddleware(
+  withAuthMiddleware(handleRequest(handler), false)
+)

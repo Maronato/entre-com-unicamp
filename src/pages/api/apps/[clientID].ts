@@ -1,4 +1,10 @@
-import { deleteApp, getAppByClientID, serializeApp } from "@/oauth/app"
+import {
+  deleteApp,
+  getAppByClientID,
+  serializeApp,
+  updateApp,
+} from "@/oauth/app"
+import { SerializedApp } from "@/oauth/app/types"
 import { User } from "@/oauth/user"
 import { getRequestUser } from "@/utils/server/auth"
 import { handleRequest, withDefaultMiddleware } from "@/utils/server/middleware"
@@ -35,6 +41,27 @@ async function getHandler(
   return respondOk(res, serializeApp(app, true, user))
 }
 
+async function updateHandler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+  user: User
+) {
+  const app = await getUserApp(req, user)
+
+  if (!app) {
+    return respondNotFound(res, "App not found")
+  }
+  const { name, redirect_uris, type }: Partial<SerializedApp<true>> = req.body
+
+  const updatedApp = await updateApp(app.id, {
+    name,
+    redirect_uris,
+    type,
+  })
+
+  return respondOk(res, serializeApp(updatedApp, true, user))
+}
+
 async function deleteHandler(
   req: NextApiRequest,
   res: NextApiResponse,
@@ -57,6 +84,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       return getHandler(req, res, user)
     case "DELETE":
       return deleteHandler(req, res, user)
+    case "PATCH":
+      return updateHandler(req, res, user)
     default:
       return respondMethodNotAllowed(res)
   }
@@ -64,5 +93,5 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
 export default withDefaultMiddleware(
   withAuthMiddleware(handleRequest(handler)),
-  ["GET", "DELETE"]
+  ["GET", "DELETE", "PATCH"]
 )

@@ -1,4 +1,5 @@
-import { getAppByClientID, serializeApp, SerializedApp } from "@/oauth/app"
+import { getAppByClientID, serializeApp } from "@/oauth/app"
+import { SerializedApp } from "@/oauth/app/types"
 import { handleRequest, withDefaultMiddleware } from "@/utils/server/middleware"
 import { respondNotFound, respondOk } from "@/utils/server/serverUtils"
 

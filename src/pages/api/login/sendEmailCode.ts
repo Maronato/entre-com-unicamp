@@ -18,7 +18,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     return respondInvalidRequest(res, "Missing email")
   }
 
-  const emailExp = new RegExp(/\w+@[[A-Za-z]+\.]?unicamp\.br/)
+  const emailExp = new RegExp(/\w+@(?:\w+\.)?unicamp\.br/)
   if (!emailExp.test(email)) {
     return respondInvalidRequest(
       res,

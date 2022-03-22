@@ -18,6 +18,9 @@ const EmailForm: FC<{
 }> = ({ email, setEmail, loading }) => {
   return (
     <>
+      <span className="text-center text-xl font-bold text-slate-700 dark:text-slate-100 mb-6">
+        Faça login com seu email da Unicamp
+      </span>
       <label htmlFor="email-address" className="sr-only">
         Email da Unicamp
       </label>
@@ -27,12 +30,15 @@ const EmailForm: FC<{
         type="email"
         autoComplete="email"
         required
-        className="appearance-none relative block w-full px-3 py-2 border border-slate-300 placeholder-slate-500 text-slate-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 disabled:bg-white"
-        placeholder="Seu email da Unicamp"
+        className="mb-4 appearance-none relative block w-full px-3 py-2 border border-slate-300 placeholder-slate-300 text-slate-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 disabled:bg-white"
+        placeholder="você@[dac.]unicamp.br"
         value={email}
         onChange={setEmail}
         disabled={loading}
       />
+      <div className="text-xs text-slate-500 dark:text-slate-300 flex flex-col justify-center text-center mb-2">
+        <span className="">Vamos te enviar um código de verificação</span>
+      </div>
       <div className="w-full">
         <Button
           type="submit"
@@ -40,7 +46,7 @@ const EmailForm: FC<{
           icon={PaperAirplaneIcon}
           wide
           loading={loading}>
-          Enviar código por email
+          Enviar
         </Button>
       </div>
     </>
@@ -56,10 +62,10 @@ const CodeForm: FC<{
 }> = ({ code, email, undo, setCode, loading }) => {
   return (
     <>
-      <span className="text-center text-xl font-bold text-slate-700 dark:text-slate-100">
+      <span className="text-center text-xl font-bold text-slate-700 dark:text-slate-100 mb-5">
         Digite o código enviado pro seu email
       </span>
-      <div className="text-xs text-slate-500 dark:text-slate-300 flex flex-col justify-center text-center">
+      <div className="text-xs text-slate-500 dark:text-slate-300 flex flex-col justify-center text-center mb-4">
         <span className="">{email}</span>
         <button
           className="text-primary dark:text-primary-400 underline w-max mx-auto"
@@ -79,7 +85,7 @@ const CodeForm: FC<{
         required
         maxLength={4}
         minLength={4}
-        className="appearance-none relative block w-full text-center px-6 py-4 border border-slate-300 placeholder-slate-500 text-slate-900 rounded-none focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-2xl mx-auto disabled:bg-white"
+        className="mb-4 appearance-none relative block w-full text-center px-6 py-4 border border-slate-300 placeholder-slate-500 text-slate-900 rounded-none focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-2xl mx-auto disabled:bg-white"
         placeholder="XXXX"
         value={code}
         onChange={setCode}
@@ -153,7 +159,7 @@ const Login: FC = () => {
   return (
     <div>
       <form className="relative" onSubmit={submit}>
-        <div className="flex space-y-3 flex-col">
+        <div className="flex flex-col">
           {readyForCode || (
             <EmailForm email={email} setEmail={setEmail} loading={loading} />
           )}

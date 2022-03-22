@@ -5,9 +5,9 @@ export function createRandomString(size = 24) {
 }
 
 export function createClientID() {
-  return createRandomString(24)
+  return createRandomString(18)
 }
 
 export function createClientSecret() {
-  return createRandomString(48)
+  return createRandomString(24)
 }

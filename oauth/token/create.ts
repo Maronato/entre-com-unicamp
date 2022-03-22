@@ -17,7 +17,7 @@ const createToken =
   <T extends TokenType>(type: T, expirationTime: string | false) =>
   async (
     clientID: string,
-    user: User,
+    user: Pick<User, "id">,
     scope: Scope[],
     jti?: string
   ): Promise<T extends AccessTokenType ? AccessToken : RefreshToken> => {
@@ -26,20 +26,26 @@ const createToken =
         type,
         expirationTime,
         clientID,
-        user: JSON.stringify({ email: user.email, id: user.id }),
+        user: user.id,
         scope,
       })
 
       const payload: BaseTokenPayload = {
-        user: { email: user.email, id: user.id },
         type,
         scope,
       }
-      return signJWT({ ...payload, jti }, clientID, expirationTime || undefined)
+      return signJWT(
+        { ...payload, jti },
+        clientID,
+        user.id,
+        expirationTime || undefined
+      )
     })
   }
 
 export const createAccessToken = createToken("access_token", "2h")
+
+export const createLoginToken = createToken("login_token", "1y")
 
 export const createRefreshToken = createToken("refresh_token", false)
 export const rotateRefreshToken = async (

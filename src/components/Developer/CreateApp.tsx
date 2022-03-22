@@ -1,10 +1,11 @@
 import { FormEvent, FunctionComponent, useState } from "react"
 
 import { postFetch } from "@/utils/browser/fetch"
+import { generateIdenticon } from "@/utils/server/identicon"
 
 import Button from "../Button"
 
-import type { AppType } from "@/oauth/app"
+import type { AppType } from "@/oauth/app/types"
 import type { CreateRequestData, CreateResponseData } from "@/pages/api/apps"
 
 const CreateApp: FunctionComponent<{
@@ -20,6 +21,7 @@ const CreateApp: FunctionComponent<{
     setCreating(true)
     const payload: CreateRequestData = {
       name,
+      logo: generateIdenticon(name),
       type,
       redirect_uris,
     }

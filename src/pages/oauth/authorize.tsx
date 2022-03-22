@@ -4,18 +4,15 @@ import { GetServerSideProps, NextPage } from "next"
 
 import Authorize, { AuthorizeProps } from "@/components/Authorize"
 import InvalidAuthorize from "@/components/InvalidAuthorize"
-import Login from "@/components/Login"
-import { App, getAppByClientID, serializeApp, SerializedApp } from "@/oauth/app"
+import Layout from "@/components/Layout"
+import { getAppByClientID, serializeApp } from "@/oauth/app"
+import { App, SerializedApp } from "@/oauth/app/types"
 import { CodeChallengeMethod } from "@/oauth/grant"
-import { isScope, Scope } from "@/oauth/scope"
+import { isScope, REQUIRED_SCOPE } from "@/oauth/scope"
 import { ErrorCodes } from "@/utils/common/errorCode"
 import { serverFetch } from "@/utils/server/auth"
 
-import {
-  UserFallback,
-  UserProvicer,
-  useAuth,
-} from "../../utils/browser/hooks/useUser"
+import { UserFallback, UserProvicer } from "../../utils/browser/hooks/useUser"
 
 type BaseProps = {
   fallback: UserFallback
@@ -30,20 +27,13 @@ type ErrorProps = {
 type Props = BaseProps & (ValidProps | ErrorProps)
 
 const AuthorizePage: FunctionComponent<ValidProps | ErrorProps> = (props) => {
-  const { user, logout } = useAuth()
-
   if ("error" in props) {
     return <InvalidAuthorize error={props.error} />
   }
 
   return (
-    <div className="flex flex-col">
-      {`I'm a user: ${JSON.stringify(user)}`}
-      <button onClick={() => logout()}>Logout</button>
-      <div className="min-h-full flex items-center justify-center py-20 px-4">
-        {!!user || <Login />}
-        {!!user && <Authorize {...props.query} app={props.app} />}
-      </div>
+    <div className="w-full flex items-center justify-center">
+      <Authorize {...props.query} app={props.app} />
     </div>
   )
 }
@@ -51,7 +41,9 @@ const AuthorizePage: FunctionComponent<ValidProps | ErrorProps> = (props) => {
 const Page: NextPage<Props> = ({ fallback, ...props }) => {
   return (
     <UserProvicer fallback={fallback}>
-      <AuthorizePage {...props} />
+      <Layout>
+        <AuthorizePage {...props} />
+      </Layout>
     </UserProvicer>
   )
 }
@@ -119,15 +111,11 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({
     return respondRedirect()
   }
 
-  const authQuery: Partial<AuthorizeProps> = {
-    clientID: client_id,
-    redirectUri: redirect_uri,
-  }
   const scopeArr = scope
     ? Array.isArray(scope)
       ? scope
       : scope.split(" ")
-    : [Scope.APPS_READ]
+    : REQUIRED_SCOPE
 
   if (!scopeArr.every(isScope)) {
     redirectUrl.searchParams.append("error", ErrorCodes.INVALID_SCOPE)
@@ -136,6 +124,12 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({
   if (!scopeArr.every((s) => app?.scope.includes(s))) {
     redirectUrl.searchParams.append("error", ErrorCodes.INVALID_SCOPE)
     return respondRedirect()
+  }
+
+  const authQuery: Partial<AuthorizeProps> = {
+    clientID: client_id,
+    redirectUri: redirect_uri,
+    scope: scopeArr,
   }
 
   if (code_challenge) {

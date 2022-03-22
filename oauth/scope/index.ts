@@ -1,24 +1,24 @@
 export enum Scope {
-  ID_READ = "id:read",
-  EMAIL_READ = "email:read",
+  PROFILE_READ = "profile:read",
   APPS_READ = "apps:read",
   APPS_WRITE = "apps:write",
 }
 
 export enum ScopeDescriptions {
-  ID_READ = "Ver o seu ID",
-  EMAIL_READ = "Ver o seu email",
-  APPS_READ = "Ver os seus apps",
-  APPS_WRITE = "Ver e modificar os seus apps",
+  PROFILE_READ = "Ver seu perfil público",
+  APPS_READ = "Ver seus apps",
+  APPS_WRITE = "Modificar seus apps",
 }
 export function getScopeDescription(scope: Scope): ScopeDescriptions {
   const res = Object.entries(Scope).find(([, value]) => value === scope)
   if (res) {
-    return ScopeDescriptions[res[0] as "ID_READ"]
+    return ScopeDescriptions[res[0] as "PROFILE_READ"]
   }
-  return ScopeDescriptions.ID_READ
+  return ScopeDescriptions.PROFILE_READ
 }
 
 export function isScope(v: unknown): v is Scope {
   return Object.values(Scope).includes(v as Scope)
 }
+
+export const REQUIRED_SCOPE = [Scope.PROFILE_READ]

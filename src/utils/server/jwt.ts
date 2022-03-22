@@ -47,20 +47,26 @@ export async function getJWKS() {
   )
 }
 
+type Audience = JWTPayload["aud"]
+type Subject = JWTPayload["sub"]
+
 export async function signJWT(
   payload: JWTPayload,
-  audience?: string | string[],
+  audience?: Audience,
+  subject?: Subject,
   expirationTime?: string | number
 ): Promise<string>
 export async function signJWT(
   payload: JWTPayload,
-  audience: string | string[] | undefined,
+  audience: Audience,
+  subject: Subject,
   expirationTime: string | number | undefined,
   returnJTI: true
 ): Promise<[string, string]>
 export async function signJWT(
   payload: JWTPayload,
-  audience?: string | string[],
+  audience?: Audience,
+  subject?: Subject,
   expirationTime?: string | number,
   returnJTI = false
 ): Promise<string | [string, string]> {
@@ -84,6 +90,9 @@ export async function signJWT(
     if (audience) {
       token = token.setAudience(audience)
     }
+    if (subject) {
+      token = token.setSubject(subject)
+    }
     if (expirationTime) {
       token = token.setExpirationTime(expirationTime)
     }
@@ -95,19 +104,19 @@ export async function signJWT(
   })
 }
 
-type Audience = JWTPayload["aud"]
-
 export type ExtendJWTPayload<T> = T &
   JWTPayload &
   Required<Pick<JWTPayload, "jti" | "iss" | "iat">>
 
 export async function verifyJWT<T extends JWTPayload = JWTPayload>(
   token: string,
-  audience?: Audience
+  audience?: Audience,
+  subject?: Subject
 ): Promise<ExtendJWTPayload<T> | null> {
   return startActiveSpan("verifyJWT", async (span, setError) => {
     span.setAttributes({
       audience,
+      subject,
       algorithm: ALGORITHM,
       issuer: ISSUER,
       type: TYPE,
@@ -117,6 +126,7 @@ export async function verifyJWT<T extends JWTPayload = JWTPayload>(
     try {
       const { payload } = await jwtVerify(token, jwks, {
         audience,
+        subject,
         algorithms: [ALGORITHM],
         issuer: ISSUER,
         typ: TYPE,

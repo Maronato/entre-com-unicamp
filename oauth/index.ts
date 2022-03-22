@@ -2,7 +2,8 @@ import { ErrorCodes } from "@/utils/common/errorCode"
 import { getJSONWebKeySet } from "@/utils/server/jwt"
 import { startActiveSpan } from "@/utils/server/telemetry/trace"
 
-import { App, getAppByClientID } from "./app"
+import { getAppByClientID } from "./app"
+import { App } from "./app/types"
 import {
   createCodeGrant,
   AuthorizationCodeGrant,
@@ -10,18 +11,18 @@ import {
   CodeChallengeMethod,
   revokeGrant,
 } from "./grant"
-import { Scope } from "./scope"
+import { REQUIRED_SCOPE, Scope } from "./scope"
 import {
   createAccessToken,
   createRefreshToken,
-  verifyToken,
+  validateToken,
   AccessToken,
   RefreshToken,
   RefreshTokenPayload,
   parseToken,
   rotateRefreshToken,
 } from "./token"
-import { getUser, User } from "./user"
+import { authorizeApp, getUser, User } from "./user"
 
 export const isErrorCode = (value: unknown): value is ErrorCodes =>
   typeof value === "string" &&
@@ -93,7 +94,7 @@ export class AuthorizationServer {
           return ErrorCodes.UNSUPPORTED_RESPONSE_TYPE
         }
 
-        scope = scope ?? [Scope.EMAIL_READ]
+        scope = scope ?? REQUIRED_SCOPE
 
         if (!scope.every((s) => app.scope.includes(s))) {
           setError(ErrorCodes.INVALID_SCOPE)
@@ -112,6 +113,10 @@ export class AuthorizationServer {
           setError(ErrorCodes.INVALID_REQUEST)
           return ErrorCodes.INVALID_REQUEST
         }
+
+        // User has authorized app
+        await authorizeApp(user.id, app.id)
+
         return createCodeGrant(
           auth.clientID,
           user.id,
@@ -126,8 +131,8 @@ export class AuthorizationServer {
   }
 
   private async generateAccessRefreshTokenPair(
-    app: App,
-    user: User,
+    app: Pick<App, "client_id">,
+    user: Pick<User, "id">,
     scope: Scope[],
     previousJTI?: string
   ): Promise<[AccessToken, RefreshToken]> {
@@ -186,7 +191,7 @@ export class AuthorizationServer {
           setError(ErrorCodes.INVALID_CLIENT)
           return ErrorCodes.INVALID_CLIENT
         }
-        const user = await getUser(grant.userID)
+        const user = await getUser(grant.sub)
         if (!user) {
           setError(ErrorCodes.SERVER_ERROR)
           return ErrorCodes.SERVER_ERROR
@@ -220,8 +225,7 @@ export class AuthorizationServer {
         return this.generateAccessRefreshTokenPair(
           app,
           {
-            email: refreshToken.user.email,
-            id: refreshToken.user.id,
+            id: refreshToken.sub,
           },
           refreshToken.scope,
           refreshToken.jti
@@ -286,7 +290,9 @@ export class AuthorizationServer {
             RefreshToken,
             RefreshTokenPayload
           >(codeOrRefreshToken)
-          const isValid = await verifyToken(codeOrRefreshToken, "refresh_token")
+          const isValid = await validateToken(codeOrRefreshToken, {
+            type: "refresh_token",
+          })
 
           if (!guardRefreshTokenType(refreshToken, isValid)) {
             setError(ErrorCodes.INVALID_GRANT)

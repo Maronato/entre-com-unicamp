@@ -1,34 +1,23 @@
 import { FunctionComponent } from "react"
 
 import classNames from "classnames"
-import Image from "next/image"
 import Link from "next/link"
 
-import LogoDark from "@/public/logo/dark.png"
-import LogoLight from "@/public/logo/light.png"
+import Logo from "./Logo"
 
-const LogoTitle: FunctionComponent<{ large?: boolean }> = ({ large }) => {
+const LogoTitle: FunctionComponent<{ large?: boolean; hide?: boolean }> = ({
+  large,
+  hide,
+}) => {
   return (
     <Link href="/">
       <a className="flex flex-wrap items-center justify-center">
-        <div
-          className={classNames("h-min justify-center hidden dark:flex", {
-            "w-20 mx-4": large,
-            "w-12 mx-2": !large,
-          })}>
-          <Image src={LogoDark} alt="Logo" />
-        </div>
-        <div
-          className={classNames("h-min justify-center flex dark:hidden", {
-            "w-20 mx-4": large,
-            "w-12 mx-2": !large,
-          })}>
-          <Image src={LogoLight} alt="Logo" />
-        </div>
+        <Logo large={large} />
         <h2
           className={classNames(
             "text-center font-extrabold text-slate-900 dark:text-slate-100 tracking-tight",
-            { "text-3xl": large, "text-xl": !large }
+            { "text-3xl": large, "text-xl": !large },
+            { "hidden md:block": hide }
           )}>
           Entre com Unicamp!
         </h2>

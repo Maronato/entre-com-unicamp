@@ -1,9 +1,9 @@
-import { FunctionComponent } from "react"
+import { FunctionComponent, useState } from "react"
 
 import { GetServerSideProps, NextPage } from "next"
 
+import Avatar from "@/components/Avatar"
 import Layout from "@/components/Layout"
-import LogoTitle from "@/components/LogoTitle"
 import { UserFallback, UserProvicer } from "@/utils/browser/hooks/useUser"
 import { serverFetch } from "@/utils/server/auth"
 
@@ -12,9 +12,18 @@ type Props = {
 }
 
 const IndexPage: FunctionComponent = () => {
+  const [message, setMessage] = useState("I'm an icon")
+
   return (
     <div className="flex flex-col m-10 p-10 border border-black dark:border-white">
-      <LogoTitle />
+      <input
+        type="text"
+        className="max-w-md p-3 rounded mb-5 text-black"
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+      />
+
+      <Avatar name={message} className="w-64" />
     </div>
   )
 }

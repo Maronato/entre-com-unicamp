@@ -10,10 +10,11 @@ import { User } from "../user"
 export type CodeChallengeMethod = "plain" | "S256"
 
 type BaseGrantPayload = {
-  clientID: string
-  userID: string
   scope: Scope[]
+  type: "access_code"
   redirectURI: string
+  aud: string
+  sub: string
   state?: string
 }
 
@@ -75,16 +76,15 @@ export async function createCodeGrant(
     })
 
     const payload = {
-      clientID,
-      userID,
       scope,
       redirectURI,
       codeChallenge,
       codeChallengeMethod,
       state,
+      type: "access_code",
     } as GrantPayload
 
-    return await signJWT(payload, clientID, codeGrantTTL)
+    return await signJWT(payload, clientID, userID, codeGrantTTL)
   })
 }
 
@@ -141,12 +141,16 @@ export async function verifyCodeGrant(
 
     const payload = await verifyJWT<GrantPayload>(token, clientID)
 
-    if (!payload || (await isGrantRevoked(payload.jti))) {
+    if (
+      !payload ||
+      payload.type !== "access_code" ||
+      (await isGrantRevoked(payload.jti))
+    ) {
       setError("Invalid token")
       return null
     }
 
-    if (redirectURI !== payload.redirectURI || clientID !== payload.clientID) {
+    if (redirectURI !== payload.redirectURI || clientID !== payload.aud) {
       setError("Invalid redirectURI or clientID")
       return null
     }
