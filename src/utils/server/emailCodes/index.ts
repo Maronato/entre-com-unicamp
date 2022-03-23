@@ -1,7 +1,7 @@
 import { createRandomString } from "@/utils/common/random"
 
-import { getRedis } from "./redis"
-import { startActiveSpan } from "./telemetry/trace"
+import { getRedis } from "../redis"
+import { startActiveSpan } from "../telemetry/trace"
 
 const getEmailKey = (email: string) => `email-code-${email}`
 const codeExpire = 60 * 60

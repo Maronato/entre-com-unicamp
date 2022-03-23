@@ -1,11 +1,9 @@
 import { generateEmailCode } from "@/utils/server/emailCodes"
+import { sendEmailCode } from "@/utils/server/emailCodes/aws"
 import { handleRequest, withDefaultMiddleware } from "@/utils/server/middleware"
 import { respondInvalidRequest, respondOk } from "@/utils/server/serverUtils"
-import { getLogger } from "@/utils/server/telemetry/logs"
 
 import type { NextApiRequest, NextApiResponse } from "next"
-
-const logger = getLogger()
 
 type RequestData = {
   email: string
@@ -28,11 +26,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
   const code = await generateEmailCode(email)
 
-  await new Promise((r) =>
-    setTimeout(() => r(logger.info(`Sent code ${code} to ${email}`)), 1000)
-  )
+  const success = await sendEmailCode(email, code)
 
-  return respondOk(res, { success: true })
+  if (success) {
+    return respondOk(res)
+  }
+  return respondInvalidRequest(res, "Failed to send email code")
 }
 
 export default withDefaultMiddleware(handleRequest(handler), ["POST"])
