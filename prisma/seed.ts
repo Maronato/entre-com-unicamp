@@ -56,6 +56,7 @@ const createFirstApp = async (prisma: PrismaClient, user: User) => {
 const seedDatabase = async () => {
   const prisma = new PrismaClient()
   if (["1"].includes("1")) {
+    logger.info("Skipping initial db seed...")
     return
   }
   try {
