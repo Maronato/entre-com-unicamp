@@ -1,7 +1,11 @@
 import { randomBytes } from "crypto"
 
+export function createRandomBytes(size = 24) {
+  return randomBytes(size)
+}
+
 export function createRandomString(size = 24) {
-  return randomBytes(size).toString("hex")
+  return createRandomBytes(size).toString("hex")
 }
 
 export function createClientID() {

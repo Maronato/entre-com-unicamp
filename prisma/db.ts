@@ -10,9 +10,9 @@ const logger = getLogger()
 
 const scheduleDisconnect = (client?: PrismaClient) => {
   // Makes sure that connections are cleaned up temporarely
-  // 1h in prod and 30s in dev
+  // 30m in prod and 10s in dev
   const timeout =
-    process.env.NODE_ENV === "production" ? 1000 * 60 * 60 : 1000 * 30
+    process.env.NODE_ENV === "production" ? 1000 * 60 * 30 : 1000 * 10
 
   if (process.env.NODE_ENV !== "production") {
     if (timeoutID) {
@@ -34,3 +34,5 @@ export function getPrisma() {
   scheduleDisconnect()
   return client
 }
+
+logger.error("loaded file")

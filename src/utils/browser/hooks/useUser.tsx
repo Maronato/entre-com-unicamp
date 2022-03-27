@@ -35,9 +35,14 @@ export const useAuth = () => {
       return false
     }
   }
-  const login = async (email: string, code: string): Promise<boolean> => {
+  const login = async (
+    email: string,
+    code: string,
+    method: "totp" | "email" = "email"
+  ): Promise<boolean> => {
     try {
-      const { user } = await postFetch<{ user: SerializedUser }>("/api/login", {
+      const url = method === "email" ? "/api/login" : "/api/login/totp"
+      const { user } = await postFetch<{ user: SerializedUser }>(url, {
         email,
         code,
       })

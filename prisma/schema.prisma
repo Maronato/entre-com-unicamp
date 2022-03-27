@@ -33,6 +33,7 @@ model user {
   email           String                @unique
   name            String?
   avatar          String
+  totp_secret     String?
   apps            app[]
   authorized_apps user_authorized_app[]
 }

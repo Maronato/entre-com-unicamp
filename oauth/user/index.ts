@@ -4,10 +4,14 @@ import { getPrisma } from "@/prisma/db"
 import { generateIdenticon } from "@/utils/server/identicon"
 import { getLogger } from "@/utils/server/telemetry/logs"
 import { startActiveSpan } from "@/utils/server/telemetry/trace"
+import { verifyTOTP } from "@/utils/server/totp"
 
 import { App } from "../app/types"
 
-export type User = Pick<user, "id" | "email" | "avatar" | "name">
+export type User = Pick<
+  user,
+  "id" | "email" | "avatar" | "name" | "totp_secret"
+>
 type SerializedPrivateUserInfo = Record<string, never>
 export type SerializedUser<Private extends boolean = false> =
   (Private extends true ? SerializedPrivateUserInfo : Record<string, never>) & {
@@ -154,6 +158,66 @@ export async function getAuthorizedApps(userID: User["id"]) {
           },
         },
       })
+    }
+  )
+}
+
+export async function enableTOTP(userID: User["id"], secret: string) {
+  return startActiveSpan(
+    "enableTOTP",
+    { attributes: { user: userID } },
+    async () => {
+      const prisma = getPrisma()
+      return prisma.user.update({
+        where: { id: userID },
+        data: { totp_secret: secret },
+      })
+    }
+  )
+}
+
+export async function hasTOTP(userID: User["id"]): Promise<boolean>
+export async function hasTOTP(user: User): Promise<boolean>
+export async function hasTOTP(user: User | User["id"]) {
+  return startActiveSpan(
+    "hasTOTP",
+    { attributes: { user: typeof user === "string" ? user : user.id } },
+    async () => {
+      if (typeof user === "string") {
+        const prisma = getPrisma()
+        const found = await prisma.user.findUnique({ where: { id: user } })
+        if (!found) {
+          return false
+        }
+        user = found
+      }
+      return typeof user.totp_secret === "string"
+    }
+  )
+}
+
+export async function checkTOTP(
+  userID: User["id"],
+  code: string
+): Promise<boolean>
+export async function checkTOTP(user: User, code: string): Promise<boolean>
+export async function checkTOTP(user: User | User["id"], code: string) {
+  return startActiveSpan(
+    "checkTOTP",
+    { attributes: { user: typeof user === "string" ? user : user.id } },
+    async () => {
+      if (typeof user === "string") {
+        const prisma = getPrisma()
+        const found = await prisma.user.findUnique({ where: { id: user } })
+        if (!found) {
+          return false
+        }
+        user = found
+      }
+      if (typeof user.totp_secret !== "string") {
+        return false
+      }
+      return verifyTOTP(user.totp_secret, code)
     }
   )
 }

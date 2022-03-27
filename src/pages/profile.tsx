@@ -20,6 +20,7 @@ import { useRouter } from "next/router"
 import AuthorizedApps from "@/components/AuthorizedApps"
 import Developer from "@/components/Developer"
 import Layout from "@/components/Layout"
+import TOTPOnboarding from "@/components/TOTPOnboarding"
 import {
   key,
   UserFallback,
@@ -109,7 +110,7 @@ const ProfilePage: FunctionComponent = () => {
           </Tab.Panel>
           <Tab.Panel>
             <h2 className="text-4xl font-bold mb-5">Conta</h2>
-            Conta
+            <TOTPOnboarding />
           </Tab.Panel>
           <Tab.Panel>
             <h2 className="text-4xl font-bold mb-5">Desenvolvedor</h2>
