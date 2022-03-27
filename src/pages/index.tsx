@@ -178,17 +178,23 @@ const IndexPage: FunctionComponent = () => {
       ),
     },
     {
+      question: "Só confio vendo o código",
+      answer: () => (
+        <p>
+          Esse é o espírito! O código todo tá disponível no{` `}
+          <RegularLink href="https://github.com/Maronato/entre-com-unicamp">
+            Github
+          </RegularLink>
+        </p>
+      ),
+    },
+    {
       question: "Quem fez?",
       answer: () => (
         <p>
           Feito com<span className="mx-1">❤️</span> por{` `}
           <RegularLink href="https://github.com/Maronato">
             Gustavo Maronato
-          </RegularLink>
-          <br />
-          Código disponível no{` `}
-          <RegularLink href="https://github.com/Maronato/entre-com-unicamp">
-            Github
           </RegularLink>
         </p>
       ),
