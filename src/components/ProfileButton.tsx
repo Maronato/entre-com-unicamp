@@ -8,6 +8,7 @@ import { usePopper } from "react-popper"
 
 import { useAuth } from "@/utils/browser/hooks/useUser"
 
+import Avatar from "./Avatar"
 import Button from "./Button"
 
 const ProfileDropdown: FunctionComponent<{
@@ -57,14 +58,23 @@ const ProfileDropdown: FunctionComponent<{
 const LoggedInProfile: FunctionComponent = () => {
   const [toggleElement, setToggleElement] = useState<HTMLElement>()
 
+  const { user } = useAuth()
+
   return (
     <Popover>
       {({ open, close }) => (
         <>
           <Popover.Button
             ref={(r: HTMLButtonElement) => setToggleElement(r)}
-            className="p-3 flex flex-row items-center space-x-3">
-            <UserIcon className="w-5 h-5 md:w-6 md:h-6 text-current" />
+            className="px-3 py-1 flex flex-row items-center space-x-3">
+            {user?.email ? (
+              <span className="w-8 h-8">
+                {" "}
+                <Avatar name={user.email} />{" "}
+              </span>
+            ) : (
+              <UserIcon className="w-5 h-5 md:w-6 md:h-6 text-current" />
+            )}
 
             <ChevronDownIcon
               className={classNames("h-5 w-5 text-current", {
