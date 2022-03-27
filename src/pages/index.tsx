@@ -2,6 +2,7 @@ import { FunctionComponent, ReactNode } from "react"
 
 import { Disclosure } from "@headlessui/react"
 import { ChevronUpIcon } from "@heroicons/react/solid"
+import classNames from "classnames"
 import { GetServerSideProps, NextPage } from "next"
 
 import Button from "@/components/Button"
@@ -22,12 +23,14 @@ const FAQ: FunctionComponent<{ question: string }> = ({
   question,
   children,
 }) => (
-  <Disclosure
-    as="div"
-    className="flex flex-col text-left rounded-xl border border-gray-400 border-opacity-0 transition-all duration-200 hover:border-opacity-20">
+  <Disclosure>
     {({ open }) => (
-      <>
-        <Disclosure.Button className="p-4 text-xl font-bold tracking-tight flex flex-row justify-between items-center">
+      <div
+        className={classNames(
+          "flex flex-col text-left rounded-xl border border-gray-400 transition-all duration-200 hover:border-opacity-20",
+          { "border-opacity-0": !open, "border-opacity-20": open }
+        )}>
+        <Disclosure.Button className="p-4 text-lg lg:text-xl font-bold tracking-tight flex flex-row justify-between items-center">
           <span className="text-left">{question}</span>
           <ChevronUpIcon
             className={`${
@@ -38,7 +41,7 @@ const FAQ: FunctionComponent<{ question: string }> = ({
         <Disclosure.Panel className="px-4 pb-4 text-base text-gray-500 dark:text-gray-400 whitespace-pre-line">
           {children}
         </Disclosure.Panel>
-      </>
+      </div>
     )}
   </Disclosure>
 )
@@ -193,44 +196,47 @@ const IndexPage: FunctionComponent = () => {
   ]
 
   return (
-    <div className="flex flex-col my-32 divide-y dark:divide-gray-700">
+    <div className="flex flex-col mt-10 md:mt-20 xl:mt-32 mb-32 divide-y dark:divide-gray-700">
       <div className="flex flex-col">
         <div>
-          <h1 className="text-5xl font-extrabold text-gray-700 dark:text-gray-200 text-center tracking-tight relative">
-            Entre com Unicamp{" "}
-            <span className="text-sm font-medium tracking-normal absolute top-0">
-              (não oficial)
+          <h1 className="text-4xl lg:text-5xl font-extrabold text-gray-700 dark:text-gray-200 text-center tracking-tight relative leading-normal">
+            Entre com{" "}
+            <span className="relative">
+              Unicamp
+              <span className="absolute -top-2 -right-5 text-sm font-medium min-w-max">
+                não oficial
+              </span>
             </span>
           </h1>
-          <p className="text-2xl text-gray-500 dark:text-gray-400 text-center mt-10">
+          <p className="text-xl lg:text-2xl text-gray-500 dark:text-gray-400 text-center mt-5 lg:mt-10">
             Um provedor de OAuth2 para apps feitos por e para membros da{" "}
             <span className="text-secondary-600 dark:text-secondary-500 font-bold">
               Unicamp
             </span>
           </p>
         </div>
-        <div className="flex flex-col lg:flex-row mt-20 items-center w-full justify-between max-w-md mx-auto">
+        <div className="flex flex-col lg:flex-row mt-10 lg:mt-20 items-center w-full justify-between max-w-md mx-auto">
           <Button
             color="secondary"
             href="/login"
             large
-            className="mb-10 lg:mb-0">
+            className="mb-5 lg:mb-0">
             Entre
           </Button>
           <Button color="primary" outline href="/profile#developer" large>
             Registre um app novo
           </Button>
         </div>
-        <div className="mt-5 text-lg text-gray-500 dark:text-gray-400 text-center mb-20">
+        <div className="mt-5 text-base lg:text-lg text-gray-500 dark:text-gray-400 text-center mb-10 lg:mb-20">
           Esse <span className="underline">não</span> é um projeto oficial da
           Unicamp
         </div>
       </div>
       <div className="flex flex-col">
-        <h1 className="mt-20 text-3xl font-extrabold text-gray-700 dark:text-gray-200 text-center tracking-tight">
+        <h1 className="mt-10 lg:mt-20 text-2xl lg:text-3xl font-extrabold text-gray-700 dark:text-gray-200 text-center tracking-tight">
           Tem perguntas?
         </h1>
-        <section className="flex flex-col space-y-4 mx-auto mt-10 w-full max-w-screen-md">
+        <section className="flex flex-col space-y-2 lg:space-y-4 mx-auto mt-5 lg:mt-10 w-full max-w-screen-md">
           {faq.map((item) => (
             <FAQ key={item.question} question={item.question}>
               {item.answer}

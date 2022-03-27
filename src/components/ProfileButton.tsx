@@ -30,7 +30,7 @@ const ProfileDropdown: FunctionComponent<{
     <Popover.Panel
       ref={(r: HTMLDivElement) => setPopperElement(r)}
       style={styles.popper}
-      className="z-20"
+      className="z-20 mt-3"
       {...attributes.popper}>
       <div className="inline-flex items-center dark:bg-background-lightest bg-background-dark py-5 rounded-lg shadow-lg z-10 text-slate-200 dark:text-slate-500 text-md">
         <div className="flex flex-col text-left space-y-2 w-full">
@@ -66,7 +66,7 @@ const LoggedInProfile: FunctionComponent = () => {
         <>
           <Popover.Button
             ref={(r: HTMLButtonElement) => setToggleElement(r)}
-            className="px-3 py-1 flex flex-row items-center space-x-3">
+            className="pl-3 py-1 flex flex-row items-center space-x-3">
             {user?.email ? (
               <span className="w-8 h-8">
                 {" "}
