@@ -178,7 +178,7 @@ const IndexPage: FunctionComponent = () => {
       question: "Quem fez?",
       answer: () => (
         <p>
-          Feito com ❤️ por{` `}
+          Feito com<span className="mx-1">❤️</span> por{` `}
           <RegularLink href="https://github.com/Maronato">
             Gustavo Maronato
           </RegularLink>
@@ -196,8 +196,11 @@ const IndexPage: FunctionComponent = () => {
     <div className="flex flex-col my-32 divide-y dark:divide-gray-700">
       <div className="flex flex-col">
         <div>
-          <h1 className="text-5xl font-extrabold text-gray-700 dark:text-gray-200 text-center tracking-tight">
-            Entre com Unicamp (não oficial)
+          <h1 className="text-5xl font-extrabold text-gray-700 dark:text-gray-200 text-center tracking-tight relative">
+            Entre com Unicamp{" "}
+            <span className="text-sm font-medium tracking-normal absolute top-0">
+              (não oficial)
+            </span>
           </h1>
           <p className="text-2xl text-gray-500 dark:text-gray-400 text-center mt-10">
             Um provedor de OAuth2 para apps feitos por e para membros da{" "}
