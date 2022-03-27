@@ -40,13 +40,13 @@ const borderColorMap: Record<Color, string> = {
 }
 
 const textColorMap: Record<Color, string> = {
-  primary: "text-primary-300",
-  secondary: "text-secondary-300",
-  blue: "text-blue-300",
-  yellow: "text-yellow-300",
-  green: "text-green-300",
-  red: "text-red-300",
-  indigo: "text-indigo-300",
+  primary: "text-primary-400",
+  secondary: "text-secondary-400",
+  blue: "text-blue-400",
+  yellow: "text-yellow-400",
+  green: "text-green-400",
+  red: "text-red-400",
+  indigo: "text-indigo-400",
 }
 
 type ColorProps = {
@@ -88,6 +88,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   wide?: boolean
   href?: string
   outline?: boolean
+  large?: boolean
 }
 
 const Button: FC<ButtonProps> = ({
@@ -100,6 +101,7 @@ const Button: FC<ButtonProps> = ({
   wide,
   outline,
   href,
+  large,
   ...props
 }) => {
   const interactive = !disabled && !loading
@@ -113,7 +115,8 @@ const Button: FC<ButtonProps> = ({
       {...props}
       className={classnames(
         "focus:outline-none focus:ring-2 focus:ring-offset-2",
-        "inline-flex items-center px-4 py-2 font-semibold leading-6 text-sm rounded-md transition ease-in-out duration-150 group",
+        "inline-flex items-center font-semibold leading-6 rounded-md transition ease-in-out duration-150 group",
+        { "px-4 py-2 text-sm": !large, "px-8 py-4 text-lg": large },
         Object.values(colors).join(" "),
         { shadow: !outline },
         { border: outline },
