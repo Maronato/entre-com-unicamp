@@ -5,6 +5,7 @@ import { useRouter } from "next/router"
 
 import Layout from "@/components/Layout"
 import Login from "@/components/Login"
+import Window from "@/components/Window"
 import { useUser } from "@/utils/browser/hooks/useUser"
 import { serverFetch } from "@/utils/server/auth"
 
@@ -18,9 +19,9 @@ const LoginPage: FunctionComponent = () => {
     return null
   }
   return (
-    <div>
+    <Window className="mx-auto mt-20">
       <Login />
-    </div>
+    </Window>
   )
 }
 
