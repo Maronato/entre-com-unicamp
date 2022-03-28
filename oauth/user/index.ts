@@ -42,6 +42,24 @@ export async function createUser(
   })
 }
 
+export async function updateUser(
+  userID: User["id"],
+  data: Partial<Pick<User, "name" | "avatar">>
+): Promise<User> {
+  return startActiveSpan(
+    "updateUser",
+    { attributes: { userID, data: JSON.stringify(data) } },
+    async () => {
+      const prisma = getPrisma()
+      const user = await prisma.user.update({
+        where: { id: userID },
+        data: { name: data.name, avatar: data.avatar },
+      })
+      return user
+    }
+  )
+}
+
 export async function getFirstUser(): Promise<User | null> {
   return startActiveSpan("getFirstUser", async () => {
     const prisma = getPrisma()
@@ -71,6 +89,13 @@ export async function getUserByEmail(
       })
     }
   )
+}
+
+export async function deleteUser(userID: User["id"]) {
+  return startActiveSpan("deleteUser", { attributes: { userID } }, async () => {
+    const prisma = getPrisma()
+    return prisma.user.delete({ where: { id: userID } })
+  })
 }
 
 export async function authorizeApp(userID: User["id"], appID: App["id"]) {
