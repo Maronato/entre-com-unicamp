@@ -1,10 +1,8 @@
 import { FunctionComponent } from "react"
 
-import { InputHandler } from "@/utils/browser/hooks/useInput"
-
-const InputForm: FunctionComponent<{
+const TextareaForm: FunctionComponent<{
   value: string
-  onChange: InputHandler
+  onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void
   htmlFor: string
   placeholder?: string
   autoComplete?: string
@@ -16,8 +14,8 @@ const InputForm: FunctionComponent<{
         className="block font-medium text-gray-700 dark:text-gray-200 mb-3">
         {children}
       </label>
-      <input
-        type="text"
+      <textarea
+        rows={5}
         value={value}
         onChange={onChange}
         name={htmlFor}
@@ -30,4 +28,4 @@ const InputForm: FunctionComponent<{
   )
 }
 
-export default InputForm
+export default TextareaForm

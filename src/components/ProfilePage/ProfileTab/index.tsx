@@ -79,7 +79,7 @@ const ProfileTab: FunctionComponent = () => {
             setAvatarURL={(url) => updateFormData("avatar", url)}>
             Foto de perfil
           </AvatarForm>
-          <div className="flex flex-row justify-end">
+          <div className="flex flex-row justify-start">
             <Button
               color="primary"
               icon={SaveIcon}

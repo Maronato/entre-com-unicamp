@@ -11,9 +11,9 @@ import type { SerializedApp } from "@/oauth/app/types"
 
 import CopyValue from "./CopyValue"
 
-const AppList: FunctionComponent<{ select: (id: string) => unknown }> = ({
-  select,
-}) => {
+const AppList: FunctionComponent<{
+  select: (app: SerializedApp) => unknown
+}> = ({ select }) => {
   const { data, error } = useSWR(`/api/apps`, (url) =>
     getFetch<SerializedApp<false>[]>(url)
   )
@@ -45,10 +45,7 @@ const AppList: FunctionComponent<{ select: (id: string) => unknown }> = ({
   return (
     <ul role="list" className="divide-y divide-black/20 dark:divide-white/20">
       {data.map((app) => (
-        <AppItem
-          key={app.client_id}
-          app={app}
-          onClick={() => select(app.client_id)}>
+        <AppItem key={app.client_id} app={app} onClick={() => select(app)}>
           <span className="min-w-max mr-2 text-sm text-slate-400">
             Client ID:{" "}
           </span>

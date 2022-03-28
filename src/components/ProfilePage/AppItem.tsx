@@ -16,15 +16,15 @@ const AppItem: FunctionComponent<{
 }> = ({ app, onClick, children }) => {
   return (
     <AppItemWrapper>
-      <div className="w-full p-4 grid grid-cols-12 items-center justify-start rounded transition duration-200 border border-opacity-0 dark:border-opacity-0 border-black dark:border-white hover:border-opacity-20 hover:dark:border-opacity-20">
+      <div className="py-4 px-2 w-full flex flex-row items-center justify-start rounded transition duration-200 border border-opacity-0 dark:border-opacity-0 border-black dark:border-white hover:border-opacity-20 hover:dark:border-opacity-20">
         <div
-          className={classNames("col-span-3 sm:col-span-2", {
+          className={classNames("mr-2 aspect-square w-20", {
             "cursor-pointer": onClick,
           })}
           onClick={onClick}>
-          <Avatar className="mx-auto w-12" name={app.name} src={app.logo} />
+          <Avatar name={app.name} src={app.logo} />
         </div>
-        <div className="flex flex-col overflow-hidden col-span-9 sm:col-span-10">
+        <div className="flex flex-col overflow-hidden">
           <div
             className={classNames("text-xl font-bold mb-2 truncate text-left", {
               "cursor-pointer": onClick,

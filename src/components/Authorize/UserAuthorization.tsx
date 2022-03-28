@@ -172,7 +172,7 @@ const UserAuthorization: FunctionComponent<
       <div className="text-xs mb-4">
         <span className="font-bold">{app.name}</span>
         {`, por `}
-        <span className="font-bold">{app.owner.email}</span>
+        <span className="font-bold">{app.owner.name || app.owner.email}</span>
         {`, está pedindo permissão para:`}
       </div>
       <div className="mb-3 flex flex-col space-y-4 border-b pb-7 dark:border-slate-600">

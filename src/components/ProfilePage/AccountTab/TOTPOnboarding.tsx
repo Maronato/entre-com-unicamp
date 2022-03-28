@@ -1,6 +1,6 @@
 import { FormEventHandler, FunctionComponent, useEffect, useState } from "react"
 
-import { CheckCircleIcon } from "@heroicons/react/outline"
+import { ShieldCheckIcon } from "@heroicons/react/outline"
 import QRCode from "react-qr-code"
 import useSWR from "swr"
 
@@ -22,6 +22,7 @@ const TOTPOnboarding: FunctionComponent = () => {
   const [loading, setLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string>()
   const [secret, setSecret] = useState("")
+  const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     setSecret(generateSecret())
@@ -46,7 +47,7 @@ const TOTPOnboarding: FunctionComponent = () => {
   if (data.totpEnabled) {
     return (
       <div className="font-bold flex flex-row items-center">
-        <CheckCircleIcon className="h-6 w-6 text-green-500 mr-2" /> Habilitado
+        <ShieldCheckIcon className="h-6 w-6 text-green-500 mr-2" /> Habilitado
         com sucesso!
       </div>
     )
@@ -73,6 +74,17 @@ const TOTPOnboarding: FunctionComponent = () => {
 
   const url = getSecretURL(user.email, secret)
 
+  if (!loaded) {
+    return (
+      <Button
+        color="primary"
+        onClick={() => setLoaded(true)}
+        icon={ShieldCheckIcon}>
+        Habilitar
+      </Button>
+    )
+  }
+
   return (
     <form onSubmit={enableTOTP}>
       <p className="mb-5">
@@ -86,7 +98,7 @@ const TOTPOnboarding: FunctionComponent = () => {
       <p className="mb-5 mt-10">
         2. Cole um dos códigos gerados no gerador abaixo para habilitar
       </p>
-      <div className="w-52 mx-auto flex flex-row space-x-4">
+      <div className="w-56 mx-auto flex flex-row space-x-4 items-end">
         <InputForm
           htmlFor="one-time-code"
           onChange={(e) => setCode(e.target.value)}
@@ -97,6 +109,7 @@ const TOTPOnboarding: FunctionComponent = () => {
         <Button
           color="primary"
           type="submit"
+          icon={ShieldCheckIcon}
           loading={loading}
           disabled={code.length !== 6}>
           Habilitar

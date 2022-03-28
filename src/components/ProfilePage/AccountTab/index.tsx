@@ -1,6 +1,4 @@
-import { FunctionComponent, useState } from "react"
-
-import Button from "@/components/Button"
+import { FunctionComponent } from "react"
 
 import TabFrame from "../TabFrame"
 
@@ -8,8 +6,6 @@ import DeleteAccount from "./DeleteAccount"
 import TOTPOnboarding from "./TOTPOnboarding"
 
 const AccountTab: FunctionComponent = () => {
-  const [enableTOTP, setEnableTOTP] = useState(false)
-
   return (
     <TabFrame title="Conta" description="Alterar dados da conta">
       <div className="flex flex-col space-y-8">
@@ -23,13 +19,8 @@ const AccountTab: FunctionComponent = () => {
             Permite que você entre na sua conta usando um gerador de códigos
             temporários como o Google Authenticator.
           </p>
-          {enableTOTP ? (
-            <TOTPOnboarding />
-          ) : (
-            <Button color="blue" onClick={() => setEnableTOTP(true)}>
-              Ativar
-            </Button>
-          )}
+
+          <TOTPOnboarding />
         </div>
         <DeleteAccount />
       </div>

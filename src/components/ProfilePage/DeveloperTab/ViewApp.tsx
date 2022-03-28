@@ -1,19 +1,119 @@
-import { FormEvent, FunctionComponent, useEffect, useState } from "react"
+import {
+  FormEvent,
+  FormEventHandler,
+  FunctionComponent,
+  useEffect,
+  useState,
+} from "react"
 
-import { Switch } from "@headlessui/react"
-import classNames from "classnames"
+import { SaveIcon, TrashIcon } from "@heroicons/react/outline"
 import useSWR from "swr"
 
 import AvatarForm from "@/components/Forms/AvatarForm"
+import InputForm from "@/components/Forms/InputForm"
+import SwitchForm from "@/components/Forms/SwitchForm"
+import TextareaForm from "@/components/Forms/TextareaForm"
 import { AppType, SerializedApp } from "@/oauth/app/types"
 import { getScopeDescription } from "@/oauth/scope"
-import { getFetch, patchFetch } from "@/utils/browser/fetch"
+import { deleteFetch, getFetch, patchFetch } from "@/utils/browser/fetch"
+import { isURL } from "@/utils/common/misc"
 
 import Button from "../../Button"
 
 import CopyValue from "./CopyValue"
 
-const ViewApp: FunctionComponent<{ clientID: string }> = ({ clientID }) => {
+const DeleteForm: FunctionComponent<{
+  app: SerializedApp<true>
+  onDelete: () => void
+}> = ({ app, onDelete }) => {
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [confirmName, setConfirmName] = useState("")
+
+  const canDelete = app.name === confirmName
+
+  const deleteApp: FormEventHandler = async (e) => {
+    e.preventDefault()
+    if (loading) {
+      return
+    }
+    setLoading(true)
+    try {
+      await deleteFetch(`/api/apps/${app.client_id}`)
+      onDelete()
+    } catch (e) {
+      console.error(e)
+      setLoading(false)
+    }
+  }
+
+  return (
+    <>
+      {isDeleting || (
+        <>
+          <Button
+            type="button"
+            outline
+            wide
+            className="lg:hidden"
+            color="red"
+            onClick={() => setIsDeleting(true)}
+            icon={TrashIcon}>
+            Apagar app
+          </Button>
+          <Button
+            type="button"
+            outline
+            className="hidden lg:flex"
+            color="red"
+            onClick={() => setIsDeleting(true)}
+            icon={TrashIcon}>
+            Apagar app
+          </Button>
+        </>
+      )}
+      {isDeleting && (
+        <form
+          onSubmit={deleteApp}
+          className="flex flex-col max-w-xs space-y-4 items-center lg:items-end w-full">
+          <InputForm
+            htmlFor="app-name"
+            onChange={(e) => setConfirmName(e.target.value)}
+            placeholder={app.name}
+            value={confirmName}>
+            Confirme o nome do app
+          </InputForm>
+          <Button
+            type="submit"
+            color="red"
+            wide
+            className="lg:hidden"
+            onClick={deleteApp}
+            disabled={!canDelete}
+            loading={loading}
+            icon={TrashIcon}>
+            Confirmar e apagar
+          </Button>
+          <Button
+            type="submit"
+            color="red"
+            className="hidden lg:flex"
+            onClick={deleteApp}
+            disabled={!canDelete}
+            loading={loading}
+            icon={TrashIcon}>
+            Confirmar e apagar
+          </Button>
+        </form>
+      )}
+    </>
+  )
+}
+
+const ViewApp: FunctionComponent<{ clientID: string; goBack: () => void }> = ({
+  clientID,
+  goBack,
+}) => {
   const { data, error, mutate } = useSWR(`/api/apps/${clientID}`, (url) =>
     getFetch<SerializedApp<true>>(url)
   )
@@ -40,8 +140,6 @@ const ViewApp: FunctionComponent<{ clientID: string }> = ({ clientID }) => {
     return <div className="">Loading</div>
   }
 
-  const isPublic = formData.type === AppType.PUBLIC
-
   const save = async (e: FormEvent) => {
     e.preventDefault()
     if (loading) {
@@ -67,74 +165,132 @@ const ViewApp: FunctionComponent<{ clientID: string }> = ({ clientID }) => {
     setLoading(false)
   }
 
+  const isValid =
+    formData.redirect_uris &&
+    formData.redirect_uris.length > 0 &&
+    formData.redirect_uris.every(isURL)
+
   return (
     <form onSubmit={save}>
-      <div className="flex flex-col space-y-5">
-        <div className="text-4xl font-bold">{data.name}</div>
+      <div className="flex flex-col space-y-8">
+        <div>
+          <h3 className="text-gray-600 dark:text-gray-300 text-xl font-bold">
+            Credenciais e escopo de acesso
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400">
+            Essas são as credenciais que você usará para autenticar seus
+            usuários no Entre com Unicamp.
+          </p>
+        </div>
+        <div className="flex flex-col space-y-4">
+          <div>
+            <p className="block font-medium text-gray-700 dark:text-gray-200 mb-3">
+              Client ID
+            </p>
+            <CopyValue value={data.client_id} />
+          </div>
+          <div>
+            <p className="block font-medium text-gray-700 dark:text-gray-200 mb-3">
+              Client secret
+            </p>
+            <CopyValue value={data.client_secret} secret />
+          </div>
+        </div>
+        <hr className="border-gray-300 dark:border-gray-600" />
+        <div>
+          <h3 className="text-gray-600 dark:text-gray-300 text-xl font-bold">
+            Permissões (ou scope)
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400">
+            Essas são as permissões que seu app poderá pedir para seus usuários.
+            <br />
+            As permissões marcadas com <span className="text-red-500">
+              *
+            </span>{" "}
+            sempre são aprovadas.
+          </p>
+          <div className="mt-4">
+            <ul className="list-disc list-inside space-y-4">
+              {data.scope.map((s) => (
+                <li key={s} className="list-item">
+                  <span className="font-mono text-gray-200 bg-gray-700 px-1 py-1 rounded mr-3">
+                    {s}
+                  </span>
+                  {getScopeDescription(s)}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+        <hr className="border-gray-300 dark:border-gray-600" />
+        <div>
+          <h3 className="text-gray-600 dark:text-gray-300 text-xl font-bold">
+            Informações e configurações
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400">
+            As configurações de OAuth2 e outros dados do app
+          </p>
+        </div>
         <AvatarForm
           identiconSource={formData.name || ""}
           setAvatarURL={(url) => updateFormData("logo", url)}
           avatarURL={formData.logo}>
-          Logo do App
+          Logo
         </AvatarForm>
-        <Switch.Group>
-          <div className="flex items-center">
-            <Switch
-              checked={isPublic}
-              onChange={(e) =>
-                updateFormData(
-                  "type",
-                  e ? AppType.PUBLIC : AppType.CONFIDENTIAL
-                )
-              }
-              className={classNames(
-                "relative inline-flex flex-shrink-0 h-6 w-10 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus-visible:ring-2  focus-visible:ring-white focus-visible:ring-opacity-75 shadow",
-                {
-                  "bg-primary dark:bg-primary-500": isPublic,
-                  "bg-teal-700": !isPublic,
-                }
-              )}>
-              <span
-                aria-hidden="true"
-                className={classNames(
-                  {
-                    "translate-x-4": isPublic,
-                    "translate-x-0": !isPublic,
-                  },
-                  "pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-lg transform ring-0 transition ease-in-out duration-200"
-                )}
-              />
-            </Switch>
-            <Switch.Label className={classNames("ml-4 relative")}>
-              {isPublic ? "Público" : "Confidencial"}
-            </Switch.Label>
-          </div>
-        </Switch.Group>
         <div>
-          Client ID: <CopyValue value={data.client_id} />
+          <TextareaForm
+            htmlFor="redirect_uris"
+            onChange={(e) =>
+              updateFormData(
+                "redirect_uris",
+                e.target.value.split("\n").map((url) => url.trim())
+              )
+            }
+            value={formData.redirect_uris?.join("\n") || ""}
+            placeholder="https://meuapp.com/callback"
+            autoComplete="none">
+            URLs de redirecionamento (uma por linha)
+          </TextareaForm>
         </div>
-        <div>
-          Client secret: <CopyValue value={data.client_secret} secret />
-        </div>
-        <textarea
-          value={formData.redirect_uris?.join("\n")}
-          onChange={(e) =>
-            updateFormData("redirect_uris", e.target.value.split("\n"))
-          }
-          className=""
-        />
 
         <div>
-          {`Scope: `}{" "}
-          <ul>
-            {data.scope.map((s) => (
-              <li key={s}>{getScopeDescription(s)}</li>
-            ))}
-          </ul>
+          <p className="block font-medium text-gray-700 dark:text-gray-200 mb-3">
+            Tipo de App
+          </p>
+          <SwitchForm
+            checked={formData.type === AppType.PUBLIC}
+            onChange={(e) =>
+              updateFormData("type", e ? AppType.PUBLIC : AppType.CONFIDENTIAL)
+            }>
+            {formData.type === AppType.PUBLIC ? "Público" : "Confidencial"}
+          </SwitchForm>
         </div>
-        <Button type="submit" color="primary" wide loading={loading}>
-          Salvar
-        </Button>
+
+        <hr className="border-gray-300 dark:border-gray-600" />
+        <div className="flex flex-col justify-between items-start lg:flex-row">
+          <div className="w-full lg:w-max">
+            <Button
+              type="submit"
+              wide
+              className="lg:hidden mb-5 lg:mb-0"
+              color="primary"
+              icon={SaveIcon}
+              loading={loading}
+              disabled={!isValid}>
+              Salvar
+            </Button>
+            <Button
+              type="submit"
+              className="hidden lg:flex"
+              color="primary"
+              icon={SaveIcon}
+              loading={loading}
+              disabled={!isValid}>
+              Salvar
+            </Button>
+          </div>
+          <DeleteForm app={data} onDelete={goBack} />
+        </div>
       </div>
     </form>
   )

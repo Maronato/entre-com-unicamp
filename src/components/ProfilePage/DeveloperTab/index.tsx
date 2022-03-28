@@ -2,6 +2,8 @@ import { FunctionComponent, useState } from "react"
 
 import { ArrowLeftIcon, PlusIcon } from "@heroicons/react/outline"
 
+import { SerializedApp } from "@/oauth/app/types"
+
 import Button from "../../Button"
 import TabFrame from "../TabFrame"
 
@@ -13,10 +15,10 @@ type Screen = "list" | "create" | "view"
 
 const Developer: FunctionComponent = () => {
   const [screen, setScreen] = useState<Screen>("list")
-  const [clientID, setClientID] = useState<string>()
+  const [app, setApp] = useState<SerializedApp<false>>()
 
-  const updateClientID = (id: string) => {
-    setClientID(id)
+  const updateApp = (app: SerializedApp<false>) => {
+    setApp(app)
     setScreen("view")
   }
 
@@ -33,7 +35,7 @@ const Developer: FunctionComponent = () => {
             Novo app
           </Button>
         </div>
-        <AppList select={updateClientID} />
+        <AppList select={updateApp} />
       </div>
     )
   }
@@ -51,16 +53,16 @@ const Developer: FunctionComponent = () => {
             Voltar
           </Button>
         </div>
-        <CreateApp onCreate={updateClientID} />
+        <CreateApp onCreate={updateApp} />
       </div>
     )
   }
 
-  if (screen === "view" && clientID) {
+  if (screen === "view" && app) {
     return (
       <div className="pt-4">
         <div className="flex flex-row justify-between items-center mb-10">
-          <div className="text-2xl font-medium">Detalhes do app</div>
+          <div className="text-2xl font-medium">{app.name}</div>
           <Button
             color="indigo"
             outline
@@ -69,7 +71,7 @@ const Developer: FunctionComponent = () => {
             Voltar
           </Button>
         </div>
-        <ViewApp clientID={clientID} />
+        <ViewApp clientID={app.client_id} goBack={() => setScreen("list")} />
       </div>
     )
   }
@@ -81,7 +83,7 @@ const DeveloperTab: FunctionComponent = () => {
   return (
     <TabFrame
       title="Desenvolvedor"
-      description="Precisa de ajuda? Dá uma lida na documentação">
+      description="Crie apps para membros da Unicamp">
       <Developer />
     </TabFrame>
   )
