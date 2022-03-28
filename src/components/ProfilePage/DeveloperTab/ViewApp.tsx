@@ -8,7 +8,7 @@ import { AppType, SerializedApp } from "@/oauth/app/types"
 import { getScopeDescription } from "@/oauth/scope"
 import { getFetch, patchFetch } from "@/utils/browser/fetch"
 
-import Button from "../Button"
+import Button from "../../Button"
 
 import CopyValue from "./CopyValue"
 

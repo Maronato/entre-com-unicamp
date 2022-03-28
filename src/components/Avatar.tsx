@@ -2,6 +2,7 @@
 import { FunctionComponent, useState, useEffect } from "react"
 
 import classNames from "classnames"
+import Image from "next/image"
 
 import { ReactIdenticon } from "@/utils/browser/identicon"
 
@@ -35,10 +36,10 @@ const Avatar: FunctionComponent<{
   return (
     <div
       className={classNames(
-        "overflow-hidden rounded-full aspect-square",
+        "overflow-hidden rounded-full aspect-square relative",
         className
       )}>
-      {src && <img src={src} />}
+      {src && <Image src={src} layout="fill" objectFit="cover" />}
       {Icon && <Icon />}
     </div>
   )

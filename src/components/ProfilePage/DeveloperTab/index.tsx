@@ -2,7 +2,8 @@ import { FunctionComponent, useState } from "react"
 
 import { ArrowLeftIcon, PlusIcon } from "@heroicons/react/outline"
 
-import Button from "../Button"
+import Button from "../../Button"
+import TabFrame from "../TabFrame"
 
 import AppList from "./AppList"
 import CreateApp from "./CreateApp"
@@ -76,4 +77,14 @@ const Developer: FunctionComponent = () => {
   return <div>Invalid component state</div>
 }
 
-export default Developer
+const DeveloperTab: FunctionComponent = () => {
+  return (
+    <TabFrame
+      title="Desenvolvedor"
+      description="Precisa de ajuda? Dá uma lida na documentação">
+      <Developer />
+    </TabFrame>
+  )
+}
+
+export default DeveloperTab
