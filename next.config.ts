@@ -5,7 +5,7 @@ const config: NextConfig = {
   productionBrowserSourceMaps: true,
   swcMinify: true,
   images: {
-    domains: ["tailwindui.com"],
+    domains: ["i.imgur.com"],
   },
   rewrites: async () => [
     {

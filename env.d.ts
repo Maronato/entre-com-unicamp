@@ -6,5 +6,6 @@ declare namespace NodeJS {
     JAEGER_ENDPOINT?: string
     AWS_API_KEY?: string
     AWS_API_ENDPOINT?: string
+    NEXT_PUBLIC_IMGUR_CLIENT_ID?: string
   }
 }
