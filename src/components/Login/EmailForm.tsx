@@ -1,7 +1,9 @@
 import { FC } from "react"
 
-import { AcademicCapIcon } from "@heroicons/react/outline"
-import { PaperAirplaneIcon } from "@heroicons/react/solid"
+import {
+  AcademicCapIcon,
+  ChevronDoubleRightIcon,
+} from "@heroicons/react/outline"
 
 import { InputHandler } from "@/utils/browser/hooks/useInput"
 
@@ -44,7 +46,7 @@ const EmailForm: FC<{
         <Button
           type="submit"
           color="primary"
-          icon={PaperAirplaneIcon}
+          icon={ChevronDoubleRightIcon}
           wide
           loading={loading}>
           {loading ? "Enviando código..." : "Seguinte"}
