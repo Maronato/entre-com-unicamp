@@ -41,4 +41,5 @@ yarn-error.log*
 .env
 
 next.config.mjs
+next.config.mjs
 server/index.js
