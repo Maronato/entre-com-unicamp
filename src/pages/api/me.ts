@@ -38,14 +38,14 @@ const handlePATCH: NextApiHandler = async (req, res) => {
 
   const { name, avatar } = req.body as Partial<Pick<User, "name" | "avatar">>
 
-  const updated = await updateUser(user.id, { name, avatar })
+  const updated = await updateUser(user, { name, avatar })
 
   return respondOk(res, serializeUser(updated))
 }
 
 const handleDelete: NextApiHandler = async (req, res) => {
   const user = getRequestUser(req)
-  await deleteUser(user.id)
+  await deleteUser(user)
   return respondNoContent(res)
 }
 

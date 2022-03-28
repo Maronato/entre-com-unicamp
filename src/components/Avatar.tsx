@@ -39,7 +39,9 @@ const Avatar: FunctionComponent<{
         "overflow-hidden rounded-full aspect-square relative",
         className
       )}>
-      {src && <Image src={src} layout="fill" objectFit="cover" />}
+      {src && (
+        <Image src={src} layout="fill" objectFit="cover" unoptimized={true} />
+      )}
       {Icon && <Icon />}
     </div>
   )

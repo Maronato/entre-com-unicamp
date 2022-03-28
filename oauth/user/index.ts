@@ -2,6 +2,10 @@ import { user } from "@prisma/client"
 
 import { getPrisma } from "@/prisma/db"
 import { generateIdenticon } from "@/utils/server/identicon"
+import {
+  deleteCurrentAvatar,
+  promoteTempAvatarToCurrent,
+} from "@/utils/server/s3"
 import { getLogger } from "@/utils/server/telemetry/logs"
 import { startActiveSpan } from "@/utils/server/telemetry/trace"
 import { verifyTOTP } from "@/utils/server/totp"
@@ -43,19 +47,31 @@ export async function createUser(
 }
 
 export async function updateUser(
-  userID: User["id"],
+  user: User,
   data: Partial<Pick<User, "name" | "avatar">>
 ): Promise<User> {
   return startActiveSpan(
     "updateUser",
-    { attributes: { userID, data: JSON.stringify(data) } },
+    { attributes: { userID: user.id, data: JSON.stringify(data) } },
     async () => {
       const prisma = getPrisma()
-      const user = await prisma.user.update({
-        where: { id: userID },
+
+      if (data.avatar) {
+        const newAvatar = await promoteTempAvatarToCurrent(
+          user.id,
+          data.avatar,
+          user.avatar
+        )
+        if (newAvatar) {
+          data.avatar = newAvatar
+        }
+      }
+
+      const updatedUser = await prisma.user.update({
+        where: { id: user.id },
         data: { name: data.name, avatar: data.avatar },
       })
-      return user
+      return updatedUser
     }
   )
 }
@@ -91,11 +107,16 @@ export async function getUserByEmail(
   )
 }
 
-export async function deleteUser(userID: User["id"]) {
-  return startActiveSpan("deleteUser", { attributes: { userID } }, async () => {
-    const prisma = getPrisma()
-    return prisma.user.delete({ where: { id: userID } })
-  })
+export async function deleteUser(user: User) {
+  return startActiveSpan(
+    "deleteUser",
+    { attributes: { userID: user.id } },
+    async () => {
+      const prisma = getPrisma()
+      await prisma.user.delete({ where: { id: user.id } })
+      await deleteCurrentAvatar(user.avatar)
+    }
+  )
 }
 
 export async function authorizeApp(userID: User["id"], appID: App["id"]) {

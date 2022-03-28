@@ -5,7 +5,7 @@ const config: NextConfig = {
   productionBrowserSourceMaps: true,
   swcMinify: true,
   images: {
-    domains: ["i.imgur.com"],
+    domains: ["cdn.entre-com-unicamp.com"],
   },
   rewrites: async () => [
     {

@@ -7,9 +7,10 @@ import Avatar from "@/components/Avatar"
 import Button from "@/components/Button"
 import InputForm from "@/components/Forms/InputForm"
 import { SerializedUser } from "@/oauth/user"
-import { patchFetch } from "@/utils/browser/fetch"
+import { RequestData, ResponseData } from "@/pages/api/avatar"
+import { uploadFile } from "@/utils/browser/avatar"
+import { patchFetch, postFetch } from "@/utils/browser/fetch"
 import { useUser } from "@/utils/browser/hooks/useUser"
-import { uploadFile } from "@/utils/browser/imgur"
 import { generateIdenticon } from "@/utils/server/identicon"
 
 import TabFrame from "../TabFrame"
@@ -50,11 +51,8 @@ const ProfileTab: FunctionComponent = () => {
       if (formData.avatar !== user?.avatar) {
         payload.avatar = formData.avatar
       }
-      const response = await patchFetch<SerializedUser<false>>(
-        "/api/me",
-        payload
-      )
-      mutate(response)
+      await patchFetch<SerializedUser<false>>("/api/me", payload)
+      mutate()
     } catch (e) {
       console.error(e)
     }
@@ -64,10 +62,23 @@ const ProfileTab: FunctionComponent = () => {
   const uploadAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setUploadingAvatar(true)
     setUploadAvatarButtonText("Carregando...")
-    const file = e.target.files?.[0]
-    if (file) {
-      const url = await uploadFile(file)
-      updateFormData("avatar", url)
+    try {
+      const signedURLPayload: RequestData = {
+        operation: "getUploadURL",
+      }
+      const { url: uploadURL, nonce } = await postFetch<ResponseData>(
+        "/api/avatar",
+        signedURLPayload
+      )
+
+      const file = e.target.files?.[0]
+      if (file) {
+        const url = await uploadFile(uploadURL, user?.id || "", nonce, file)
+        updateFormData("avatar", url)
+        mutate()
+      }
+    } catch (e) {
+      console.error(e)
     }
     setUploadingAvatar(false)
     setUploadAvatarButtonText("Alterar foto")
@@ -110,7 +121,7 @@ const ProfileTab: FunctionComponent = () => {
                 <Avatar
                   className="w-20 h-20 lg:w-32 lg:h-32"
                   name={user.email}
-                  src={formData.avatar}
+                  src={`${formData.avatar}#${new Date().getTime()}`}
                 />
               </div>
               <div className="flex flex-col space-y-2 ml-4">
