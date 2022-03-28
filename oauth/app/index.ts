@@ -1,6 +1,10 @@
 import { getPrisma } from "@/prisma/db"
 import { SSRIdenticon } from "@/utils/browser/identicon/ssr"
 import { createClientID, createClientSecret } from "@/utils/common/random"
+import {
+  deleteCurrentAvatar,
+  promoteTempAvatarToCurrent,
+} from "@/utils/server/s3"
 import { startActiveSpan } from "@/utils/server/telemetry/trace"
 
 import { REQUIRED_SCOPE, Scope } from "../scope"
@@ -27,7 +31,7 @@ export function createApp(
         logo = new SSRIdenticon(name).render().toBase64()
       }
 
-      const app = await prisma.app.create({
+      let app = await prisma.app.create({
         data: {
           client_id,
           client_secret,
@@ -39,6 +43,17 @@ export function createApp(
           scope,
         },
       })
+
+      if (logo) {
+        const newLogo = await promoteTempAvatarToCurrent(app.id, logo)
+        if (newLogo) {
+          app = await prisma.app.update({
+            where: { id: app.id },
+            data: { logo: newLogo },
+          })
+        }
+      }
+
       return app
     }
   )
@@ -95,32 +110,42 @@ export function getUserApps(owner: User["id"]) {
 }
 
 export function updateApp(
-  appID: App["id"],
+  app: App,
   update: Partial<
     Pick<App, "name" | "redirect_uris" | "scope" | "type" | "logo">
   >
 ) {
   return startActiveSpan(
     "updateApp",
-    { attributes: { appID: appID, ...update } },
+    { attributes: { appID: app.id, ...update } },
     async () => {
       const prisma = getPrisma()
-      if ("name" in update && update.name) {
+      if (update.logo) {
+        const newLogo = await promoteTempAvatarToCurrent(
+          app.id,
+          update.logo,
+          app.logo
+        )
+        if (newLogo) {
+          update.logo = newLogo
+        }
+      } else if ("name" in update && update.name) {
         update.logo = new SSRIdenticon(update.name).render().toBase64()
       }
 
-      return prisma.app.update({ data: { ...update }, where: { id: appID } })
+      return prisma.app.update({ data: { ...update }, where: { id: app.id } })
     }
   )
 }
 
-export function deleteApp(appID: App["id"]) {
+export function deleteApp(app: App) {
   return startActiveSpan(
     "deleteApp",
-    { attributes: { appID: appID } },
+    { attributes: { appID: app.id } },
     async () => {
       const prisma = getPrisma()
-      return prisma.app.delete({ where: { id: appID } })
+      await prisma.app.delete({ where: { id: app.id } })
+      await deleteCurrentAvatar(app.logo)
     }
   )
 }

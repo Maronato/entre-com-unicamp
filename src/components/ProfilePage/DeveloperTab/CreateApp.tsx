@@ -1,29 +1,32 @@
 import { FormEvent, FunctionComponent, useState } from "react"
 
+import AvatarForm from "@/components/Forms/AvatarForm"
+import { AppType, SerializedApp } from "@/oauth/app/types"
 import { postFetch } from "@/utils/browser/fetch"
-import { generateIdenticon } from "@/utils/server/identicon"
 
 import Button from "../../Button"
 
-import type { AppType } from "@/oauth/app/types"
 import type { CreateRequestData, CreateResponseData } from "@/pages/api/apps"
 
 const CreateApp: FunctionComponent<{
   onCreate: (clientID: string) => void
 }> = ({ onCreate }) => {
-  const [name, setName] = useState("")
-  const [redirect_uris, setRedirectURIs] = useState<string[]>([])
-  const [type, setType] = useState<AppType>("public" as AppType)
+  const [formData, setFormData] = useState<Partial<SerializedApp<true>>>({})
+
+  const updateFormData = <T extends keyof SerializedApp<true>>(
+    field: T,
+    data: SerializedApp<true>[T]
+  ) => setFormData((prev) => ({ ...prev, [field]: data }))
   const [creating, setCreating] = useState(false)
 
   const create = async (e: FormEvent) => {
     e.preventDefault()
     setCreating(true)
     const payload: CreateRequestData = {
-      name,
-      logo: generateIdenticon(name),
-      type,
-      redirect_uris,
+      name: formData.name || "",
+      logo: formData.logo || "",
+      type: formData.type || AppType.PUBLIC,
+      redirect_uris: formData.redirect_uris || [],
     }
     try {
       const app = await postFetch<CreateResponseData>("/api/apps", payload)
@@ -40,18 +43,26 @@ const CreateApp: FunctionComponent<{
   return (
     <form onSubmit={create}>
       <input
-        value={name}
-        onChange={(e) => setName(e.target.value)}
+        value={formData.name}
+        onChange={(e) => updateFormData("name", e.target.value)}
         placeholder="App name"
       />
+      <AvatarForm
+        identiconSource={formData.name || ""}
+        setAvatarURL={(url) => updateFormData("logo", url)}
+        avatarURL={formData.logo}>
+        Logo do app
+      </AvatarForm>
       <textarea
-        value={redirect_uris.join("\n")}
-        onChange={(e) => setRedirectURIs(e.target.value.split("\n"))}
+        value={formData.redirect_uris?.join("\n")}
+        onChange={(e) =>
+          updateFormData("redirect_uris", e.target.value.split("\n"))
+        }
         placeholder="Redirect uris"
       />
       <input
-        value={type}
-        onChange={(e) => setType(e.target.value as AppType)}
+        value={formData.type}
+        onChange={(e) => updateFormData("type", e.target.value as AppType)}
         placeholder="App Type"
       />
       <Button type="submit" color="blue" loading={creating}>

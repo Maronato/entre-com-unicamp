@@ -4,6 +4,7 @@ import { Switch } from "@headlessui/react"
 import classNames from "classnames"
 import useSWR from "swr"
 
+import AvatarForm from "@/components/Forms/AvatarForm"
 import { AppType, SerializedApp } from "@/oauth/app/types"
 import { getScopeDescription } from "@/oauth/scope"
 import { getFetch, patchFetch } from "@/utils/browser/fetch"
@@ -17,12 +18,19 @@ const ViewApp: FunctionComponent<{ clientID: string }> = ({ clientID }) => {
     getFetch<SerializedApp<true>>(url)
   )
   const [loading, setLoading] = useState(false)
-  const [updateData, setUpdateData] = useState<Partial<SerializedApp<true>>>()
-  const updatePartialData = (update: Partial<SerializedApp<true>>) =>
-    setUpdateData((old) => ({ ...old, ...update }))
+  const [formData, setFormData] = useState<Partial<SerializedApp<true>>>(
+    data || {}
+  )
+
+  const updateFormData = <T extends keyof SerializedApp<true>>(
+    field: T,
+    data: SerializedApp<true>[T]
+  ) => setFormData((prev) => ({ ...prev, [field]: data }))
 
   useEffect(() => {
-    setUpdateData(data)
+    if (data) {
+      setFormData(data)
+    }
   }, [data])
 
   if (error) {
@@ -32,7 +40,7 @@ const ViewApp: FunctionComponent<{ clientID: string }> = ({ clientID }) => {
     return <div className="">Loading</div>
   }
 
-  const isPublic = updateData?.type === AppType.PUBLIC
+  const isPublic = formData.type === AppType.PUBLIC
 
   const save = async (e: FormEvent) => {
     e.preventDefault()
@@ -43,15 +51,16 @@ const ViewApp: FunctionComponent<{ clientID: string }> = ({ clientID }) => {
 
     try {
       const payload: Partial<SerializedApp<true>> = {
-        name: updateData?.name,
-        redirect_uris: updateData?.redirect_uris,
-        type: updateData?.type,
+        name: formData.name,
+        redirect_uris: formData.redirect_uris,
+        type: formData.type,
+        logo: formData.logo,
       }
-      const response = await patchFetch<typeof payload>(
+      const response = await patchFetch<SerializedApp<true>>(
         `/api/apps/${data.client_id}`,
         payload
       )
-      mutate({ ...data, ...response })
+      mutate(response)
     } catch (e) {
       console.error(e)
     }
@@ -62,14 +71,21 @@ const ViewApp: FunctionComponent<{ clientID: string }> = ({ clientID }) => {
     <form onSubmit={save}>
       <div className="flex flex-col space-y-5">
         <div className="text-4xl font-bold">{data.name}</div>
+        <AvatarForm
+          identiconSource={formData.name || ""}
+          setAvatarURL={(url) => updateFormData("logo", url)}
+          avatarURL={formData.logo}>
+          Logo do App
+        </AvatarForm>
         <Switch.Group>
           <div className="flex items-center">
             <Switch
               checked={isPublic}
               onChange={(e) =>
-                updatePartialData({
-                  type: e ? AppType.PUBLIC : AppType.CONFIDENTIAL,
-                })
+                updateFormData(
+                  "type",
+                  e ? AppType.PUBLIC : AppType.CONFIDENTIAL
+                )
               }
               className={classNames(
                 "relative inline-flex flex-shrink-0 h-6 w-10 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus-visible:ring-2  focus-visible:ring-white focus-visible:ring-opacity-75 shadow",
@@ -101,9 +117,9 @@ const ViewApp: FunctionComponent<{ clientID: string }> = ({ clientID }) => {
           Client secret: <CopyValue value={data.client_secret} secret />
         </div>
         <textarea
-          value={updateData?.redirect_uris?.join("\n")}
+          value={formData.redirect_uris?.join("\n")}
           onChange={(e) =>
-            updatePartialData({ redirect_uris: e.target.value.split("\n") })
+            updateFormData("redirect_uris", e.target.value.split("\n"))
           }
           className=""
         />

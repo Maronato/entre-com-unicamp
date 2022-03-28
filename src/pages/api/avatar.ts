@@ -17,6 +17,7 @@ export type RequestData = {
 export type ResponseData = {
   url: string
   nonce: string
+  id: string
 }
 
 const handlePOST: NextApiHandler = async (req, res) => {
@@ -24,14 +25,16 @@ const handlePOST: NextApiHandler = async (req, res) => {
 
   const { operation } = req.body as Partial<RequestData>
 
+  const id = user.id
+
   if (!operation) {
     return respondInvalidRequest(res, "missing operation")
   }
 
   const nonce = createRandomString(10)
-  const url = await getAvatarUploadSignedURL(user.id, nonce)
+  const url = await getAvatarUploadSignedURL(id, nonce)
 
-  return respondOk(res, { url, nonce })
+  return respondOk(res, { url, nonce, id })
 }
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {

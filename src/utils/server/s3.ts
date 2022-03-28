@@ -22,10 +22,10 @@ const s3Client = new S3Client({
   },
 })
 
-export const getAvatarUploadSignedURL = (userID: string, nonce: string) => {
+export const getAvatarUploadSignedURL = (resourceID: string, nonce: string) => {
   const command = new PutObjectCommand({
     Bucket: process.env.AWS_S3_BUCKET_NAME || "",
-    Key: getTempAvatarKey(userID, nonce),
+    Key: getTempAvatarKey(resourceID, nonce),
     ContentType: "image/*",
   })
   return getSignedUrl(s3Client, command, { expiresIn: 3600 })
@@ -45,7 +45,7 @@ export const deleteCurrentAvatar = (avatarURL: string) => {
 }
 
 export const promoteTempAvatarToCurrent = async (
-  userID: string,
+  resourceID: string,
   newAvatarURL: string,
   oldAvatarURL?: string
 ): Promise<string | undefined> => {
@@ -63,12 +63,12 @@ export const promoteTempAvatarToCurrent = async (
 
   const copyCommand = new CopyObjectCommand({
     Bucket: bucket,
-    CopySource: `${bucket}/${getTempAvatarKey(userID, newParsed.nonce)}`,
-    Key: getCurrentAvatarKey(userID, newParsed.nonce),
+    CopySource: `${bucket}/${getTempAvatarKey(newParsed.id, newParsed.nonce)}`,
+    Key: getCurrentAvatarKey(resourceID, newParsed.nonce),
     ContentType: "image/*",
   })
 
   await s3Client.send(copyCommand)
 
-  return getCurrentAvatarURL(userID, newParsed.nonce)
+  return getCurrentAvatarURL(resourceID, newParsed.nonce)
 }

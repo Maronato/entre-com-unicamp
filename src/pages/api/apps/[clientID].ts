@@ -51,12 +51,14 @@ async function updateHandler(
   if (!app) {
     return respondNotFound(res, "App not found")
   }
-  const { name, redirect_uris, type }: Partial<SerializedApp<true>> = req.body
+  const { name, redirect_uris, type, logo }: Partial<SerializedApp<true>> =
+    req.body
 
-  const updatedApp = await updateApp(app.id, {
+  const updatedApp = await updateApp(app, {
     name,
     redirect_uris,
     type,
+    logo,
   })
 
   return respondOk(res, serializeApp(updatedApp, true, user))
@@ -71,7 +73,7 @@ async function deleteHandler(
   if (!app) {
     return respondNotFound(res, "App not found")
   }
-  await deleteApp(app.id)
+  await deleteApp(app)
 
   return respondNoContent(res)
 }
