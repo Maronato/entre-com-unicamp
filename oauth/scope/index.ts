@@ -1,11 +1,13 @@
 export enum Scope {
   PROFILE_READ = "profile:read",
+  PROFILE_WRITE = "profile:write",
   APPS_READ = "apps:read",
   APPS_WRITE = "apps:write",
 }
 
 export enum ScopeDescriptions {
   PROFILE_READ = "Ver seu perfil público",
+  PROFILE_WRITE = "Modificar seu perfil público",
   APPS_READ = "Ver seus apps",
   APPS_WRITE = "Modificar seus apps",
 }

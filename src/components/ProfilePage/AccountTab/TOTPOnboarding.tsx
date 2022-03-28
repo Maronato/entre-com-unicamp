@@ -1,16 +1,17 @@
 import { FormEventHandler, FunctionComponent, useEffect, useState } from "react"
 
+import { CheckCircleIcon } from "@heroicons/react/outline"
 import QRCode from "react-qr-code"
 import useSWR from "swr"
 
+import Button from "@/components/Button"
+import InputForm from "@/components/Forms/InputForm"
+import CopyValue from "@/components/ProfilePage/DeveloperTab/CopyValue"
 import { getFetch, postFetch } from "@/utils/browser/fetch"
 import { useAuth } from "@/utils/browser/hooks/useUser"
 import { generateSecret, getSecretURL, verifyTOTP } from "@/utils/browser/totp"
 
 import type { UserInfoResponse } from "@/pages/api/login/loginUserInfo"
-
-import Button from "./Button"
-import CopyValue from "./Developer/CopyValue"
 
 const TOTPOnboarding: FunctionComponent = () => {
   const { user } = useAuth()
@@ -39,11 +40,16 @@ const TOTPOnboarding: FunctionComponent = () => {
   }
 
   if (!data) {
-    return <div>Loading...</div>
+    return <div>Carregando...</div>
   }
 
   if (data.totpEnabled) {
-    return <div>TOTP is already enabled</div>
+    return (
+      <div className="font-bold flex flex-row items-center">
+        <CheckCircleIcon className="h-6 w-6 text-green-500 mr-2" /> Habilitado
+        com sucesso!
+      </div>
+    )
   }
 
   const enableTOTP: FormEventHandler = async (e) => {
@@ -69,18 +75,33 @@ const TOTPOnboarding: FunctionComponent = () => {
 
   return (
     <form onSubmit={enableTOTP}>
-      <div className="p-5 bg-white rounded w-min">
-        <QRCode value={url} />
+      <p className="mb-5">
+        1. Escaneie o QR code usando seu gerador de códigos, ou cole o texto
+        abaixo diretamente no gerador
+      </p>
+      <div className="p-5 bg-white rounded-lg shadow w-min mx-auto mb-5">
+        <QRCode value={url} size={200} />
       </div>
       <CopyValue value={url} secret />
-      <input onChange={(e) => setCode(e.target.value)} type="text" />
-      <Button
-        color="primary"
-        type="submit"
-        loading={loading}
-        disabled={code.length < 6}>
-        Habilitar
-      </Button>
+      <p className="mb-5 mt-10">
+        2. Cole um dos códigos gerados no gerador abaixo para habilitar
+      </p>
+      <div className="w-52 mx-auto flex flex-row space-x-4">
+        <InputForm
+          htmlFor="one-time-code"
+          onChange={(e) => setCode(e.target.value)}
+          autoComplete="one-time-code"
+          placeholder="123456"
+          value={code}
+        />
+        <Button
+          color="primary"
+          type="submit"
+          loading={loading}
+          disabled={code.length !== 6}>
+          Habilitar
+        </Button>
+      </div>
       {errorMessage && <div>{errorMessage}</div>}
     </form>
   )

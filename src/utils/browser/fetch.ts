@@ -51,3 +51,12 @@ export const getFetch = async <T>(url: string) => {
     .then((r) => r.json())
   return res
 }
+
+export const deleteFetch = async (url: string) => {
+  await fetch(url, { method: "DELETE" }).then((r) => {
+    if (!r.ok) {
+      throw r
+    }
+    return r
+  })
+}

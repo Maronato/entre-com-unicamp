@@ -17,10 +17,11 @@ import classNames from "classnames"
 import { GetServerSideProps, NextPage } from "next"
 import { useRouter } from "next/router"
 
-import AuthorizedApps from "@/components/AuthorizedApps"
-import Developer from "@/components/Developer"
 import Layout from "@/components/Layout"
-import TOTPOnboarding from "@/components/TOTPOnboarding"
+import AccountTab from "@/components/ProfilePage/AccountTab"
+import AppsTab from "@/components/ProfilePage/AppsTab"
+import DeveloperTab from "@/components/ProfilePage/DeveloperTab"
+import ProfileTab from "@/components/ProfilePage/ProfileTab"
 import {
   key,
   UserFallback,
@@ -99,22 +100,18 @@ const ProfilePage: FunctionComponent = () => {
             </Tab>
           ))}
         </Tab.List>
-        <Tab.Panels className="mt-10 md:mt-0 md:ml-2 px-5 col-span-6 overflow-scroll">
+        <Tab.Panels className="mt-10 md:mt-0 md:ml-2 p-10 col-span-6 overflow-scroll rounded-lg bg-background-light dark:bg-background-dark">
           <Tab.Panel>
-            <h2 className="text-4xl font-bold mb-5">Perfil</h2>
-            {user.email}
+            <ProfileTab />
           </Tab.Panel>
           <Tab.Panel>
-            <h2 className="text-4xl font-bold mb-5">Aplicativos</h2>
-            <AuthorizedApps />
+            <AppsTab />
           </Tab.Panel>
           <Tab.Panel>
-            <h2 className="text-4xl font-bold mb-5">Conta</h2>
-            <TOTPOnboarding />
+            <AccountTab />
           </Tab.Panel>
           <Tab.Panel>
-            <h2 className="text-4xl font-bold mb-5">Desenvolvedor</h2>
-            <Developer />
+            <DeveloperTab />
           </Tab.Panel>
         </Tab.Panels>
       </Tab.Group>
