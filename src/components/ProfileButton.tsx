@@ -34,7 +34,7 @@ const ProfileDropdown: FunctionComponent<{
       {...attributes.popper}>
       <div className="inline-flex items-center dark:bg-background-lightest bg-background-dark py-5 rounded-lg shadow-lg z-10 text-slate-200 dark:text-slate-500 text-md">
         <div className="flex flex-col text-left space-y-2 w-full">
-          <div className="group pt-1 pb-5 px-6 border-b w-min border-b-slate-600 dark:border-b-slate-300 min-w-max flex flex-col">
+          <div className="group pt-1 pb-5 px-6 border-b w-max border-b-slate-600 dark:border-b-slate-300 min-w-max flex flex-col">
             <span>Logado como</span>
             <span className="font-bold">{user?.name || user?.email}</span>
           </div>
