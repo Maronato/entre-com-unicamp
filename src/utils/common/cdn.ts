@@ -5,7 +5,10 @@ export const getCurrentAvatarKey = (id: string, nonce: string) =>
 
 const getCDNHost = () => {
   if (typeof window !== "undefined") {
-    return "http://localhost:9000/development"
+    if (window.location.hostname === "localhost") {
+      return "http://localhost:9000/development"
+    }
+    return "https://cdn.entre-com-unicamp.com"
   }
   return process.env.CDN_HOST || "https://cdn.entre-com-unicamp.com"
 }
