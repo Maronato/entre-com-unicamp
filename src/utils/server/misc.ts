@@ -1,3 +1,9 @@
+import { startActiveSpan } from "./telemetry/trace"
+
 export function delay(duration: number) {
-  return new Promise<void>((r) => setTimeout(r, duration))
+  return startActiveSpan(
+    "delay",
+    { attributes: { duration } },
+    () => new Promise<void>((r) => setTimeout(r, duration))
+  )
 }

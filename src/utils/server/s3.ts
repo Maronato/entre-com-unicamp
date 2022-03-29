@@ -5,6 +5,7 @@ import {
   CopyObjectCommand,
 } from "@aws-sdk/client-s3"
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
+import { SpanKind } from "@opentelemetry/api"
 
 import {
   getCurrentAvatarKey,
@@ -14,34 +15,62 @@ import {
   parseTempAvatarURL,
 } from "../common/avatar"
 
+import { startActiveSpan } from "./telemetry/trace"
+
+const bucket = process.env.AWS_S3_BUCKET_NAME || ""
+const region = "sa-east-1"
+const accessKeyId = process.env.AWS_S3_ACCESS_KEY_ID || ""
+
 const s3Client = new S3Client({
-  region: "sa-east-1",
+  region,
   credentials: {
-    accessKeyId: process.env.AWS_S3_ACCESS_KEY_ID || "",
+    accessKeyId: accessKeyId,
     secretAccessKey: process.env.AWS_S3_SECRET_ACCESS_KEY || "",
   },
 })
 
+const clientData = { bucket, region, accessKeyId }
+
 export const getAvatarUploadSignedURL = (resourceID: string, nonce: string) => {
-  const command = new PutObjectCommand({
-    Bucket: process.env.AWS_S3_BUCKET_NAME || "",
-    Key: getTempAvatarKey(resourceID, nonce),
-    ContentType: "image/*",
-  })
-  return getSignedUrl(s3Client, command, { expiresIn: 3600 })
+  return startActiveSpan(
+    "getAvatarUploadSignedURL",
+    {
+      attributes: { resourceID, nonce, ...clientData },
+      kind: SpanKind.CLIENT,
+    },
+    (span) => {
+      const key = getTempAvatarKey(resourceID, nonce)
+      span.setAttribute("key", key)
+
+      const command = new PutObjectCommand({
+        Bucket: bucket,
+        Key: key,
+        ContentType: "image/*",
+      })
+      return getSignedUrl(s3Client, command, { expiresIn: 3600 })
+    }
+  )
 }
 
 export const deleteCurrentAvatar = (avatarURL: string) => {
-  const parsed = parseCurrentAvatarURL(avatarURL)
-  if (!parsed) {
-    return
-  }
-  const bucket = process.env.AWS_S3_BUCKET_NAME || ""
-  const command = new DeleteObjectCommand({
-    Bucket: bucket,
-    Key: getCurrentAvatarKey(parsed.id, parsed.nonce),
-  })
-  return s3Client.send(command)
+  return startActiveSpan(
+    "deleteCurrentAvatar",
+    { kind: SpanKind.CLIENT, attributes: { avatarURL, ...clientData } },
+    (span) => {
+      const parsed = parseCurrentAvatarURL(avatarURL)
+      if (!parsed) {
+        return
+      }
+      const key = getCurrentAvatarKey(parsed.id, parsed.nonce)
+      span.setAttribute("key", key)
+
+      const command = new DeleteObjectCommand({
+        Bucket: bucket,
+        Key: key,
+      })
+      return s3Client.send(command)
+    }
+  )
 }
 
 export const promoteTempAvatarToCurrent = async (
@@ -49,26 +78,44 @@ export const promoteTempAvatarToCurrent = async (
   newAvatarURL: string,
   oldAvatarURL?: string
 ): Promise<string | undefined> => {
-  const newParsed = parseTempAvatarURL(newAvatarURL)
+  return startActiveSpan(
+    "promoteTempAvatarToCurrent",
+    {
+      kind: SpanKind.CLIENT,
+      attributes: { resourceID, newAvatarURL, oldAvatarURL, ...clientData },
+    },
+    async (span) => {
+      const newParsed = parseTempAvatarURL(newAvatarURL)
 
-  if (oldAvatarURL) {
-    await deleteCurrentAvatar(oldAvatarURL)
-  }
+      if (oldAvatarURL) {
+        await deleteCurrentAvatar(oldAvatarURL)
+      }
 
-  if (!newParsed) {
-    return
-  }
+      if (!newParsed) {
+        return
+      }
 
-  const bucket = process.env.AWS_S3_BUCKET_NAME || ""
+      const copySource = `${bucket}/${getTempAvatarKey(
+        newParsed.id,
+        newParsed.nonce
+      )}`
+      const key = getCurrentAvatarKey(resourceID, newParsed.nonce)
 
-  const copyCommand = new CopyObjectCommand({
-    Bucket: bucket,
-    CopySource: `${bucket}/${getTempAvatarKey(newParsed.id, newParsed.nonce)}`,
-    Key: getCurrentAvatarKey(resourceID, newParsed.nonce),
-    ContentType: "image/*",
-  })
+      span.setAttributes({
+        copySource,
+        key,
+      })
 
-  await s3Client.send(copyCommand)
+      const copyCommand = new CopyObjectCommand({
+        Bucket: bucket,
+        CopySource: copySource,
+        Key: key,
+        ContentType: "image/*",
+      })
 
-  return getCurrentAvatarURL(resourceID, newParsed.nonce)
+      await s3Client.send(copyCommand)
+
+      return getCurrentAvatarURL(resourceID, newParsed.nonce)
+    }
+  )
 }
