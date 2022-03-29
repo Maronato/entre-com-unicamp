@@ -1,6 +1,7 @@
 import { FunctionComponent, useState } from "react"
 
 import { ArrowLeftIcon, PlusIcon } from "@heroicons/react/outline"
+import Link from "next/link"
 
 import { SerializedApp } from "@/oauth/app/types"
 
@@ -84,6 +85,13 @@ const DeveloperTab: FunctionComponent = () => {
     <TabFrame
       title="Desenvolvedor"
       description="Crie apps para membros da Unicamp">
+      <div className="text-center -mt-5">
+        <Link href="/docs">
+          <a className="text-blue-500 dark:text-blue-400 underline ">
+            Documentação
+          </a>
+        </Link>
+      </div>
       <Developer />
     </TabFrame>
   )
