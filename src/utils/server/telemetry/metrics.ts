@@ -1,7 +1,7 @@
 import { IncomingMessage, ServerResponse } from "http"
 import { UrlWithParsedQuery } from "url"
 
-import { metrics, ValueType } from "@opentelemetry/api-metrics"
+import { metrics } from "@opentelemetry/api-metrics"
 import {
   HostMetrics,
   MetricsCollectorConfig,
@@ -12,15 +12,57 @@ import { APP_NAME } from "./consts"
 export const getMeter = () => {
   return metrics.getMeter(APP_NAME)
 }
-export const getInstruments = () => {
-  const meter = getMeter()
-  const requests = meter.createCounter("requests", {
-    description: "Counter of requests",
-  })
-  return {
-    requests,
+const getInstrumentsFactory = () => {
+  const getMeters = () => {
+    const meter = getMeter()
+    const redisRequestDuration = meter.createHistogram(
+      "redis_request_duration_seconds",
+      {
+        description: "Duration of redis access requests",
+      }
+    )
+    const requestDuration = meter.createHistogram("request_duration_seconds", {
+      description: "Duration of HTTP requests",
+    })
+    const dbRequestDuration = meter.createHistogram(
+      "database_request_duration_seconds",
+      {
+        description: "Duration of database access requests",
+      }
+    )
+    const sendEmailDuration = meter.createHistogram(
+      "ses_request_duration_seconds",
+      {
+        description: "Duration of email sending requests",
+      }
+    )
+    const s3RequestDuration = meter.createHistogram(
+      "s3_request_duration_seconds",
+      {
+        description: "Duration of S3 access requests",
+      }
+    )
+
+    return {
+      redisRequestDuration,
+      requestDuration,
+      dbRequestDuration,
+      sendEmailDuration,
+      s3RequestDuration,
+    } as const
+  }
+
+  let instruments: ReturnType<typeof getMeters> | undefined
+
+  return () => {
+    if (!instruments) {
+      instruments = getMeters()
+    }
+    return instruments
   }
 }
+
+export const getInstruments = getInstrumentsFactory()
 
 export const startHostMetrics = () => {
   const meterProvider =
@@ -34,13 +76,7 @@ export const startHostMetrics = () => {
 }
 
 export const creatRequestMeter = () => {
-  const meter = getMeter()
-
-  const requestDuration = meter.createHistogram("request_duration_seconds", {
-    description: "Duration of HTTP requests",
-    valueType: ValueType.INT,
-    unit: "milliseconds",
-  })
+  const { requestDuration } = getInstruments()
 
   return (
     req: IncomingMessage,

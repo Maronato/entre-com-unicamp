@@ -1,25 +1,16 @@
 import { SpanKind } from "@opentelemetry/api"
-import { ValueType } from "@opentelemetry/api-metrics"
 import { SemanticAttributes } from "@opentelemetry/semantic-conventions"
 import { parse } from "pg-connection-string"
 
 import type { PrismaClient } from "@prisma/client"
 
-import { getMeter } from "./metrics"
+import { getInstruments } from "./metrics"
 import { startActiveSpan } from "./trace"
 
 type Middleware = Parameters<PrismaClient["$use"]>[0]
 
 export function createTelemetryMiddleware() {
-  const meter = getMeter()
-  const dbRequestDuration = meter.createHistogram(
-    "database_request_duration_seconds",
-    {
-      description: "Duration of dabatace access requests",
-      unit: "milliseconds",
-      valueType: ValueType.INT,
-    }
-  )
+  const { dbRequestDuration } = getInstruments()
 
   return startActiveSpan("createTelemetryMiddleware", () => {
     const middleware: Middleware = async (params, next) => {

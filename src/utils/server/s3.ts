@@ -5,7 +5,7 @@ import {
   CopyObjectCommand,
 } from "@aws-sdk/client-s3"
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
-import { SpanKind } from "@opentelemetry/api"
+import { SpanKind, SpanStatusCode } from "@opentelemetry/api"
 
 import {
   getCurrentAvatarKey,
@@ -15,6 +15,7 @@ import {
   parseTempAvatarURL,
 } from "../common/avatar"
 
+import { getInstruments } from "./telemetry/metrics"
 import { startActiveSpan } from "./telemetry/trace"
 
 const bucket = process.env.AWS_S3_BUCKET_NAME || ""
@@ -56,7 +57,8 @@ export const deleteCurrentAvatar = (avatarURL: string) => {
   return startActiveSpan(
     "deleteCurrentAvatar",
     { kind: SpanKind.CLIENT, attributes: { avatarURL, ...clientData } },
-    (span) => {
+    async (span) => {
+      const { s3RequestDuration } = getInstruments()
       const parsed = parseCurrentAvatarURL(avatarURL)
       if (!parsed) {
         return
@@ -68,7 +70,23 @@ export const deleteCurrentAvatar = (avatarURL: string) => {
         Bucket: bucket,
         Key: key,
       })
-      return s3Client.send(command)
+      const start = new Date().getTime()
+      let status: "success" | "failure" = "failure"
+      try {
+        await s3Client.send(command)
+        status = "success"
+      } catch (e) {
+        span.setStatus({
+          code: SpanStatusCode.ERROR,
+          message: "failed to delete key",
+        })
+      }
+      const responseTime = new Date().getTime() - start
+      s3RequestDuration.record(responseTime, {
+        ...clientData,
+        status,
+        command: "delete",
+      })
     }
   )
 }
@@ -85,6 +103,7 @@ export const promoteTempAvatarToCurrent = async (
       attributes: { resourceID, newAvatarURL, oldAvatarURL, ...clientData },
     },
     async (span) => {
+      const { s3RequestDuration } = getInstruments()
       const newParsed = parseTempAvatarURL(newAvatarURL)
 
       if (oldAvatarURL) {
@@ -113,7 +132,24 @@ export const promoteTempAvatarToCurrent = async (
         ContentType: "image/*",
       })
 
-      await s3Client.send(copyCommand)
+      const start = new Date().getTime()
+      try {
+        await s3Client.send(copyCommand)
+        const responseTime = new Date().getTime() - start
+        s3RequestDuration.record(responseTime, {
+          ...clientData,
+          command: "copy",
+          status: "success",
+        })
+      } catch (e) {
+        const responseTime = new Date().getTime() - start
+        s3RequestDuration.record(responseTime, {
+          ...clientData,
+          command: "copy",
+          status: "failure",
+        })
+        throw e
+      }
 
       return getCurrentAvatarURL(resourceID, newParsed.nonce)
     }

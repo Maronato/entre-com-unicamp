@@ -4,7 +4,7 @@ import { Histogram } from "@opentelemetry/api-metrics"
 import { SemanticAttributes } from "@opentelemetry/semantic-conventions"
 import { createClient, RedisClientType } from "redis"
 
-import { getMeter } from "./telemetry/metrics"
+import { getInstruments } from "./telemetry/metrics"
 import { startActiveSpan } from "./telemetry/trace"
 
 class Redis {
@@ -24,11 +24,7 @@ class Redis {
       url: this.address,
     })
 
-    const meter = getMeter()
-    this.meter = meter.createHistogram("redis_request_duration_seconds", {
-      description: "Duration of redis access requests",
-      unit: "milliseconds",
-    })
+    this.meter = getInstruments().redisRequestDuration
   }
 
   startMetric(command: string, args: Record<string, string> = {}) {
