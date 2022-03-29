@@ -82,7 +82,7 @@ export const deleteCurrentAvatar = (avatarURL: string) => {
         })
       }
       const responseTime = new Date().getTime() - start
-      s3RequestDuration.record(responseTime, {
+      s3RequestDuration.record(responseTime / 1000, {
         ...clientData,
         status,
         command: "delete",
@@ -136,14 +136,14 @@ export const promoteTempAvatarToCurrent = async (
       try {
         await s3Client.send(copyCommand)
         const responseTime = new Date().getTime() - start
-        s3RequestDuration.record(responseTime, {
+        s3RequestDuration.record(responseTime / 1000, {
           ...clientData,
           command: "copy",
           status: "success",
         })
       } catch (e) {
         const responseTime = new Date().getTime() - start
-        s3RequestDuration.record(responseTime, {
+        s3RequestDuration.record(responseTime / 1000, {
           ...clientData,
           command: "copy",
           status: "failure",

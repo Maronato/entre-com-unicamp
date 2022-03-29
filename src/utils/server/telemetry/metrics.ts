@@ -95,7 +95,7 @@ export const creatRequestMeter = () => {
     res.on("finish", () => {
       const responseTime = new Date().getTime() - start
       const statusCode = res.statusCode.toString()
-      requestDuration.record(responseTime, {
+      requestDuration.record(responseTime / 1000, {
         ...metadata,
         status_code: statusCode,
       })

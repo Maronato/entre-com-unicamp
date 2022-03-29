@@ -39,7 +39,7 @@ export async function sendEmailCode(email: string, code: string) {
       })
 
       const responseTime = new Date().getTime() - start
-      dbRequestDuration.record(responseTime, {
+      dbRequestDuration.record(responseTime / 1000, {
         status: response.ok ? "success" : "failure",
         statusCode: response.statusText,
         system: "AWS API Gateway",

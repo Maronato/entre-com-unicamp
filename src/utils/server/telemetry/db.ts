@@ -32,7 +32,8 @@ export function createTelemetryMiddleware() {
 
           const start = new Date().getTime()
           const recordDuration = (success: boolean) => {
-            dbRequestDuration.record(new Date().getTime() - start, {
+            const responseTime = new Date().getTime() - start
+            dbRequestDuration.record(responseTime / 1000, {
               table: params.model || "undefined",
               action: params.action,
               status: success ? "success" : "failure",

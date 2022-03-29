@@ -33,8 +33,12 @@ class Redis {
       command,
     }
     return (endArgs: Record<string, string> = {}) => {
-      const end = new Date().getTime()
-      this.meter.record(end - start, { ...baseArgs, ...args, ...endArgs })
+      const responseTime = new Date().getTime() - start
+      this.meter.record(responseTime / 1000, {
+        ...baseArgs,
+        ...args,
+        ...endArgs,
+      })
     }
   }
 
