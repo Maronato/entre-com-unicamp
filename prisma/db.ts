@@ -3,7 +3,12 @@ import { PrismaClient } from "@prisma/client"
 import { createTelemetryMiddleware } from "@/utils/server/telemetry/db"
 import { getLogger } from "@/utils/server/telemetry/logs"
 
-let client: PrismaClient | undefined = undefined
+declare global {
+  // allow global `var` declarations
+  // eslint-disable-next-line no-var
+  var prisma: PrismaClient | undefined
+}
+
 let timeoutID: NodeJS.Timeout | undefined
 
 const logger = getLogger()
@@ -25,14 +30,12 @@ const scheduleDisconnect = (client?: PrismaClient) => {
   }
 }
 
-export function getPrisma() {
-  if (!client) {
-    client = new PrismaClient()
-    client.$use(createTelemetryMiddleware())
+export const getPrisma = () => {
+  if (!global.prisma) {
+    global.prisma = new PrismaClient()
+    global.prisma.$use(createTelemetryMiddleware())
     logger.debug("Created Prisma instance")
   }
   scheduleDisconnect()
-  return client
+  return global.prisma
 }
-
-logger.error("loaded file")

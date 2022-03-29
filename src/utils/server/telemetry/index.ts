@@ -7,7 +7,7 @@ import { api, NodeSDK, resources } from "@opentelemetry/sdk-node"
 import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions"
 
 import { APP_NAME } from "./consts"
-import { startHostMetrics } from "./metrics"
+import { registerInstruments } from "./metrics"
 
 const sdkRef: { sdk?: NodeSDK } = {}
 
@@ -15,7 +15,7 @@ const getSDK = async () => {
   if (!sdkRef.sdk) {
     // Get Jaeger exporter if in prod. Else, console exporter
     const jaegerEndpoint =
-      process.env.JAEGER_ENDPOINT ?? "http://tempo:14268/api/traces"
+      process.env.JAEGER_ENDPOINT ?? "http://localhost:14268/api/traces"
 
     const traceExporter = new JaegerExporter({
       endpoint: jaegerEndpoint,
@@ -53,8 +53,11 @@ export const getContext = () => {
 }
 
 export const startTelemetry = async () => {
+  // Load SDK
   await getSDK()
-  startHostMetrics()
+  // Register instruments
+  await registerInstruments()
+
   api.diag.setLogger(
     new api.DiagConsoleLogger(),
     process.env.LOG_LEVEL === "debug"

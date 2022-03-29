@@ -10,7 +10,6 @@ specifiers:
   '@opentelemetry/api-metrics': ^0.27.0
   '@opentelemetry/exporter-jaeger': ^1.0.1
   '@opentelemetry/exporter-prometheus': ^0.27.0
-  '@opentelemetry/host-metrics': ^0.27.1
   '@opentelemetry/instrumentation-http': ^0.27.0
   '@opentelemetry/instrumentation-winston': ^0.27.2
   '@opentelemetry/propagator-jaeger': ^1.0.1
@@ -64,7 +63,6 @@ dependencies:
   '@opentelemetry/api-metrics': 0.27.0
   '@opentelemetry/exporter-jaeger': 1.0.1_@opentelemetry+api@1.0.4
   '@opentelemetry/exporter-prometheus': 0.27.0_@opentelemetry+api@1.0.4
-  '@opentelemetry/host-metrics': 0.27.1_@opentelemetry+api@1.0.4
   '@opentelemetry/instrumentation-http': 0.27.0_@opentelemetry+api@1.0.4
   '@opentelemetry/instrumentation-winston': 0.27.2_@opentelemetry+api@1.0.4
   '@opentelemetry/propagator-jaeger': 1.0.1_@opentelemetry+api@1.0.4
@@ -1372,19 +1370,6 @@ packages:
       '@opentelemetry/api-metrics': 0.27.0
       '@opentelemetry/core': 1.0.1_@opentelemetry+api@1.0.4
       '@opentelemetry/sdk-metrics-base': 0.27.0_@opentelemetry+api@1.0.4
-    dev: false
-
-  /@opentelemetry/host-metrics/0.27.1_@opentelemetry+api@1.0.4:
-    resolution: {integrity: sha512-ntn20aSKy+enTTNqh+mJ7slFN8x6HEbTXuNag3uKhboeGgnZuOwp4968NEq/qVX+54r6CUAoBq4geJ7xzB9+sg==}
-    engines: {node: '>=8.5.0'}
-    peerDependencies:
-      '@opentelemetry/api': ^1.0.2
-    dependencies:
-      '@opentelemetry/api': 1.0.4
-      '@opentelemetry/api-metrics': 0.27.0
-      '@opentelemetry/core': 1.0.1_@opentelemetry+api@1.0.4
-      '@opentelemetry/sdk-metrics-base': 0.27.0_@opentelemetry+api@1.0.4
-      systeminformation: 5.11.8
     dev: false
 
   /@opentelemetry/instrumentation-http/0.27.0_@opentelemetry+api@1.0.4:
@@ -5403,13 +5388,6 @@ packages:
       react: ^16.11.0 || ^17.0.0 || ^18.0.0
     dependencies:
       react: 17.0.2
-    dev: false
-
-  /systeminformation/5.11.8:
-    resolution: {integrity: sha512-u30rM0KwGKiJof44Ak25WeSh9661NU2GshXpHPpv/zGXvvSGI5eALjpVJ3EYnIroceToWzy9+xkuMfjHIx6OiQ==}
-    engines: {node: '>=8.0.0'}
-    os: [darwin, linux, win32, freebsd, openbsd, netbsd, sunos, android]
-    hasBin: true
     dev: false
 
   /tailwindcss/3.0.23_2a12c91f48b4280adc4c14dfe7c50ae2:

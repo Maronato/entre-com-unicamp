@@ -1,20 +1,18 @@
 import { SpanKind } from "@opentelemetry/api"
 import { SemanticAttributes } from "@opentelemetry/semantic-conventions"
 
-import { getInstruments } from "../telemetry/metrics"
 import { startActiveSpan } from "../telemetry/trace"
 
-export async function sendEmailCode(email: string, code: string) {
+export async function sendSESEmailCode(email: string, code: string) {
   const apiKey = process.env.AWS_API_KEY || ""
   const url = process.env.AWS_API_ENDPOINT || ""
   const payload = {
     to: email,
     code,
   }
-  const { dbRequestDuration } = getInstruments()
 
   return startActiveSpan(
-    "sendEmailCode - AWS",
+    "sendSESEmailCode",
     {
       attributes: {
         email,
@@ -28,7 +26,6 @@ export async function sendEmailCode(email: string, code: string) {
       kind: SpanKind.CLIENT,
     },
     async (span, setError) => {
-      const start = new Date().getTime()
       const response = await fetch(url, {
         method: "POST",
         headers: {
@@ -36,13 +33,6 @@ export async function sendEmailCode(email: string, code: string) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
-      })
-
-      const responseTime = new Date().getTime() - start
-      dbRequestDuration.record(responseTime / 1000, {
-        status: response.ok ? "success" : "failure",
-        statusCode: response.statusText,
-        system: "AWS API Gateway",
       })
 
       if (!response.ok) {

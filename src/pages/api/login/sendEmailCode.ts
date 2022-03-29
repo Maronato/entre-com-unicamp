@@ -1,5 +1,4 @@
-import { generateEmailCode } from "@/utils/server/emailCodes"
-import { sendEmailCode } from "@/utils/server/emailCodes/aws"
+import { generateEmailCode, sendEmailCode } from "@/utils/server/emailCodes"
 import { handleRequest, withDefaultMiddleware } from "@/utils/server/middleware"
 import { respondInvalidRequest, respondOk } from "@/utils/server/serverUtils"
 

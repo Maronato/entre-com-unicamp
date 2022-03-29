@@ -1,7 +1,11 @@
 import { createRandomString } from "@/utils/common/random"
 
 import { getRedis } from "../redis"
+import { getInstruments } from "../telemetry/metrics"
 import { startActiveSpan } from "../telemetry/trace"
+
+import { sendSESEmailCode } from "./aws"
+import { sendConsoleEmailCode } from "./console"
 
 const getEmailKey = (email: string) => `email-code-${email}`
 const codeExpire = 60 * 60
@@ -39,4 +43,43 @@ export const emailCodeIsValid = (email: string, code: string) => {
 
     return isValid
   })
+}
+
+export const sendEmailCode = (email: string, code: string) => {
+  const { sendEmailDuration } = getInstruments()
+  return startActiveSpan(
+    "sendEmailCode",
+    { attributes: { email, code } },
+    async (span, setError) => {
+      const apiKey = process.env.AWS_API_KEY
+      const url = process.env.AWS_API_ENDPOINT
+      const useSES = !!apiKey && !!url
+      const transport: "console" | "aws" = useSES ? "aws" : "console"
+
+      span.setAttributes({
+        transport,
+      })
+
+      let status: boolean
+      const start = new Date().getTime()
+
+      if (useSES) {
+        status = await sendSESEmailCode(email, code)
+      } else {
+        status = await sendConsoleEmailCode(email, code)
+      }
+
+      const responseTime = new Date().getTime() - start
+      sendEmailDuration.record(responseTime / 1000, {
+        transport,
+        status: status ? "success" : "error",
+      })
+
+      if (!status) {
+        setError("Error sending email code")
+      }
+
+      return status
+    }
+  )
 }
