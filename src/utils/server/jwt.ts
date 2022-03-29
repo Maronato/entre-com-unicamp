@@ -18,12 +18,16 @@ export const ALGORITHM = "ES256"
 export const ISSUER = "entre-com-unicamp.com"
 export const TYPE = "JWT"
 
+// GENERATE YOUR KEY FOR PRODUCTION!
+const DEFAULT_PRIVATE_KEY =
+  '{"kty":"EC","x":"f-Ix02u9TbSSPZDuVHkdJuG0GDCqqpczasp8rd2Y-yM","y":"LPO4N2PC5G3JgrvuchnnJwhmkkL8SbEl4iYxs0h1r7U","crv":"P-256","d":"L-pJifhr1qAmWSvrsfOtR71aZFRr_P9gu9W_08uHDdQ"}'
+
 export function getPrivateKey(): Promise<KeyObject> {
   return startActiveSpan(
     "getPrivateKey",
     () =>
       importJWK(
-        JSON.parse(process.env.JWT_PRIVATE_KEY || ""),
+        JSON.parse(process.env.JWT_PRIVATE_KEY || DEFAULT_PRIVATE_KEY),
         ALGORITHM
       ) as Promise<KeyObject>
   )

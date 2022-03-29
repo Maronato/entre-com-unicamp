@@ -1,4 +1,4 @@
-import { getTempAvatarURL } from "../common/avatar"
+import { getTempAvatarURL } from "../common/cdn"
 
 export const uploadFile = async (
   signedURL: string,

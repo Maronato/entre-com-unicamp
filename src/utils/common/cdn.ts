@@ -3,17 +3,26 @@ export const getTempAvatarKey = (id: string, nonce: string) =>
 export const getCurrentAvatarKey = (id: string, nonce: string) =>
   `avatars/${id}/${nonce}`
 
+const getCDNHost = () => {
+  if (typeof window !== "undefined") {
+    return "http://localhost:9000/development"
+  }
+  return process.env.CDN_HOST || "https://cdn.entre-com-unicamp.com"
+}
+
 export const getTempAvatarURL = (id: string, nonce: string) =>
-  `https://cdn.entre-com-unicamp.com/${getTempAvatarKey(id, nonce)}`
+  `${getCDNHost()}/${getTempAvatarKey(id, nonce)}`
 export const getCurrentAvatarURL = (id: string, nonce: string) =>
-  `https://cdn.entre-com-unicamp.com/${getCurrentAvatarKey(id, nonce)}`
+  `${getCDNHost()}/${getCurrentAvatarKey(id, nonce)}`
 
 export const parseTempAvatarURL = (
   url: string
 ): { id: string; nonce: string } | null => {
-  const match = url.match(
-    /https:\/\/cdn\.entre-com-unicamp\.com\/avatars\/temp\/(.+)\/(.+)$/
-  )
+  const pathname = url.split(getCDNHost())[1]
+  if (!pathname) {
+    return null
+  }
+  const match = pathname.match(/\/avatars\/temp\/(.+)\/(.+)$/)
   if (!match) {
     return null
   }
@@ -26,9 +35,11 @@ export const parseTempAvatarURL = (
 export const parseCurrentAvatarURL = (
   url: string
 ): { id: string; nonce: string } | null => {
-  const match = url.match(
-    /https:\/\/cdn\.entre-com-unicamp\.com\/avatars\/(.+)\/(.+)$/
-  )
+  const pathname = url.split(getCDNHost())[1]
+  if (!pathname) {
+    return null
+  }
+  const match = pathname.match(/\/avatars\/(.+)\/(.+)$/)
   if (!match) {
     return null
   }

@@ -3,6 +3,8 @@ lockfileVersion: 5.3
 specifiers:
   '@aws-sdk/client-s3': ^3.56.0
   '@aws-sdk/s3-request-presigner': ^3.56.0
+  '@aws-sdk/util-create-request': ^3.58.0
+  '@aws-sdk/util-format-url': ^3.58.0
   '@headlessui/react': ^1.5.0
   '@heroicons/react': ^1.0.6
   '@marolint/eslint-config-nextjs': ^1.0.2
@@ -57,6 +59,8 @@ specifiers:
 dependencies:
   '@aws-sdk/client-s3': 3.56.0
   '@aws-sdk/s3-request-presigner': 3.56.0
+  '@aws-sdk/util-create-request': 3.58.0
+  '@aws-sdk/util-format-url': 3.58.0
   '@headlessui/react': 1.5.0_react-dom@17.0.2+react@17.0.2
   '@heroicons/react': 1.0.6_react@17.0.2
   '@opentelemetry/api': 1.0.4
@@ -868,6 +872,16 @@ packages:
       tslib: 2.3.1
     dev: false
 
+  /@aws-sdk/util-create-request/3.58.0:
+    resolution: {integrity: sha512-EP6HLQHc8RxjSJ95Ca9Ppp5F0aS6QNSQg03hbjcpmKK42h8dtuXFp5qGAu35VxUg6IRztN2x7lpa+b3d/SdDoQ==}
+    engines: {node: '>= 12.0.0'}
+    dependencies:
+      '@aws-sdk/middleware-stack': 3.55.0
+      '@aws-sdk/smithy-client': 3.55.0
+      '@aws-sdk/types': 3.55.0
+      tslib: 2.3.1
+    dev: false
+
   /@aws-sdk/util-defaults-mode-browser/3.55.0:
     resolution: {integrity: sha512-OS3gAwR84bHz7ObhjsSJM+grfeaBq3leGrj7xiX4BH3C8J+c10GMo3fqx1pV8Fq5F+9lMmhHpfOocD63SN5Q8A==}
     engines: {node: '>= 10.0.0'}
@@ -892,6 +906,15 @@ packages:
 
   /@aws-sdk/util-format-url/3.55.0:
     resolution: {integrity: sha512-xSVunSEiTPzemeEtyR8lIc027LsMKtwmC3j9QDV6oGMEZjarfrVB7SsxgVklTQvm4lPICEpmajMxR9Z0vSxYQg==}
+    engines: {node: '>= 12.0.0'}
+    dependencies:
+      '@aws-sdk/querystring-builder': 3.55.0
+      '@aws-sdk/types': 3.55.0
+      tslib: 2.3.1
+    dev: false
+
+  /@aws-sdk/util-format-url/3.58.0:
+    resolution: {integrity: sha512-nhxomsG+OIBqpIyc2AU88J3+dTap0H5R1D2lNAsSZk07kuu2B1H4qAXIlWPkXyxTi9uL9aykBMuCosECD062NA==}
     engines: {node: '>= 12.0.0'}
     dependencies:
       '@aws-sdk/querystring-builder': 3.55.0

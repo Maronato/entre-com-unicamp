@@ -18,7 +18,10 @@ const CreateApp: FunctionComponent<{
   onCreate: (app: SerializedApp<false>) => void
 }> = ({ onCreate }) => {
   const [creating, setCreating] = useState(false)
-  const [formData, setFormData] = useState<Partial<SerializedApp<true>>>({})
+  const [formData, setFormData] = useState<Partial<SerializedApp<true>>>({
+    redirect_uris: [],
+    type: AppType.PUBLIC,
+  })
   const updateFormData = <T extends keyof SerializedApp<true>>(
     field: T,
     data: SerializedApp<true>[T]

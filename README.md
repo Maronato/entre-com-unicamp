@@ -1,34 +1,50 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Entre com Unicamp
 
-## Getting Started
+## Local development
+To run locally, you need Docker, Node 16.x and pnpm
 
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
+First, create a file named `.env` on the root directory of the project with the following contents:
+```
+DATABASE_URL="postgres://postgres:postgres@localhost:5432/postgres"
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+1. Install dependencies with `pnpm install`
+2. Start supporting containers with `docker compose --file ./dev/docker-compose.yml up -d`
+3. Wait for the containers to converge
+4. Migrate the database with `yarn prisma db push`
+5. Generate the prisma client with `yarn prisma generate`
+6. Start the dev server with `yarn dev`
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+## Supporting services
+In development, the supporting services are available at these locations:
 
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+- `prometheus`: http://localhost:9090
+- `jaeger`: http://localhost:16686
+- `minio`: http://localhost:9001 (user: `minio_user`, password: `minio_password`)
+- `postgres`: postgres://postgres:postgres@localhost:5432
+- `redis`: redis://localhost:6379
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
+## Env configs
+These are the available environment variables
 
-## Learn More
+- `DATABASE_URL`: Postgres db url
+- `JWT_PRIVATE_KEY `: ES256 private key as string
+- `LOG_LEVEL `: Log level
+- `JAEGER_ENDPOINT `: Tracing collector endpoint
+- `AWS_API_KEY `: SES API key for sending email codes
+- `AWS_API_ENDPOINT`: SES API endpoint for sending email codes
+- `AWS_S3_ACCESS_KEY_ID`: S3 access key
+- `AWS_S3_SECRET_ACCESS_KEY`: S3 secret key
+- `AWS_S3_BUCKET_NAME`: S3 bucket name
+- `AWS_S3_REGION`: S3 region
+- `CDN_HOST`: Production CDN host
 
-To learn more about Next.js, take a look at the following resources:
+## Generating private keys
+Although not needed for development, you should enable it in production. Generate new key strings with:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```ts
+import jose from "jose"
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+const newKey = JSON.stringify(await jose.exportJWK((await jose.generateKeyPair("ES256")).privateKey))
+console.log(newKey)
+```

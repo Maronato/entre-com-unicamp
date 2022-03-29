@@ -4,7 +4,9 @@ import {
   DeleteObjectCommand,
   CopyObjectCommand,
 } from "@aws-sdk/client-s3"
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
+import { getSignedUrl, S3RequestPresigner } from "@aws-sdk/s3-request-presigner"
+import { createRequest } from "@aws-sdk/util-create-request"
+import { formatUrl } from "@aws-sdk/util-format-url"
 import { SpanKind, SpanStatusCode } from "@opentelemetry/api"
 
 import {
@@ -13,24 +15,50 @@ import {
   getTempAvatarKey,
   parseCurrentAvatarURL,
   parseTempAvatarURL,
-} from "../common/avatar"
+} from "@/utils/common/cdn"
 
 import { getInstruments } from "./telemetry/metrics"
 import { startActiveSpan } from "./telemetry/trace"
 
-const bucket = process.env.AWS_S3_BUCKET_NAME || ""
-const region = "sa-east-1"
-const accessKeyId = process.env.AWS_S3_ACCESS_KEY_ID || ""
+// Use Minio dev configs by default
+const bucket = process.env.AWS_S3_BUCKET_NAME || "development"
+const endpoint =
+  process.env.NODE_ENV === "production" ? undefined : "http://localhost:9000"
+const accessKeyId = process.env.AWS_S3_ACCESS_KEY_ID || "minio_user"
+const secretAccessKey = process.env.AWS_S3_SECRET_ACCESS_KEY || "minio_password"
+const region = process.env.AWS_S3_REGION || "us-east-1"
+
+const useProductionEndpoint = typeof endpoint === "undefined"
 
 const s3Client = new S3Client({
   region,
+  endpoint,
   credentials: {
-    accessKeyId: accessKeyId,
-    secretAccessKey: process.env.AWS_S3_SECRET_ACCESS_KEY || "",
+    accessKeyId,
+    secretAccessKey,
   },
+  tls: useProductionEndpoint,
+  forcePathStyle: !useProductionEndpoint,
 })
 
 const clientData = { bucket, region, accessKeyId }
+
+const getFixedSignedUrl: typeof getSignedUrl = async (
+  client,
+  command,
+  options
+) => {
+  if (useProductionEndpoint) {
+    return getSignedUrl(client, command, options)
+  }
+
+  // https://github.com/aws/aws-sdk-js-v3/issues/2121
+  const signer = new S3RequestPresigner({ ...s3Client.config })
+  const request = await createRequest(client, command)
+  request.headers.host = `${request.hostname}:${request.port}`
+  const signed = await signer.presign(request)
+  return formatUrl(signed)
+}
 
 export const getAvatarUploadSignedURL = (resourceID: string, nonce: string) => {
   return startActiveSpan(
@@ -48,7 +76,8 @@ export const getAvatarUploadSignedURL = (resourceID: string, nonce: string) => {
         Key: key,
         ContentType: "image/*",
       })
-      return getSignedUrl(s3Client, command, { expiresIn: 3600 })
+
+      return getFixedSignedUrl(s3Client, command, { expiresIn: 60 })
     }
   )
 }
