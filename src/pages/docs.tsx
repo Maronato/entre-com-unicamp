@@ -64,6 +64,9 @@ const DocsPage: FunctionComponent = () => {
             <b>Token endpoint</b>: {`${baseURL}/oauth/token`}
           </li>
           <li className="list-item">
+            <b>Informações do usuário</b>: {`${baseURL}/api/me`}
+          </li>
+          <li className="list-item">
             <b>response_type permitidos</b>: {`code`}
           </li>
           <li className="list-item">
