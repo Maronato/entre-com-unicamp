@@ -42,7 +42,7 @@ const Avatar: FunctionComponent<{
       {src && (
         <Image src={src} layout="fill" objectFit="cover" unoptimized={true} />
       )}
-      {Icon && <Icon />}
+      {Icon && !src && <Icon />}
     </div>
   )
 }
