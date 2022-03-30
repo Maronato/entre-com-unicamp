@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 networks:
   captain:
@@ -17,6 +17,15 @@ services:
       - captain
       - prom
     env_file: .env
+    environment:
+      DOCKER_SERVICE_ID: "{{.Service.ID}}"
+      DOCKER_SERVICE_NAME: "{{.Service.Name}}"
+      DOCKER_SERVICE_LABELS: "{{.Service.Labels}}"
+      DOCKER_NODE_ID: "{{.Node.ID}}"
+      DOCKER_NODE_HOSTNAME: "{{.Node.Hostname}}"
+      DOCKER_TASK_ID: "{{.Task.ID}}"
+      DOCKER_TASK_NAME: "{{.Task.Name}}"
+      DOCKER_TASK_SLOT: "{{.Task.Slot}}"
     deploy:
       mode: replicated
       replicas: 1

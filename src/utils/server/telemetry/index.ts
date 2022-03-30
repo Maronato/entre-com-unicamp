@@ -20,12 +20,11 @@ const sdkRef: { sdk?: NodeSDK } = {}
 
 const getSDK = async () => {
   if (!sdkRef.sdk) {
-    // Get Jaeger exporter if in prod. Else, console exporter
-    const jaegerEndpoint =
-      process.env.JAEGER_ENDPOINT ?? "http://localhost:14268/api/traces"
+    const jaegerHost =
+      process.env.NODE_ENV === "production" ? "tempo" : "localhost"
 
     const traceExporter = new JaegerExporter({
-      endpoint: jaegerEndpoint,
+      endpoint: `http://${jaegerHost}:14268/api/traces`,
     })
 
     // Get Prometheus exporter if in prod. Else, console exporter
@@ -36,6 +35,15 @@ const getSDK = async () => {
     // Instrument http, winston, ioredis, pg
     const instrumentations = [
       new HttpInstrumentation({
+        ignoreOutgoingUrls: [
+          (url) => {
+            // Ignore loki and jarger requests
+            return [/:14268\/api\/traces/, /:3100\/loki\/api\/v1\/push/].some(
+              (rgx) => rgx.test(url)
+            )
+          },
+        ],
+        requireParentforOutgoingSpans: true,
         serverName: APP_NAME,
         requestHook: (span, request) => {
           // Set the peer service to AWS S3 if the request is for AWS S3

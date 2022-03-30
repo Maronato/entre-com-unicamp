@@ -1,1 +1,1 @@
-export const APP_NAME = "entre-com-unicamp"
+export const APP_NAME = "ecu_entre-com-unicamp"

@@ -5,18 +5,43 @@ volumes:
   postgres: {}
 
 services:
-  jaeger:
-    image: jaegertracing/all-in-one:latest
+  tempo:
+    image: grafana/tempo:1.3.2
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./tempo/config.yaml:/etc/tempo.yaml
     ports:
-      - 14268:14268
-      - 16686:16686
+      - 14268:14268 # jaeger ingest
+
+  loki:
+    image: grafana/loki:2.4.2
+    command: ["-config.file=/etc/loki/local-config.yaml"]
+    ports:
+      - "3100:3100" # loki needs to be exposed so it receives logs
+    environment:
+      - JAEGER_AGENT_HOST=tempo
+      - JAEGER_ENDPOINT=http://tempo:14268/api/traces # send traces to Tempo
+      - JAEGER_SAMPLER_TYPE=const
+      - JAEGER_SAMPLER_PARAM=1
 
   prometheus:
     image: prom/prometheus:v2.34.0
+    command: ["--config.file=/etc/prometheus.yaml"]
     ports:
       - 9090:9090
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/config.yaml:/etc/prometheus.yaml
+
+  grafana:
+    image: grafana/grafana:8.4.4
+    volumes:
+      - ./grafana/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+    ports:
+      - "3030:3000"
 
   postgres:
     image: postgres:14-alpine
