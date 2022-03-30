@@ -6,7 +6,7 @@ import { respondInvalidRequest, respondOk } from "@/utils/server/serverUtils"
 
 import type { NextApiRequest, NextApiResponse } from "next"
 
-export type VerifyTOTPRequest = {
+type VerifyTOTPRequest = {
   email: string
   code: string
 }

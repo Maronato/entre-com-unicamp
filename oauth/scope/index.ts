@@ -5,7 +5,7 @@ export enum Scope {
   APPS_WRITE = "apps:write",
 }
 
-export enum ScopeDescriptions {
+enum ScopeDescriptions {
   PROFILE_READ = "Ver seu perfil público",
   PROFILE_WRITE = "Modificar seu perfil público",
   APPS_READ = "Ver seus apps",

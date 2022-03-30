@@ -24,8 +24,7 @@
       "@/oauth": ["oauth/index"],
       "@/oauth/*": ["oauth/*"],
       "@/prisma/*": ["prisma/*"]
-    },
-    "plugins": [{ "name": "typescript-plugin-css-modules" }]
+    }
   },
   "include": [
     "env.d.ts",

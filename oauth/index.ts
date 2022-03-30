@@ -30,7 +30,7 @@ export const isErrorCode = (value: unknown): value is ErrorCodes =>
 
 type ResponseType = "code"
 export type AuthorizationCodeGrantType = "authorization_code"
-export type RefreshTokenGrantType = "refresh_token"
+type RefreshTokenGrantType = "refresh_token"
 export type GrantType = AuthorizationCodeGrantType | RefreshTokenGrantType
 
 type ConfidentialAuth = {

@@ -25,12 +25,6 @@ export type SerializedUser<Private extends boolean = false> =
     name: string | null
   }
 
-// Used to embed user info in tokens
-export type SerializedUserLite = Pick<
-  SerializedUser<false>,
-  "email" | "id" | "name"
->
-
 export async function createUser(
   email: string,
   name?: string,
@@ -74,13 +68,6 @@ export async function updateUser(
       return updatedUser
     }
   )
-}
-
-export async function getFirstUser(): Promise<User | null> {
-  return startActiveSpan("getFirstUser", async () => {
-    const prisma = getPrisma()
-    return prisma.user.findFirst()
-  })
 }
 
 export async function getUser(userID: User["id"]): Promise<User | null> {

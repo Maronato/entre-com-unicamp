@@ -1,5 +1,5 @@
 import { CookieSerializeOptions, serialize } from "cookie"
-import { NextApiRequest, NextApiResponse } from "next"
+import { NextApiResponse } from "next"
 
 export function setCookie(
   res: NextApiResponse,
@@ -16,20 +16,6 @@ export function setCookie(
   }
 
   res.setHeader("Set-Cookie", serialize(name, stringValue, options))
-}
-
-export function getCookie(req: NextApiRequest, name: string): string | undefined
-export function getCookie(
-  req: NextApiRequest,
-  name: string,
-  fallback: string
-): string
-export function getCookie(
-  req: NextApiRequest,
-  name: string,
-  fallback?: string
-) {
-  return req.cookies[name] || fallback
 }
 
 export function removeCookie(

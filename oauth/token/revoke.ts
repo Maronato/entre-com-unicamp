@@ -23,7 +23,7 @@ const joinRefreshTokenCounter = (jti: RefreshTokenJTI): string => {
   return `${jti.jti}${REFRESH_TOKEN_JTI_SEPARATOR}${jti.counter}`
 }
 const getJTIRedisKey = (jti: string) => `refresh-token-revoke-${jti}`
-export const getLastJTISeen = async (jtiString: string) => {
+const getLastJTISeen = async (jtiString: string) => {
   return startActiveSpan("getLastJTISeen", async (span) => {
     const redis = await getRedis()
     const { jti, counter } = parseRefreshTokenCounter(jtiString)

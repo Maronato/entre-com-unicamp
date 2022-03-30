@@ -2,7 +2,6 @@ import { createRandomBytes } from "../common/random"
 import {
   base32ToBuffer,
   bufferToBase32,
-  generateTOTPFactory,
   verifyTOTPFactory,
 } from "../common/totp"
 
@@ -40,8 +39,6 @@ async function computeHOTP(secret: string, counter: number) {
   const result = await crypto.subtle.sign("HMAC", key, formatCounter(counter))
   return ("000000" + (truncate(new Uint8Array(result)) % 10 ** 6)).slice(-6)
 }
-
-export const generateTOTP = generateTOTPFactory(computeHOTP)
 
 export const verifyTOTP = verifyTOTPFactory(computeHOTP)
 

@@ -6,25 +6,25 @@ export type Handler<R = unknown> = (
   res: NextApiResponse
 ) => Promise<R>
 
-export type StatusOk = 200 | 201 | 202 | 203 | 204
-export type StatusError = 400 | 401 | 403 | 404 | 405 | 500 | 503
+type StatusOk = 200 | 201 | 202 | 203 | 204
+type StatusError = 400 | 401 | 403 | 404 | 405 | 500 | 503
 const statusIsOk = (
   statusCode: StatusOk | StatusError
 ): statusCode is StatusOk => statusCode < 400
 
-export type StatusCode = StatusOk | StatusError
+type StatusCode = StatusOk | StatusError
 
-export async function respond(
+async function respond(
   res: NextApiResponse,
   statusCode: StatusOk,
   data?: unknown
 ): Promise<void>
-export async function respond(
+async function respond(
   res: NextApiResponse,
   statusCode: StatusError,
   errorMessage: unknown
 ): Promise<void>
-export async function respond(
+async function respond(
   res: NextApiResponse,
   statusCode: StatusCode,
   dataOrError?: unknown

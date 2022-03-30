@@ -1,10 +1,6 @@
 import { webcrypto } from "crypto"
 
-import {
-  base32ToBuffer,
-  generateTOTPFactory,
-  verifyTOTPFactory,
-} from "../common/totp"
+import { base32ToBuffer, verifyTOTPFactory } from "../common/totp"
 
 async function computeHOTP(secret: string, counter: number) {
   // https://tools.ietf.org/html/rfc4226#section-5.1
@@ -46,7 +42,5 @@ async function computeHOTP(secret: string, counter: number) {
   )
   return ("000000" + (truncate(new Uint8Array(result)) % 10 ** 6)).slice(-6)
 }
-
-export const generateTOTP = generateTOTPFactory(computeHOTP)
 
 export const verifyTOTP = verifyTOTPFactory(computeHOTP)

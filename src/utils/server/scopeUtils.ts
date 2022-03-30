@@ -5,7 +5,7 @@ import { Scope } from "@/oauth/scope"
 import { getRequestScope } from "./auth"
 import { respondForbidden } from "./serverUtils"
 
-export const requireScope =
+const requireScope =
   (scope: Scope[]) =>
   (req: NextApiRequest, res: NextApiResponse, handler: NextApiHandler) => {
     const requestScope = getRequestScope(req)

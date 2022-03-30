@@ -3,13 +3,9 @@ import { api } from "@opentelemetry/sdk-node"
 
 import { APP_NAME } from "./consts"
 
-import { getContext } from "."
-
-export const getTracer = () => {
+const getTracer = () => {
   return api.trace.getTracer(APP_NAME)
 }
-
-export const getCurrentSpan = () => api.trace.getSpan(getContext())
 
 /**
  * Start active span

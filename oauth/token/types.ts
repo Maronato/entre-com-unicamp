@@ -3,12 +3,12 @@ import { ExtendJWTPayload, ISSUER } from "@/utils/server/jwt"
 import { Scope } from "../scope"
 
 export type AccessTokenType = "access_token"
-export type RefreshTokenType = "refresh_token"
-export type LoginTokenType = "login_token"
+type RefreshTokenType = "refresh_token"
+type LoginTokenType = "login_token"
 export type TokenType = AccessTokenType | RefreshTokenType | LoginTokenType
 export type AccessToken = string
 export type RefreshToken = string
-export type LoginToken = string
+type LoginToken = string
 export type Token = AccessToken | RefreshToken | LoginToken
 
 export type BaseTokenPayload = {

@@ -60,24 +60,3 @@ export const deleteFetch = async (url: string) => {
     return r
   })
 }
-
-export const putFetch = async <T>(
-  url: string,
-  body?: Record<string, unknown>
-) => {
-  const res: T = await fetch(url, {
-    method: "PUT",
-    body: JSON.stringify(body),
-    headers: {
-      "Content-type": "application/json; charset=UTF-8",
-    },
-  })
-    .then((r) => {
-      if (!r.ok) {
-        throw r
-      }
-      return r
-    })
-    .then((r) => r.json())
-  return res
-}

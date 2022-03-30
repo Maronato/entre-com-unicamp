@@ -57,19 +57,7 @@ function getCurrentStep() {
   return now / TIME_STEP
 }
 
-export function getTimeLeft() {
-  const step = getCurrentStep()
-  const fraction = step - Math.floor(step)
-  return (1 - fraction) * TIME_STEP
-}
-
 type ComputeHOTP = (secret: string, counter: number) => Promise<string>
-
-export const generateTOTPFactory =
-  (computeHOTP: ComputeHOTP) => (secret: string) => {
-    const counter = Math.floor(getCurrentStep())
-    return computeHOTP(secret, counter)
-  }
 
 export const verifyTOTPFactory =
   (computeHOTP: ComputeHOTP) => async (secret: string, code: string) => {

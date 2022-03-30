@@ -20,7 +20,7 @@ export type CreateRequestData = {
   redirect_uris: string[]
 }
 
-export type CreateResponseData = SerializedApp<true>
+type CreateResponseData = SerializedApp<true>
 
 async function createHandler(
   req: NextApiRequest,

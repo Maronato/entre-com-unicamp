@@ -29,7 +29,7 @@ export type ValidResponseData = {
   code: string
   state?: string
 }
-export type ErrorResponseData = {
+type ErrorResponseData = {
   error: string
   state?: string
 }

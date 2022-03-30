@@ -59,26 +59,6 @@ export function createApp(
   )
 }
 
-export function getFirstApp(): Promise<App | null> {
-  return startActiveSpan("getFirstApp", async () => {
-    const prisma = getPrisma()
-    return prisma.app.findFirst()
-  })
-}
-
-export function getApp(appID: App["id"]): Promise<App | null> {
-  return startActiveSpan(
-    "getApp",
-    { attributes: { appID: appID } },
-    async () => {
-      const prisma = getPrisma()
-      return prisma.app.findUnique({
-        where: { id: appID },
-      })
-    }
-  )
-}
-
 export function getAppByClientID(
   clientID: App["client_id"]
 ): Promise<App | null> {
@@ -184,19 +164,6 @@ export function serializeApp<P extends boolean = false>(
         Object.assign(result, { [key]: value })
       }
       return result as SerializedApp<P>
-    }
-  )
-}
-
-export function unserializeApp(app: SerializedApp): Promise<App | null> {
-  return startActiveSpan(
-    "unserializeApp",
-    { attributes: { app: app.client_id } },
-    async () => {
-      if ("id" in app) {
-        return getApp(app.id)
-      }
-      return getAppByClientID(app.client_id)
     }
   )
 }

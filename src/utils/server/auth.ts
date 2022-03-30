@@ -15,7 +15,7 @@ const AUTH_COOKIE_NAME = "jwt-auth"
 
 const MAX_AGE = 60 * 60 * 24 * 30 * 12
 
-export const getAuthCookieOptions = () => ({
+const getAuthCookieOptions = () => ({
   maxAge: MAX_AGE,
   path: "/",
   sameSite: true,
@@ -60,7 +60,7 @@ async function verifyAuthToken(
   })
 }
 
-export function isAuthenticated(
+function isAuthenticated(
   req: Pick<NextApiRequest, "cookies" | "headers">,
   checkAudience = true,
   scope = REQUIRED_SCOPE

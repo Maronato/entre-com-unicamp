@@ -15,15 +15,15 @@ import { createRandomString } from "@/utils/common/random"
 import { getLogger } from "./telemetry/logs"
 import { startActiveSpan } from "./telemetry/trace"
 
-export const ALGORITHM = "ES256"
+const ALGORITHM = "ES256"
 export const ISSUER = "entre-com-unicamp.com"
-export const TYPE = "JWT"
+const TYPE = "JWT"
 
 // GENERATE YOUR KEY FOR PRODUCTION!
 const DEFAULT_PRIVATE_KEY =
   '{"kty":"EC","x":"f-Ix02u9TbSSPZDuVHkdJuG0GDCqqpczasp8rd2Y-yM","y":"LPO4N2PC5G3JgrvuchnnJwhmkkL8SbEl4iYxs0h1r7U","crv":"P-256","d":"L-pJifhr1qAmWSvrsfOtR71aZFRr_P9gu9W_08uHDdQ"}'
 
-export function getPrivateKey(): Promise<KeyObject> {
+function getPrivateKey(): Promise<KeyObject> {
   const logger = getLogger()
   return startActiveSpan("getPrivateKey", (_, setError) => {
     let key = process.env.JWT_PRIVATE_KEY
@@ -48,7 +48,7 @@ export async function getJSONWebKeySet(): Promise<JSONWebKeySet> {
   }))
 }
 
-export async function getJWKS() {
+async function getJWKS() {
   return startActiveSpan("getJWKS", async () =>
     createLocalJWKSet(await getJSONWebKeySet())
   )
