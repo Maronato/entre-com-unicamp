@@ -1,7 +1,7 @@
 import { createRandomString } from "@/utils/common/random"
 
 import { getRedis } from "../redis"
-import { getInstruments } from "../telemetry/metrics"
+import { getInstruments, startStatusHistogram } from "../telemetry/metrics"
 import { startActiveSpan } from "../telemetry/trace"
 
 import { sendSESEmailCode } from "./aws"
@@ -21,7 +21,7 @@ export const generateEmailCode = (email: string) => {
     })
 
     const redis = await getRedis()
-    await redis.set(key, code, { EX: codeExpire })
+    await redis.set(key, code, codeExpire)
     return code
   })
 }
@@ -61,7 +61,9 @@ export const sendEmailCode = (email: string, code: string) => {
       })
 
       let status: boolean
-      const start = new Date().getTime()
+      const record = startStatusHistogram(sendEmailDuration, {
+        transport,
+      })
 
       if (useSES) {
         status = await sendSESEmailCode(email, code)
@@ -69,11 +71,7 @@ export const sendEmailCode = (email: string, code: string) => {
         status = await sendConsoleEmailCode(email, code)
       }
 
-      const responseTime = new Date().getTime() - start
-      sendEmailDuration.record(responseTime / 1000, {
-        transport,
-        status: status ? "success" : "error",
-      })
+      record(status)
 
       if (!status) {
         setError("Error sending email code")

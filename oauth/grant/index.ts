@@ -185,7 +185,7 @@ export const revokeGrant = async (jti: string) => {
     const key = getRevokedGrantKey(jti)
     span.setAttribute("key", key)
 
-    await redis.set(key, "expired", { EX: codeGrantTTLSeconds, NX: true })
+    await redis.set(key, "expired", codeGrantTTLSeconds, true)
   })
 }
 const isGrantRevoked = async (jti: string) => {

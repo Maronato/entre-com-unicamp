@@ -1,10 +1,13 @@
 import { SpanKind } from "@opentelemetry/api"
-import { SemanticAttributes } from "@opentelemetry/semantic-conventions"
+import {
+  DbSystemValues,
+  SemanticAttributes,
+} from "@opentelemetry/semantic-conventions"
 import { parse } from "pg-connection-string"
 
 import type { PrismaClient } from "@prisma/client"
 
-import { getInstruments } from "./metrics"
+import { getInstruments, startStatusHistogram } from "./metrics"
 import { startActiveSpan } from "./trace"
 
 type Middleware = Parameters<PrismaClient["$use"]>[0]
@@ -21,33 +24,29 @@ export function createTelemetryMiddleware() {
           const connConfig = parse(process.env.DATABASE_URL || "")
 
           span.setAttributes({
-            [SemanticAttributes.DB_SYSTEM]: "postgresql",
+            [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
             [SemanticAttributes.DB_NAME]: connConfig.database || undefined,
             [SemanticAttributes.DB_USER]: connConfig.user,
             [SemanticAttributes.DB_SQL_TABLE]: params.model,
             [SemanticAttributes.DB_OPERATION]: params.action,
             [SemanticAttributes.NET_PEER_PORT]: connConfig.port || undefined,
             [SemanticAttributes.NET_PEER_NAME]: connConfig.host || undefined,
+            [SemanticAttributes.PEER_SERVICE]: "postgresql",
           })
 
-          const start = new Date().getTime()
-          const recordDuration = (success: boolean) => {
-            const responseTime = new Date().getTime() - start
-            dbRequestDuration.record(responseTime / 1000, {
-              table: params.model || "undefined",
-              action: params.action,
-              status: success ? "success" : "failure",
-              system: "postgresql",
-              database: connConfig.database || "undefined",
-            })
-          }
+          const record = startStatusHistogram(dbRequestDuration, {
+            table: params.model || "undefined",
+            action: params.action,
+            system: "postgresql",
+            database: connConfig.database || "undefined",
+          })
 
           try {
             const result = await next(params)
-            recordDuration(true)
+            record(true)
             return result
           } catch (e) {
-            recordDuration(false)
+            record(false)
             throw e
           }
         }

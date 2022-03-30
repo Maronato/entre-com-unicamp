@@ -13,6 +13,7 @@ specifiers:
   '@opentelemetry/exporter-jaeger': ^1.0.1
   '@opentelemetry/exporter-prometheus': ^0.27.0
   '@opentelemetry/instrumentation-http': ^0.27.0
+  '@opentelemetry/instrumentation-ioredis': ^0.28.0
   '@opentelemetry/instrumentation-winston': ^0.27.2
   '@opentelemetry/propagator-jaeger': ^1.0.1
   '@opentelemetry/sdk-node': ^0.27.0
@@ -29,11 +30,13 @@ specifiers:
   esbuild: ^0.14.25
   eslint: ^8.10.0
   husky: ^7.0.4
+  ioredis: <5
   jose: ^4.6.0
   lint-staged: ^12.3.5
   next: 12.1.0
   pg-connection-string: ^2.5.0
   postcss: ^8.4.8
+  postcss-import: ^14.1.0
   prettier: ^2.5.1
   prisma: ^3.10.0
   react: 17.0.2
@@ -41,7 +44,6 @@ specifiers:
   react-popper: ^2.2.5
   react-qr-code: ^2.0.3
   react-use: ^17.3.2
-  redis: ^4.0.4
   rimraf: ^3.0.2
   swr: ^1.2.2
   tailwindcss: ^3.0.23
@@ -62,6 +64,7 @@ dependencies:
   '@opentelemetry/exporter-jaeger': 1.0.1_@opentelemetry+api@1.0.4
   '@opentelemetry/exporter-prometheus': 0.27.0_@opentelemetry+api@1.0.4
   '@opentelemetry/instrumentation-http': 0.27.0_@opentelemetry+api@1.0.4
+  '@opentelemetry/instrumentation-ioredis': 0.28.0_@opentelemetry+api@1.0.4
   '@opentelemetry/instrumentation-winston': 0.27.2_@opentelemetry+api@1.0.4
   '@opentelemetry/propagator-jaeger': 1.0.1_@opentelemetry+api@1.0.4
   '@opentelemetry/sdk-node': 0.27.0_@opentelemetry+api@1.0.4
@@ -70,6 +73,7 @@ dependencies:
   '@prisma/client': 3.10.0_prisma@3.10.0
   classnames: 2.3.1
   cookie: 0.4.2
+  ioredis: 4.28.5
   jose: 4.6.0
   next: 12.1.0_react-dom@17.0.2+react@17.0.2
   pg-connection-string: 2.5.0
@@ -79,7 +83,6 @@ dependencies:
   react-popper: 2.2.5_4d48938cec404f33c7375aa6b453941c
   react-qr-code: 2.0.3_react@17.0.2
   react-use: 17.3.2_react-dom@17.0.2+react@17.0.2
-  redis: 4.0.4
   swr: 1.2.2_react@17.0.2
   winston: 3.6.0
 
@@ -95,6 +98,7 @@ devDependencies:
   husky: 7.0.4
   lint-staged: 12.3.5
   postcss: 8.4.8
+  postcss-import: 14.1.0_postcss@8.4.8
   prettier: 2.5.1
   rimraf: 3.0.2
   tailwindcss: 3.0.23_2a12c91f48b4280adc4c14dfe7c50ae2
@@ -1258,56 +1262,6 @@ packages:
     dev: false
     optional: true
 
-  /@node-redis/bloom/1.0.1_@node-redis+client@1.0.4:
-    resolution: {integrity: sha512-mXEBvEIgF4tUzdIN89LiYsbi6//EdpFA7L8M+DHCvePXg+bfHWi+ct5VI6nHUFQE5+ohm/9wmgihCH3HSkeKsw==}
-    peerDependencies:
-      '@node-redis/client': ^1.0.0
-    dependencies:
-      '@node-redis/client': 1.0.4
-    dev: false
-
-  /@node-redis/client/1.0.4:
-    resolution: {integrity: sha512-IM/NRAqg7MvNC3bIRQipXGrEarunrdgvrbAzsd3ty93LSHi/M+ybQulOERQi8a3M+P5BL8HenwXjiIoKm6ml2g==}
-    engines: {node: '>=12'}
-    dependencies:
-      cluster-key-slot: 1.1.0
-      generic-pool: 3.8.2
-      redis-parser: 3.0.0
-      yallist: 4.0.0
-    dev: false
-
-  /@node-redis/graph/1.0.0_@node-redis+client@1.0.4:
-    resolution: {integrity: sha512-mRSo8jEGC0cf+Rm7q8mWMKKKqkn6EAnA9IA2S3JvUv/gaWW/73vil7GLNwion2ihTptAm05I9LkepzfIXUKX5g==}
-    peerDependencies:
-      '@node-redis/client': ^1.0.0
-    dependencies:
-      '@node-redis/client': 1.0.4
-    dev: false
-
-  /@node-redis/json/1.0.2_@node-redis+client@1.0.4:
-    resolution: {integrity: sha512-qVRgn8WfG46QQ08CghSbY4VhHFgaTY71WjpwRBGEuqGPfWwfRcIf3OqSpR7Q/45X+v3xd8mvYjywqh0wqJ8T+g==}
-    peerDependencies:
-      '@node-redis/client': ^1.0.0
-    dependencies:
-      '@node-redis/client': 1.0.4
-    dev: false
-
-  /@node-redis/search/1.0.3_@node-redis+client@1.0.4:
-    resolution: {integrity: sha512-rsrzkGWI84di/uYtEctS/4qLusWt0DESx/psjfB0TFpORDhe7JfC0h8ary+eHulTksumor244bXLRSqQXbFJmw==}
-    peerDependencies:
-      '@node-redis/client': ^1.0.0
-    dependencies:
-      '@node-redis/client': 1.0.4
-    dev: false
-
-  /@node-redis/time-series/1.0.2_@node-redis+client@1.0.4:
-    resolution: {integrity: sha512-HGQ8YooJ8Mx7l28tD7XjtB3ImLEjlUxG1wC1PAjxu6hPJqjPshUZxAICzDqDjtIbhDTf48WXXUcx8TQJB1XTKA==}
-    peerDependencies:
-      '@node-redis/client': ^1.0.0
-    dependencies:
-      '@node-redis/client': 1.0.4
-    dev: false
-
   /@nodelib/fs.scandir/2.1.5:
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
     engines: {node: '>= 8'}
@@ -1394,6 +1348,20 @@ packages:
       '@opentelemetry/instrumentation': 0.27.0_@opentelemetry+api@1.0.4
       '@opentelemetry/semantic-conventions': 1.0.1
       semver: 7.3.5
+    transitivePeerDependencies:
+      - supports-color
+    dev: false
+
+  /@opentelemetry/instrumentation-ioredis/0.28.0_@opentelemetry+api@1.0.4:
+    resolution: {integrity: sha512-cIXWW3iTYAxIxuaSdoQNPc5j2nvD829H4Y4wdnIQw0lcfSKZLfXfsXYJGDklnRgNyil5PMFlBxVnjZf5gYieHQ==}
+    engines: {node: '>=8.0.0'}
+    peerDependencies:
+      '@opentelemetry/api': ^1.0.2
+    dependencies:
+      '@opentelemetry/api': 1.0.4
+      '@opentelemetry/instrumentation': 0.27.0_@opentelemetry+api@1.0.4
+      '@opentelemetry/semantic-conventions': 1.0.1
+      '@types/ioredis': 4.26.6
     transitivePeerDependencies:
       - supports-color
     dev: false
@@ -1614,6 +1582,12 @@ packages:
     resolution: {integrity: sha512-CuPgU6f3eT/XgKKPqKd/gLZV1Xmvf1a2R5POBOGQa6uv82xpls89HU5zKeVoyR8XzHd1RGNOlQlvUe3CFkjWNQ==}
     dev: true
 
+  /@types/ioredis/4.26.6:
+    resolution: {integrity: sha512-Q9ydXL/5Mot751i7WLCm9OGTj5jlW3XBdkdEW21SkXZ8Y03srbkluFGbM3q8c+vzPW30JOLJ+NsZWHoly0+13A==}
+    dependencies:
+      '@types/node': 17.0.21
+    dev: false
+
   /@types/js-cookie/2.2.7:
     resolution: {integrity: sha512-aLkWa0C0vO5b4Sr798E26QgOkss68Un0bLjs7u9qxzPT5CG+8DuNTffWES58YzJs3hrVAOs1wonycqEBqNJubA==}
     dev: false
@@ -1628,7 +1602,6 @@ packages:
 
   /@types/node/17.0.21:
     resolution: {integrity: sha512-DBZCJbhII3r90XbQxI8Y9IjjiiOGlZ0Hr32omXIZvwwZ7p4DMMXGrKXVyPfuoBOri9XNtL0UK69jYIBIsRX3QQ==}
-    dev: true
 
   /@types/parse-json/4.0.0:
     resolution: {integrity: sha512-//oorEZjL6sbPcKUaCdIGlIUeH26mgzimjBB77G6XRgnDl/L5wOnpyBGRe/Mmf5CVW3PwEBE1NjiMZ/ssFh4wA==}
@@ -2447,6 +2420,11 @@ packages:
     resolution: {integrity: sha1-yY2bzvdWdBiOEQlpFRGZ45sfppM=}
     dev: true
 
+  /denque/1.5.1:
+    resolution: {integrity: sha512-XwE+iZ4D6ZUB7mfYRMb5wByE8L74HCn30FBN7sWnXksWc1LO1bPDl67pBR9o/kC4z/xSNAwkMYcGgqDV3BE3Hw==}
+    engines: {node: '>=0.10'}
+    dev: false
+
   /detective/5.2.0:
     resolution: {integrity: sha512-6SsIx+nUUbuK0EthKjv0zrdnajCCXVYGmbYYiYjFVpzcjwEs/JMDZ8tPRG29J/HhN56t3GJp2cGSWDRjjot8Pg==}
     engines: {node: '>=0.8.0'}
@@ -3224,11 +3202,6 @@ packages:
       - supports-color
     dev: false
 
-  /generic-pool/3.8.2:
-    resolution: {integrity: sha512-nGToKy6p3PAbYQ7p1UlWl6vSPwfwU6TMSWK7TTu+WUY4ZjyZQGniGGt2oNVvyNSpyZYSB43zMXVLcBm08MTMkg==}
-    engines: {node: '>= 4'}
-    dev: false
-
   /get-intrinsic/1.1.1:
     resolution: {integrity: sha512-kWZrnVM42QCiEA2Ig1bG8zjoIMOgxWwYCEeNdwY6Tv/cOSeGpcoX4pXHfKUxNKVoArnrEr2e9srnAxxGIraS9Q==}
     dependencies:
@@ -3428,6 +3401,25 @@ packages:
       has: 1.0.3
       side-channel: 1.0.4
     dev: true
+
+  /ioredis/4.28.5:
+    resolution: {integrity: sha512-3GYo0GJtLqgNXj4YhrisLaNNvWSNwSS2wS4OELGfGxH8I69+XfNdnmV1AyN+ZqMh0i7eX+SWjrwFKDBDgfBC1A==}
+    engines: {node: '>=6'}
+    dependencies:
+      cluster-key-slot: 1.1.0
+      debug: 4.3.3
+      denque: 1.5.1
+      lodash.defaults: 4.2.0
+      lodash.flatten: 4.4.0
+      lodash.isarguments: 3.1.0
+      p-map: 2.1.0
+      redis-commands: 1.7.0
+      redis-errors: 1.2.0
+      redis-parser: 3.0.0
+      standard-as-callback: 2.1.0
+    transitivePeerDependencies:
+      - supports-color
+    dev: false
 
   /is-arrayish/0.2.1:
     resolution: {integrity: sha1-d8mYQFJ6qOyxqLppe4BkWnqSap0=}
@@ -3718,6 +3710,18 @@ packages:
       p-locate: 2.0.0
       path-exists: 3.0.0
     dev: true
+
+  /lodash.defaults/4.2.0:
+    resolution: {integrity: sha1-0JF4cW/+pN3p5ft7N/bwgCJ0WAw=}
+    dev: false
+
+  /lodash.flatten/4.4.0:
+    resolution: {integrity: sha1-8xwiIlqWMtK7+OSt2+8kCqdlph8=}
+    dev: false
+
+  /lodash.isarguments/3.1.0:
+    resolution: {integrity: sha1-L1c9hcaiQon/AGY7SRwdM4/zRYo=}
+    dev: false
 
   /lodash.merge/4.6.2:
     resolution: {integrity: sha512-0KpjqXRVvrYyCsX1swR/XTK0va6VQkQM6MNo7PqW77ByjAhoARA8EfrP1N4+KlKj8YS0ZUCtRT/YUuhyYDujIQ==}
@@ -4046,6 +4050,11 @@ packages:
       p-limit: 1.3.0
     dev: true
 
+  /p-map/2.1.0:
+    resolution: {integrity: sha512-y3b8Kpd8OAN444hxfBbFfj1FY/RjtTd8tzYwhUqNYXx0fXx2iX4maP4Qr6qhIKbQXI02wTLAda4fYUbDagTUFw==}
+    engines: {node: '>=6'}
+    dev: false
+
   /p-map/4.0.0:
     resolution: {integrity: sha512-/bjOqmgETBYB5BoEeGVea8dmvHb2m9GLy1E9W43yeyfP6QQCZGFNa+XRceJEuDB6zqr+gKpIAmlLebMpykw/MQ==}
     engines: {node: '>=10'}
@@ -4108,6 +4117,23 @@ packages:
   /picomatch/2.3.1:
     resolution: {integrity: sha512-JU3teHTNjmE2VCGFzuY8EXzCDVwEqB2a8fsIvwaStHhAWJEeVd1o1QD80CU6+ZdEXXSLbSsuLwJjkCBWqRQUVA==}
     engines: {node: '>=8.6'}
+    dev: true
+
+  /pify/2.3.0:
+    resolution: {integrity: sha1-7RQaasBDqEnqWISY59yosVMw6Qw=}
+    engines: {node: '>=0.10.0'}
+    dev: true
+
+  /postcss-import/14.1.0_postcss@8.4.8:
+    resolution: {integrity: sha512-flwI+Vgm4SElObFVPpTIT7SU7R3qk2L7PyduMcokiaVKuWv9d/U+Gm/QAd8NDLuykTWTkcrjOeD2Pp1rMeBTGw==}
+    engines: {node: '>=10.0.0'}
+    peerDependencies:
+      postcss: ^8.0.0
+    dependencies:
+      postcss: 8.4.8
+      postcss-value-parser: 4.2.0
+      read-cache: 1.0.0
+      resolve: 1.22.0
     dev: true
 
   /postcss-js/4.0.0_postcss@8.4.8:
@@ -4320,6 +4346,12 @@ packages:
       object-assign: 4.1.1
     dev: false
 
+  /read-cache/1.0.0:
+    resolution: {integrity: sha1-5mTvMRYRZsl1HNvo28+GtftY93Q=}
+    dependencies:
+      pify: 2.3.0
+    dev: true
+
   /readable-stream/3.6.0:
     resolution: {integrity: sha512-BViHy7LKeTz4oNnkcLJ+lVSL6vpiFeX6/d3oSH8zCW7UxP2onchk+vTGB143xuFjHS3deTgkKoXXymXqymiIdA==}
     engines: {node: '>= 6'}
@@ -4336,6 +4368,10 @@ packages:
       picomatch: 2.3.1
     dev: true
 
+  /redis-commands/1.7.0:
+    resolution: {integrity: sha512-nJWqw3bTFy21hX/CPKHth6sfhZbdiHP6bTawSgQBlKOVRG7EZkfHbbHwQJnrE4vsQf0CMNE+3gJ4Fmm16vdVlQ==}
+    dev: false
+
   /redis-errors/1.2.0:
     resolution: {integrity: sha1-62LSrbFeTq9GEMBK/hUpOEJQq60=}
     engines: {node: '>=4'}
@@ -4346,17 +4382,6 @@ packages:
     engines: {node: '>=4'}
     dependencies:
       redis-errors: 1.2.0
-    dev: false
-
-  /redis/4.0.4:
-    resolution: {integrity: sha512-KaM1OAj/nGrSeybmmOWSMY0LXTGT6FVWgUZZrd2MYzXKJ+VGtqVaciGQeNMfZiQX+kDM8Ke4uttb54m2rm6V0A==}
-    dependencies:
-      '@node-redis/bloom': 1.0.1_@node-redis+client@1.0.4
-      '@node-redis/client': 1.0.4
-      '@node-redis/graph': 1.0.0_@node-redis+client@1.0.4
-      '@node-redis/json': 1.0.2_@node-redis+client@1.0.4
-      '@node-redis/search': 1.0.3_@node-redis+client@1.0.4
-      '@node-redis/time-series': 1.0.2_@node-redis+client@1.0.4
     dev: false
 
   /regenerator-runtime/0.13.9:
@@ -4624,6 +4649,10 @@ packages:
       error-stack-parser: 2.0.7
       stack-generator: 2.0.5
       stacktrace-gps: 3.0.4
+    dev: false
+
+  /standard-as-callback/2.1.0:
+    resolution: {integrity: sha512-qoRRSyROncaz1z0mvYqIE4lCd9p2R90i6GxW3uZv5ucSu8tU7B5HXUP1gG8pVZsYNVaXjk8ClXHPttLyxAL48A==}
     dev: false
 
   /string-argv/0.3.1:

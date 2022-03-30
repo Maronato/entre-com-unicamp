@@ -1,42 +1,43 @@
 import { IncomingMessage, ServerResponse } from "http"
 import { UrlWithParsedQuery } from "url"
 
-import { metrics } from "@opentelemetry/api-metrics"
+import { Histogram, metrics } from "@opentelemetry/api-metrics"
 
 import { APP_NAME } from "./consts"
 
 const createInstruments = () => {
   const meter = metrics.getMeterProvider().getMeter(APP_NAME)
+  const boundaries = [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10]
   const redisRequestDuration = meter.createHistogram(
     "redis_request_duration_seconds",
     {
       description: "Duration of redis access requests",
-      boundaries: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
+      boundaries,
     }
   )
   const requestDuration = meter.createHistogram("request_duration_seconds", {
     description: "Duration of HTTP requests",
-    boundaries: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
+    boundaries,
   })
   const dbRequestDuration = meter.createHistogram(
     "database_request_duration_seconds",
     {
       description: "Duration of database access requests",
-      boundaries: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
+      boundaries,
     }
   )
   const sendEmailDuration = meter.createHistogram(
     "ses_request_duration_seconds",
     {
       description: "Duration of email sending requests",
-      boundaries: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
+      boundaries,
     }
   )
   const s3RequestDuration = meter.createHistogram(
     "s3_request_duration_seconds",
     {
       description: "Duration of S3 access requests",
-      boundaries: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
+      boundaries,
     }
   )
 
@@ -69,6 +70,30 @@ export const getInstruments = () => {
   return global.instruments
 }
 
+export const startHistogram = (
+  hist: Histogram,
+  baseArgs: Record<string, string> = {}
+) => {
+  const start = new Date().getTime()
+  return (endArgs: Record<string, string> = {}) => {
+    const responseTime = new Date().getTime() - start
+    hist.record(responseTime / 1000, {
+      ...baseArgs,
+      ...endArgs,
+    })
+  }
+}
+
+export const startStatusHistogram = (
+  hist: Histogram,
+  baseArgs: Record<string, string> = {}
+) => {
+  const record = startHistogram(hist, baseArgs)
+  return (success?: boolean, endArgs: Record<string, string> = {}) => {
+    return record({ success: success ? "success" : "failure", ...endArgs })
+  }
+}
+
 export const creatRequestMeter = () => {
   const { requestDuration } = getInstruments()
 
@@ -80,18 +105,13 @@ export const creatRequestMeter = () => {
     const { pathname } = url
     const method = req.method
 
-    const metadata = {
+    const record = startHistogram(requestDuration, {
       pathname: pathname || "",
       method: method || "UNKNOWN",
-    }
-
-    const start = new Date().getTime()
+    })
     res.on("finish", () => {
-      const responseTime = new Date().getTime() - start
-      const statusCode = res.statusCode.toString()
-      requestDuration.record(responseTime / 1000, {
-        ...metadata,
-        status_code: statusCode,
+      record({
+        status_code: res.statusCode.toString(),
       })
     })
   }

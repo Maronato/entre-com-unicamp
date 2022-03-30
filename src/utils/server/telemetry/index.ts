@@ -1,10 +1,14 @@
 import { JaegerExporter } from "@opentelemetry/exporter-jaeger"
 import { PrometheusExporter } from "@opentelemetry/exporter-prometheus"
 import { HttpInstrumentation } from "@opentelemetry/instrumentation-http"
+import { IORedisInstrumentation } from "@opentelemetry/instrumentation-ioredis"
 import { WinstonInstrumentation } from "@opentelemetry/instrumentation-winston"
 import { JaegerPropagator } from "@opentelemetry/propagator-jaeger"
 import { api, NodeSDK, resources } from "@opentelemetry/sdk-node"
-import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions"
+import {
+  SemanticAttributes,
+  SemanticResourceAttributes,
+} from "@opentelemetry/semantic-conventions"
 
 import { APP_NAME } from "./consts"
 import { registerInstruments } from "./metrics"
@@ -26,10 +30,19 @@ const getSDK = async () => {
       port: 9464,
     })
 
-    // Only HTTP and winston logs calls may be auto-logged
+    // Instrument http, winston, ioredis, pg
     const instrumentations = [
-      new HttpInstrumentation({}),
-      new WinstonInstrumentation({}),
+      new HttpInstrumentation({
+        serverName: APP_NAME,
+      }),
+      new WinstonInstrumentation(),
+      new IORedisInstrumentation({
+        requestHook: (span) => {
+          span.setAttributes({
+            [SemanticAttributes.PEER_SERVICE]: "redis",
+          })
+        },
+      }),
     ]
     // Propagate traces using Jaeger
     const textMapPropagator = new JaegerPropagator()

@@ -17,7 +17,7 @@ import {
   parseTempAvatarURL,
 } from "@/utils/common/cdn"
 
-import { getInstruments } from "./telemetry/metrics"
+import { getInstruments, startStatusHistogram } from "./telemetry/metrics"
 import { startActiveSpan } from "./telemetry/trace"
 
 // Use Minio dev configs by default
@@ -99,23 +99,19 @@ export const deleteCurrentAvatar = (avatarURL: string) => {
         Bucket: bucket,
         Key: key,
       })
-      const start = new Date().getTime()
-      let status: "success" | "failure" = "failure"
+      const record = startStatusHistogram(s3RequestDuration, {
+        command: "delete",
+      })
       try {
         await s3Client.send(command)
-        status = "success"
+        record(true)
       } catch (e) {
         span.setStatus({
           code: SpanStatusCode.ERROR,
           message: "failed to delete key",
         })
+        record(false)
       }
-      const responseTime = new Date().getTime() - start
-      s3RequestDuration.record(responseTime / 1000, {
-        ...clientData,
-        status,
-        command: "delete",
-      })
     }
   )
 }
@@ -161,22 +157,14 @@ export const promoteTempAvatarToCurrent = async (
         ContentType: "image/*",
       })
 
-      const start = new Date().getTime()
+      const record = startStatusHistogram(s3RequestDuration, {
+        command: "copy",
+      })
       try {
         await s3Client.send(copyCommand)
-        const responseTime = new Date().getTime() - start
-        s3RequestDuration.record(responseTime / 1000, {
-          ...clientData,
-          command: "copy",
-          status: "success",
-        })
+        record(true)
       } catch (e) {
-        const responseTime = new Date().getTime() - start
-        s3RequestDuration.record(responseTime / 1000, {
-          ...clientData,
-          command: "copy",
-          status: "failure",
-        })
+        record(false)
         throw e
       }
 
