@@ -12,6 +12,7 @@ import {
 
 import { createRandomString } from "@/utils/common/random"
 
+import { getLogger } from "./telemetry/logs"
 import { startActiveSpan } from "./telemetry/trace"
 
 export const ALGORITHM = "ES256"
@@ -23,14 +24,16 @@ const DEFAULT_PRIVATE_KEY =
   '{"kty":"EC","x":"f-Ix02u9TbSSPZDuVHkdJuG0GDCqqpczasp8rd2Y-yM","y":"LPO4N2PC5G3JgrvuchnnJwhmkkL8SbEl4iYxs0h1r7U","crv":"P-256","d":"L-pJifhr1qAmWSvrsfOtR71aZFRr_P9gu9W_08uHDdQ"}'
 
 export function getPrivateKey(): Promise<KeyObject> {
-  return startActiveSpan(
-    "getPrivateKey",
-    () =>
-      importJWK(
-        JSON.parse(process.env.JWT_PRIVATE_KEY || DEFAULT_PRIVATE_KEY),
-        ALGORITHM
-      ) as Promise<KeyObject>
-  )
+  const logger = getLogger()
+  return startActiveSpan("getPrivateKey", (_, setError) => {
+    let key = process.env.JWT_PRIVATE_KEY
+    if (!key) {
+      logger.warn("JWT_PRIVATE_KEY is not set")
+      setError("JWT_PRIVATE_KEY is not set")
+      key = DEFAULT_PRIVATE_KEY
+    }
+    return importJWK(JSON.parse(key), ALGORITHM) as Promise<KeyObject>
+  })
 }
 
 async function getPublicKey() {
