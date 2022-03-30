@@ -66,8 +66,9 @@ const buildCommands = (client: RedisInstance) => {
 
 export const getRedis = async () => {
   if (!global.redis) {
-    global.redis = new RedisClient()
-    global.redis.del
+    const host = process.env.NODE_ENV === "production" ? "redis" : "localhost"
+    global.redis = new RedisClient(`redis://${host}:6379`)
+    await global.redis.connect()
   }
 
   return buildCommands(global.redis)
