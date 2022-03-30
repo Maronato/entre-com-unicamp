@@ -10,6 +10,9 @@ import {
   SemanticResourceAttributes,
 } from "@opentelemetry/semantic-conventions"
 
+import { updateAPIGatewayRequestSpan } from "../emailCodes/aws"
+import { updateS3RequestSpan } from "../s3"
+
 import { APP_NAME } from "./consts"
 import { registerInstruments } from "./metrics"
 
@@ -34,6 +37,11 @@ const getSDK = async () => {
     const instrumentations = [
       new HttpInstrumentation({
         serverName: APP_NAME,
+        requestHook: (span, request) => {
+          // Set the peer service to AWS S3 if the request is for AWS S3
+          updateS3RequestSpan(span, request)
+          updateAPIGatewayRequestSpan(span, request)
+        },
       }),
       new WinstonInstrumentation(),
       new IORedisInstrumentation({

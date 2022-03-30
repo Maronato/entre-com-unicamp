@@ -1,13 +1,18 @@
+import { ClientRequest, IncomingMessage } from "http"
+
 import {
   S3Client,
   PutObjectCommand,
   DeleteObjectCommand,
+  ListObjectsCommand,
   CopyObjectCommand,
 } from "@aws-sdk/client-s3"
 import { getSignedUrl, S3RequestPresigner } from "@aws-sdk/s3-request-presigner"
 import { createRequest } from "@aws-sdk/util-create-request"
 import { formatUrl } from "@aws-sdk/util-format-url"
-import { SpanKind, SpanStatusCode } from "@opentelemetry/api"
+import { SpanStatusCode } from "@opentelemetry/api"
+import { api } from "@opentelemetry/sdk-node"
+import { SemanticAttributes } from "@opentelemetry/semantic-conventions"
 
 import {
   getCurrentAvatarKey,
@@ -15,7 +20,7 @@ import {
   getTempAvatarKey,
   parseCurrentAvatarURL,
   parseTempAvatarURL,
-} from "@/utils/common/cdn"
+} from "../common/cdn"
 
 import { getInstruments, startStatusHistogram } from "./telemetry/metrics"
 import { startActiveSpan } from "./telemetry/trace"
@@ -41,7 +46,27 @@ const s3Client = new S3Client({
   forcePathStyle: !useProductionEndpoint,
 })
 
-const clientData = { bucket, region, accessKeyId }
+const clientData = {
+  bucket,
+  region,
+  accessKeyId,
+}
+
+export const updateS3RequestSpan = (
+  span: api.Span,
+  request: IncomingMessage | ClientRequest
+) => {
+  if (request instanceof ClientRequest) {
+    const userAgent = request.getHeader("user-agent")
+    if (typeof userAgent === "string" && userAgent.startsWith("aws-sdk-js")) {
+      span.setAttributes({
+        [SemanticAttributes.PEER_SERVICE]: useProductionEndpoint
+          ? "AWS S3"
+          : "minio",
+      })
+    }
+  }
+}
 
 const getFixedSignedUrl: typeof getSignedUrl = async (
   client,
@@ -65,7 +90,6 @@ export const getAvatarUploadSignedURL = (resourceID: string, nonce: string) => {
     "getAvatarUploadSignedURL",
     {
       attributes: { resourceID, nonce, ...clientData },
-      kind: SpanKind.CLIENT,
     },
     (span) => {
       const key = getTempAvatarKey(resourceID, nonce)
@@ -85,7 +109,7 @@ export const getAvatarUploadSignedURL = (resourceID: string, nonce: string) => {
 export const deleteCurrentAvatar = (avatarURL: string) => {
   return startActiveSpan(
     "deleteCurrentAvatar",
-    { kind: SpanKind.CLIENT, attributes: { avatarURL, ...clientData } },
+    { attributes: { avatarURL, ...clientData } },
     async (span) => {
       const { s3RequestDuration } = getInstruments()
       const parsed = parseCurrentAvatarURL(avatarURL)
@@ -124,7 +148,6 @@ export const promoteTempAvatarToCurrent = async (
   return startActiveSpan(
     "promoteTempAvatarToCurrent",
     {
-      kind: SpanKind.CLIENT,
       attributes: { resourceID, newAvatarURL, oldAvatarURL, ...clientData },
     },
     async (span) => {
@@ -169,6 +192,36 @@ export const promoteTempAvatarToCurrent = async (
       }
 
       return getCurrentAvatarURL(resourceID, newParsed.nonce)
+    }
+  )
+}
+
+export const listObjects = (maxKeys?: number) => {
+  return startActiveSpan(
+    "listObjects",
+    { attributes: { maxKeys, ...clientData } },
+    async (span) => {
+      const { s3RequestDuration } = getInstruments()
+
+      const command = new ListObjectsCommand({
+        Bucket: bucket,
+        MaxKeys: maxKeys,
+      })
+      const record = startStatusHistogram(s3RequestDuration, {
+        command: "list",
+      })
+      try {
+        const res = await s3Client.send(command)
+        record(true)
+        return res
+      } catch (e) {
+        span.setStatus({
+          code: SpanStatusCode.ERROR,
+          message: "failed to list objects",
+        })
+        record(false)
+        throw e
+      }
     }
   )
 }

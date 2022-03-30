@@ -1,11 +1,28 @@
-import { SpanKind } from "@opentelemetry/api"
+import { ClientRequest, IncomingMessage } from "http"
+
+import { api } from "@opentelemetry/sdk-node"
 import { SemanticAttributes } from "@opentelemetry/semantic-conventions"
 
 import { startActiveSpan } from "../telemetry/trace"
 
+const API_KEY = process.env.AWS_API_KEY || ""
+const API_URL = process.env.AWS_API_ENDPOINT || ""
+
+export const updateAPIGatewayRequestSpan = (
+  span: api.Span,
+  request: IncomingMessage | ClientRequest
+) => {
+  if (request instanceof ClientRequest) {
+    const xApiKey = request.getHeader("x-api-key")
+    if (typeof xApiKey === "string" && xApiKey === API_KEY) {
+      span.setAttributes({
+        [SemanticAttributes.PEER_SERVICE]: "AWS API Gateway",
+      })
+    }
+  }
+}
+
 export async function sendSESEmailCode(email: string, code: string) {
-  const apiKey = process.env.AWS_API_KEY || ""
-  const url = process.env.AWS_API_ENDPOINT || ""
   const payload = {
     to: email,
     code,
@@ -17,19 +34,17 @@ export async function sendSESEmailCode(email: string, code: string) {
       attributes: {
         email,
         code,
-        [SemanticAttributes.PEER_SERVICE]: "AWS API Gateway",
-        [SemanticAttributes.MESSAGING_URL]: url,
+        [SemanticAttributes.MESSAGING_URL]: API_URL,
         [SemanticAttributes.MESSAGING_SYSTEM]: "SES",
         [SemanticAttributes.MESSAGING_DESTINATION]: email,
         [SemanticAttributes.MESSAGING_DESTINATION_KIND]: "email",
       },
-      kind: SpanKind.CLIENT,
     },
     async (span, setError) => {
-      const response = await fetch(url, {
+      const response = await fetch(API_URL, {
         method: "POST",
         headers: {
-          "x-api-key": apiKey,
+          "x-api-key": API_KEY,
           "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
@@ -55,4 +70,26 @@ export async function sendSESEmailCode(email: string, code: string) {
       return true
     }
   )
+}
+
+export const testAPICredentials = async (url: string, key: string) => {
+  return startActiveSpan("testAPICredentials", async (span, setError) => {
+    const response = await fetch(url, {
+      method: "HEAD",
+      headers: {
+        "x-api-key": key,
+      },
+    })
+
+    if (!response.ok) {
+      span.setAttributes({
+        [SemanticAttributes.HTTP_STATUS_CODE]: response.status,
+        "http.status_text": response.statusText,
+      })
+      setError("Error testing API credentials")
+      return false
+    }
+
+    return true
+  })
 }

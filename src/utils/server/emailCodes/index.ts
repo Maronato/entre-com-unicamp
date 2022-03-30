@@ -4,7 +4,7 @@ import { getRedis } from "../redis"
 import { getInstruments, startStatusHistogram } from "../telemetry/metrics"
 import { startActiveSpan } from "../telemetry/trace"
 
-import { sendSESEmailCode } from "./aws"
+import { sendSESEmailCode, testAPICredentials } from "./aws"
 import { sendConsoleEmailCode } from "./console"
 
 const getEmailKey = (email: string) => `email-code-${email}`
@@ -75,6 +75,37 @@ export const sendEmailCode = (email: string, code: string) => {
 
       if (!status) {
         setError("Error sending email code")
+      }
+
+      return status
+    }
+  )
+}
+
+export const testSendEmailCode = async (email: string, code: string) => {
+  return startActiveSpan(
+    "testSendEmailCode",
+    { attributes: { email, code } },
+    async (span, setError) => {
+      const apiKey = process.env.AWS_API_KEY
+      const url = process.env.AWS_API_ENDPOINT
+      const useSES = !!apiKey && !!url
+      const transport: "console" | "aws" = useSES ? "aws" : "console"
+
+      span.setAttributes({
+        transport,
+      })
+
+      let status: boolean
+
+      if (useSES) {
+        status = await testAPICredentials(url, apiKey)
+      } else {
+        status = await sendConsoleEmailCode(email, code)
+      }
+
+      if (!status) {
+        setError("Error testing send email code")
       }
 
       return status
