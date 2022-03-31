@@ -100,7 +100,7 @@ const ProfilePage: FunctionComponent = () => {
             </Tab>
           ))}
         </Tab.List>
-        <Tab.Panels className="mt-10 md:mt-0 md:ml-2 p-7 lg:p-10 col-span-6 overflow-scroll rounded-lg bg-background-light dark:bg-background-dark">
+        <Tab.Panels className="focus:outline-none focus:ring-0 mt-10 md:mt-0 md:ml-2 p-7 lg:p-10 col-span-6 overflow-scroll rounded-lg bg-background-light dark:bg-background-dark">
           <Tab.Panel>
             <ProfileTab />
           </Tab.Panel>
