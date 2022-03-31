@@ -69,7 +69,8 @@ const getSDK = async () => {
       instrumentations,
       textMapPropagator,
       resource: new resources.Resource({
-        [SemanticResourceAttributes.SERVICE_NAME]: APP_NAME,
+        [SemanticResourceAttributes.SERVICE_NAME]:
+          process.env.DOCKER_SERVICE_NAME ?? APP_NAME,
       }),
     })
   }
