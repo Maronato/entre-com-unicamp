@@ -40,12 +40,24 @@ const ProfilePage: FunctionComponent = () => {
 
   const [selectedIndex, setSelectedIndex] = useState(0)
 
-  const tabs = useMemo<{ name: string; hash: string; icon: typeof CodeIcon }[]>(
+  const tabs = useMemo<
+    {
+      name: string
+      hash: string
+      icon: typeof CodeIcon
+      panel: FunctionComponent
+    }[]
+  >(
     () => [
-      { name: "Perfil", hash: "", icon: UserIcon },
-      { name: "Aplicativos", hash: "#apps", icon: PuzzleIcon },
-      { name: "Conta", hash: "#account", icon: CogIcon },
-      { name: "Desenvolvedor", hash: "#developer", icon: CodeIcon },
+      { name: "Perfil", hash: "", icon: UserIcon, panel: ProfileTab },
+      { name: "Aplicativos", hash: "#apps", icon: PuzzleIcon, panel: AppsTab },
+      { name: "Conta", hash: "#account", icon: CogIcon, panel: AccountTab },
+      {
+        name: "Desenvolvedor",
+        hash: "#developer",
+        icon: CodeIcon,
+        panel: DeveloperTab,
+      },
     ],
     []
   )
@@ -100,19 +112,14 @@ const ProfilePage: FunctionComponent = () => {
             </Tab>
           ))}
         </Tab.List>
-        <Tab.Panels className="focus:outline-none focus:ring-0 mt-10 md:mt-0 md:ml-2 p-7 lg:p-10 col-span-6 overflow-scroll rounded-lg bg-background-light dark:bg-background-dark">
-          <Tab.Panel>
-            <ProfileTab />
-          </Tab.Panel>
-          <Tab.Panel>
-            <AppsTab />
-          </Tab.Panel>
-          <Tab.Panel>
-            <AccountTab />
-          </Tab.Panel>
-          <Tab.Panel>
-            <DeveloperTab />
-          </Tab.Panel>
+        <Tab.Panels className="mt-10 md:mt-0 md:ml-2 p-7 lg:p-10 col-span-6 overflow-scroll rounded-lg bg-background-light dark:bg-background-dark">
+          {tabs.map((tab) => (
+            <Tab.Panel
+              key={tab.hash}
+              className="focus:outline-none focus:ring-0">
+              <tab.panel />
+            </Tab.Panel>
+          ))}
         </Tab.Panels>
       </Tab.Group>
     </div>
