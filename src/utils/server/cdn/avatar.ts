@@ -4,7 +4,7 @@ export const getCurrentAvatarKey = (id: string, nonce: string) =>
   `avatars/${id}/${nonce}`
 
 const getCDNHost = () => {
-  return process.env.NEXT_PUBLIC_CDN_URL || "http://localhost:9000/development"
+  return process.env.CDN_URL || "http://localhost:9000/development"
 }
 
 export const getTempAvatarURL = (id: string, nonce: string) =>

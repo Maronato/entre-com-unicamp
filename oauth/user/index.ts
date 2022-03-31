@@ -1,11 +1,11 @@
 import { user } from "@prisma/client"
 
 import { getPrisma } from "@/prisma/db"
-import { generateIdenticon } from "@/utils/server/identicon"
 import {
   deleteCurrentAvatar,
   promoteTempAvatarToCurrent,
-} from "@/utils/server/s3"
+} from "@/utils/server/cdn/s3"
+import { generateIdenticon } from "@/utils/server/identicon"
 import { getLogger } from "@/utils/server/telemetry/logs"
 import { startActiveSpan } from "@/utils/server/telemetry/trace"
 import { verifyTOTP } from "@/utils/server/totp"

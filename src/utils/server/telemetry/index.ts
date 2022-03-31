@@ -10,8 +10,8 @@ import {
   SemanticResourceAttributes,
 } from "@opentelemetry/semantic-conventions"
 
+import { updateS3RequestSpan } from "../cdn/s3"
 import { updateAPIGatewayRequestSpan } from "../emailCodes/aws"
-import { updateS3RequestSpan } from "../s3"
 
 import { APP_NAME } from "./consts"
 import { registerInstruments } from "./metrics"

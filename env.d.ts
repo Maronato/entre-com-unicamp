@@ -6,7 +6,7 @@ declare namespace NodeJS {
     JAEGER_ENDPOINT?: string
 
     // CDN
-    NEXT_PUBLIC_CDN_URL?: string
+    CDN_URL?: string
 
     // AWS secrets
     AWS_API_KEY?: string

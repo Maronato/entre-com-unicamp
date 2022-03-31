@@ -14,17 +14,17 @@ import { SpanStatusCode } from "@opentelemetry/api"
 import { api } from "@opentelemetry/sdk-node"
 import { SemanticAttributes } from "@opentelemetry/semantic-conventions"
 
+import { getLogger } from "../telemetry/logs"
+import { getInstruments, startStatusHistogram } from "../telemetry/metrics"
+import { startActiveSpan } from "../telemetry/trace"
+
 import {
   getCurrentAvatarKey,
   getCurrentAvatarURL,
   getTempAvatarKey,
   parseCurrentAvatarURL,
   parseTempAvatarURL,
-} from "../common/cdn"
-
-import { getLogger } from "./telemetry/logs"
-import { getInstruments, startStatusHistogram } from "./telemetry/metrics"
-import { startActiveSpan } from "./telemetry/trace"
+} from "./avatar"
 
 // Use Minio dev configs by default
 const bucket = process.env.AWS_S3_BUCKET_NAME || "development"

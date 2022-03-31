@@ -4,7 +4,7 @@ import { createClientID, createClientSecret } from "@/utils/common/random"
 import {
   deleteCurrentAvatar,
   promoteTempAvatarToCurrent,
-} from "@/utils/server/s3"
+} from "@/utils/server/cdn/s3"
 import { startActiveSpan } from "@/utils/server/telemetry/trace"
 
 import { REQUIRED_SCOPE, Scope } from "../scope"

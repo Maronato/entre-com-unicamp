@@ -1,8 +1,9 @@
 import { createRandomString } from "@/utils/common/random"
 import { getRequestUser } from "@/utils/server/auth"
+import { getTempAvatarURL } from "@/utils/server/cdn/avatar"
+import { getAvatarUploadSignedURL } from "@/utils/server/cdn/s3"
 import { handleRequest, withDefaultMiddleware } from "@/utils/server/middleware"
 import { withAuthMiddleware } from "@/utils/server/middleware/auth"
-import { getAvatarUploadSignedURL } from "@/utils/server/s3"
 import {
   respondInvalidRequest,
   respondMethodNotAllowed,
@@ -15,9 +16,8 @@ export type RequestData = {
   operation: "getUploadURL"
 }
 export type ResponseData = {
-  url: string
-  nonce: string
-  id: string
+  uploadURL: string
+  cdnURL: string
 }
 
 const handlePOST: NextApiHandler = async (req, res) => {
@@ -32,9 +32,14 @@ const handlePOST: NextApiHandler = async (req, res) => {
   }
 
   const nonce = createRandomString(10)
-  const url = await getAvatarUploadSignedURL(id, nonce)
+  const uploadURL = await getAvatarUploadSignedURL(id, nonce)
 
-  return respondOk(res, { url, nonce, id })
+  const response: ResponseData = {
+    uploadURL,
+    cdnURL: getTempAvatarURL(id, nonce),
+  }
+
+  return respondOk(res, response)
 }
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {

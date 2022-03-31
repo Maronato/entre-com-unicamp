@@ -6,9 +6,25 @@ import classNames from "classnames"
 import Avatar from "@/components/Avatar"
 import Button from "@/components/Button"
 import { RequestData, ResponseData } from "@/pages/api/avatar"
-import { uploadFile } from "@/utils/browser/avatar"
 import { postFetch } from "@/utils/browser/fetch"
 import { generateIdenticon } from "@/utils/server/identicon"
+
+export const uploadFile = async (
+  signedURL: string,
+  file: File
+): Promise<true> => {
+  const response = await fetch(signedURL, {
+    headers: {
+      "Content-Type": "image/*",
+    },
+    method: "PUT",
+    body: file,
+  })
+  if (!response.ok) {
+    throw new Error(`Upload API responded with ${response.status}`)
+  }
+  return true
+}
 
 const AvatarForm: FunctionComponent<{
   avatarURL?: string
@@ -26,16 +42,15 @@ const AvatarForm: FunctionComponent<{
       const signedURLPayload: RequestData = {
         operation: "getUploadURL",
       }
-      const {
-        url: uploadURL,
-        nonce,
-        id,
-      } = await postFetch<ResponseData>("/api/avatar", signedURLPayload)
+      const { cdnURL, uploadURL } = await postFetch<ResponseData>(
+        "/api/avatar",
+        signedURLPayload
+      )
 
       const file = e.target.files?.[0]
       if (file) {
-        const url = await uploadFile(uploadURL, id, nonce, file)
-        setAvatarURL(url)
+        await uploadFile(uploadURL, file)
+        setAvatarURL(cdnURL)
       }
     } catch (e) {
       console.error(e)

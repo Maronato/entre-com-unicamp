@@ -1,8 +1,8 @@
 import { getPrisma } from "@/prisma/db"
+import { listObjects } from "@/utils/server/cdn/s3"
 import { testSendEmailCode } from "@/utils/server/emailCodes"
 import { handleRequest, withDefaultMiddleware } from "@/utils/server/middleware"
 import { getRedis } from "@/utils/server/redis"
-import { listObjects } from "@/utils/server/s3"
 import {
   respondOk,
   respondServiceUnavailable,
