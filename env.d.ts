@@ -5,12 +5,17 @@ declare namespace NodeJS {
     LOG_LEVEL?: string
     JAEGER_ENDPOINT?: string
 
+    // CDN
+    NEXT_PUBLIC_CDN_URL?: string
+
     // AWS secrets
     AWS_API_KEY?: string
     AWS_API_ENDPOINT?: string
     AWS_S3_ACCESS_KEY_ID?: string
     AWS_S3_SECRET_ACCESS_KEY?: string
     AWS_S3_BUCKET_NAME?: string
+    AWS_S3_REGION?: string
+    AWS_S3_ENDPOINT_URL?: string
 
     // Docker labels
     DOCKER_SERVICE_ID?: string

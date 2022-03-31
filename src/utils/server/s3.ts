@@ -22,18 +22,23 @@ import {
   parseTempAvatarURL,
 } from "../common/cdn"
 
+import { getLogger } from "./telemetry/logs"
 import { getInstruments, startStatusHistogram } from "./telemetry/metrics"
 import { startActiveSpan } from "./telemetry/trace"
 
 // Use Minio dev configs by default
 const bucket = process.env.AWS_S3_BUCKET_NAME || "development"
-const endpoint =
-  process.env.NODE_ENV === "production" ? undefined : "http://localhost:9000"
+let endpoint = process.env.AWS_S3_ENDPOINT_URL
+if (!endpoint && process.env.NODE_ENV !== "production") {
+  endpoint = "http://localhost:9000"
+}
 const accessKeyId = process.env.AWS_S3_ACCESS_KEY_ID || "minio_user"
 const secretAccessKey = process.env.AWS_S3_SECRET_ACCESS_KEY || "minio_password"
 const region = process.env.AWS_S3_REGION || "us-east-1"
 
-const useProductionEndpoint = typeof endpoint === "undefined"
+const useAWSEndpoint = typeof endpoint === "undefined"
+
+const logger = getLogger()
 
 const s3Client = new S3Client({
   region,
@@ -42,8 +47,8 @@ const s3Client = new S3Client({
     accessKeyId,
     secretAccessKey,
   },
-  tls: useProductionEndpoint,
-  forcePathStyle: !useProductionEndpoint,
+  tls: !endpoint || endpoint.startsWith("https://"),
+  forcePathStyle: !useAWSEndpoint,
 })
 
 const clientData = {
@@ -60,9 +65,7 @@ export const updateS3RequestSpan = (
     const userAgent = request.getHeader("user-agent")
     if (typeof userAgent === "string" && userAgent.startsWith("aws-sdk-js")) {
       span.setAttributes({
-        [SemanticAttributes.PEER_SERVICE]: useProductionEndpoint
-          ? "AWS S3"
-          : "minio",
+        [SemanticAttributes.PEER_SERVICE]: useAWSEndpoint ? "AWS S3" : "minio",
       })
     }
   }
@@ -73,7 +76,8 @@ const getFixedSignedUrl: typeof getSignedUrl = async (
   command,
   options
 ) => {
-  if (useProductionEndpoint) {
+  const endpointUrl = new URL(endpoint || "")
+  if (useAWSEndpoint || endpointUrl.port === "") {
     return getSignedUrl(client, command, options)
   }
 
@@ -134,6 +138,7 @@ export const deleteCurrentAvatar = (avatarURL: string) => {
           code: SpanStatusCode.ERROR,
           message: "failed to delete key",
         })
+        logger.error(e)
         record(false)
       }
     }
@@ -188,6 +193,7 @@ export const promoteTempAvatarToCurrent = async (
         record(true)
       } catch (e) {
         record(false)
+        logger.error(e)
         throw e
       }
 
@@ -220,6 +226,7 @@ export const listObjects = (maxKeys?: number) => {
           message: "failed to list objects",
         })
         record(false)
+        logger.error(e)
         throw e
       }
     }

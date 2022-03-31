@@ -4,13 +4,7 @@ export const getCurrentAvatarKey = (id: string, nonce: string) =>
   `avatars/${id}/${nonce}`
 
 const getCDNHost = () => {
-  if (typeof window !== "undefined") {
-    if (window.location.hostname === "localhost") {
-      return "http://localhost:9000/development"
-    }
-    return "https://cdn.entre-com-unicamp.com"
-  }
-  return process.env.CDN_HOST || "https://cdn.entre-com-unicamp.com"
+  return process.env.NEXT_PUBLIC_CDN_URL || "http://localhost:9000/development"
 }
 
 export const getTempAvatarURL = (id: string, nonce: string) =>
