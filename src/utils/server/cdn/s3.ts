@@ -14,7 +14,6 @@ import { SpanStatusCode } from "@opentelemetry/api"
 import { api } from "@opentelemetry/sdk-node"
 import { SemanticAttributes } from "@opentelemetry/semantic-conventions"
 
-import { getLogger } from "../telemetry/logs"
 import { getInstruments, startStatusHistogram } from "../telemetry/metrics"
 import { startActiveSpan } from "../telemetry/trace"
 
@@ -37,8 +36,6 @@ const secretAccessKey = process.env.AWS_S3_SECRET_ACCESS_KEY || "minio_password"
 const region = process.env.AWS_S3_REGION || "us-east-1"
 
 const useAWSEndpoint = typeof endpoint === "undefined"
-
-const logger = getLogger()
 
 const s3Client = new S3Client({
   region,
@@ -138,7 +135,7 @@ export const deleteCurrentAvatar = (avatarURL: string) => {
           code: SpanStatusCode.ERROR,
           message: "failed to delete key",
         })
-        logger.error(e)
+
         record(false)
       }
     }
@@ -193,7 +190,7 @@ export const promoteTempAvatarToCurrent = async (
         record(true)
       } catch (e) {
         record(false)
-        logger.error(e)
+
         throw e
       }
 
@@ -226,7 +223,7 @@ export const listObjects = (maxKeys?: number) => {
           message: "failed to list objects",
         })
         record(false)
-        logger.error(e)
+
         throw e
       }
     }
