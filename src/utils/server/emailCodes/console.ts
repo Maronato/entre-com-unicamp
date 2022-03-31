@@ -25,7 +25,7 @@ export async function sendConsoleEmailCode(email: string, code: string) {
       kind: SpanKind.CLIENT,
     },
     async () => {
-      logger.info("Sending email code", payload)
+      logger.info(`Sending email code ${code}`, payload)
 
       return true
     }
