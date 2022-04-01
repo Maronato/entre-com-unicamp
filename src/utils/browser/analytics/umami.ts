@@ -1,19 +1,17 @@
-import { createElement, FunctionComponent, useEffect } from "react"
+import { createElement, useEffect } from "react"
 
 import { useRouter } from "next/router"
 import NextScript from "next/script"
 
-import { Analytics, createProvider } from "./context"
+import { Analytics, createProvider, ProviderScript } from "./context"
 
-const UmamiScript: FunctionComponent = () => {
-  const id = process.env.NEXT_PUBLIC_TRACKING_ID
-  const src = process.env.NEXT_PUBLIC_TRACKING_URL
+const UmamiScript: ProviderScript = ({ trackingID, trackingURL }) => {
   return createElement(NextScript, {
-    src,
+    src: trackingURL,
     id: "umami-script",
     strategy: "beforeInteractive",
     ...{
-      "data-website-id": id,
+      "data-website-id": trackingID,
       "data-auto-track": "false",
       "data-do-not-track": "true",
     },
