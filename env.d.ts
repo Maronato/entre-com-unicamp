@@ -26,5 +26,9 @@ declare namespace NodeJS {
     DOCKER_TASK_ID?: string
     DOCKER_TASK_NAME?: string
     DOCKER_TASK_SLOT?: string
+
+    // Analytics
+    NEXT_PUBLIC_TRACKING_ID?: string
+    NEXT_PUBLIC_TRACKING_URL?: string
   }
 }

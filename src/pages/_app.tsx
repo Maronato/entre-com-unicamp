@@ -1,5 +1,7 @@
 import Head from "next/head"
 
+import { AnalyticsProvider } from "@/utils/browser/analytics"
+
 import type { AppProps } from "next/app"
 
 import "@/styles/globals.css"
@@ -10,7 +12,9 @@ function MyApp({ Component, pageProps }: AppProps) {
       <Head>
         <title>Entre com Unicamp</title>
       </Head>
-      <Component {...pageProps} />
+      <AnalyticsProvider>
+        <Component {...pageProps} />
+      </AnalyticsProvider>
     </>
   )
 }
