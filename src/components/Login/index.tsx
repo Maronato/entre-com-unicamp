@@ -72,8 +72,8 @@ const Login: FC = () => {
     const res = await login(email, code, authMethod)
     if (!res) {
       setError("Código incorreto")
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   const undoCodeSent = () => {
