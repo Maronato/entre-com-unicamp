@@ -7,6 +7,9 @@ networks:
   prom:
     external: true
     name: devops_prom
+  logging:
+    external: true
+    name: devops_logging
   ecu: {}
 
 services:
@@ -16,6 +19,7 @@ services:
       - ecu
       - captain
       - prom
+      - logging
     env_file: .env
     environment:
       DOCKER_SERVICE_ID: "{{.Service.ID}}"
@@ -28,7 +32,11 @@ services:
       DOCKER_TASK_SLOT: "{{.Task.Slot}}"
     deploy:
       mode: replicated
-      replicas: 1
+      replicas: 2 
+      update_config:
+        parallelism: 1
+        failure_action: rollback
+        order: start-first
       labels:
         prometheus-job: "entre-com-unicamp"
         prometheus-port: "9464"
