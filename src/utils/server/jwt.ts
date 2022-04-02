@@ -17,7 +17,7 @@ import { getSecret } from "./secrets"
 import { getLogger } from "./telemetry/logs"
 import { startActiveSpan } from "./telemetry/trace"
 
-const ALGORITHM = "ES256"
+export const ALGORITHM = "ES256"
 export const ISSUER = "entre-com-unicamp.com"
 const TYPE = "JWT"
 

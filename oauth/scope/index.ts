@@ -1,4 +1,5 @@
 export enum Scope {
+  OPENID = "openid",
   PROFILE_READ = "profile:read",
   PROFILE_WRITE = "profile:write",
   APPS_READ = "apps:read",
@@ -6,6 +7,7 @@ export enum Scope {
 }
 
 enum ScopeDescriptions {
+  OPENID = "Ver seu OpenID Connect ID",
   PROFILE_READ = "Ver seu perfil público",
   PROFILE_WRITE = "Modificar seu perfil público",
   APPS_READ = "Ver seus apps",
