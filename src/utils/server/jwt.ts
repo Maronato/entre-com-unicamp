@@ -4,14 +4,16 @@ import {
   importJWK,
   createLocalJWKSet,
   exportJWK,
-  JSONWebKeySet,
   SignJWT,
   JWTPayload,
   jwtVerify,
+  importPKCS8,
+  JSONWebKeySet,
 } from "jose"
 
 import { createRandomString } from "@/utils/common/random"
 
+import { getSecret } from "./secrets"
 import { getLogger } from "./telemetry/logs"
 import { startActiveSpan } from "./telemetry/trace"
 
@@ -25,21 +27,34 @@ const DEFAULT_PRIVATE_KEY =
 
 function getPrivateKey(): Promise<KeyObject> {
   const logger = getLogger()
-  return startActiveSpan("getPrivateKey", (_, setError) => {
-    let key = process.env.JWT_PRIVATE_KEY
-    if (!key) {
-      logger.warn("JWT_PRIVATE_KEY is not set")
-      setError("JWT_PRIVATE_KEY is not set")
-      key = DEFAULT_PRIVATE_KEY
+  return startActiveSpan("getPrivateKey", async (_, setError) => {
+    // In production, look for secrets
+    if (process.env.NODE_ENV === "production") {
+      return getSecret(
+        "jwt-private-ke",
+        async (secret) => (await importPKCS8(secret, ALGORITHM)) as KeyObject
+      )
+    } else {
+      // In development, use the default key
+      let key = process.env.JWT_PRIVATE_KEY
+      if (!key) {
+        logger.warn("JWT_PRIVATE_KEY is not set")
+        setError("JWT_PRIVATE_KEY is not set")
+        key = DEFAULT_PRIVATE_KEY
+      }
+      return (await importJWK(JSON.parse(key), ALGORITHM)) as KeyObject
     }
-    return importJWK(JSON.parse(key), ALGORITHM) as Promise<KeyObject>
   })
 }
 
+let cachedPub: KeyObject | undefined = undefined
 async function getPublicKey() {
-  return startActiveSpan("getPublicKey", async () =>
-    createPublicKey(await getPrivateKey())
-  )
+  return startActiveSpan("getPublicKey", async () => {
+    if (!cachedPub) {
+      cachedPub = createPublicKey(await getPrivateKey())
+    }
+    return cachedPub
+  })
 }
 
 export async function getJSONWebKeySet(): Promise<JSONWebKeySet> {

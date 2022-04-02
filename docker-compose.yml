@@ -12,6 +12,11 @@ networks:
     name: devops_logging
   ecu: {}
 
+secrets:
+  jwt-private-key:
+    name: jwt-private-key-${VERSION}
+    file: ./jwt-private-key.pem
+
 services:
   entre-com-unicamp:
     image: maronato/entre-com-unicamp:latest
@@ -21,6 +26,8 @@ services:
       - prom
       - logging
     env_file: .env
+    secrets:
+      - jwt-private-key
     environment:
       DOCKER_SERVICE_ID: "{{.Service.ID}}"
       DOCKER_SERVICE_NAME: "{{.Service.Name}}"
@@ -32,7 +39,7 @@ services:
       DOCKER_TASK_SLOT: "{{.Task.Slot}}"
     deploy:
       mode: replicated
-      replicas: 2 
+      replicas: 2
       update_config:
         parallelism: 1
         failure_action: rollback
