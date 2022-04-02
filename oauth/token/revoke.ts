@@ -1,4 +1,4 @@
-import { getRedis } from "@/utils/server/redis"
+import { getPrisma } from "@/prisma/db"
 import { startActiveSpan } from "@/utils/server/telemetry/trace"
 
 import { RefreshTokenPayload } from "./types"
@@ -8,6 +8,36 @@ type RefreshTokenJTI = {
   jti: string
   counter: number
 }
+
+const getCurrentCounter = async (jti: string) => {
+  const primsa = getPrisma()
+  return startActiveSpan(
+    "getCurrentCounter",
+    { attributes: { jti } },
+    async () => {
+      const token = await primsa.refresh_token.findUnique({
+        where: { jti },
+      })
+      return token ? token.counter : Infinity
+    }
+  )
+}
+const updateCounter = async (jti: string, counter: number) => {
+  const primsa = getPrisma()
+  return startActiveSpan(
+    "updateCounter",
+    { attributes: { jti, counter } },
+    async () => {
+      await primsa.refresh_token.update({
+        where: { jti },
+        data: {
+          counter,
+        },
+      })
+    }
+  )
+}
+
 /**
  * Parses refresh token JTIs for revocation
  *
@@ -22,21 +52,17 @@ const parseRefreshTokenCounter = (previousJTI: string): RefreshTokenJTI => {
 const joinRefreshTokenCounter = (jti: RefreshTokenJTI): string => {
   return `${jti.jti}${REFRESH_TOKEN_JTI_SEPARATOR}${jti.counter}`
 }
-const getJTIRedisKey = (jti: string) => `refresh-token-revoke-${jti}`
+
 const getLastJTISeen = async (jtiString: string) => {
   return startActiveSpan("getLastJTISeen", async (span) => {
-    const redis = await getRedis()
-    const { jti, counter } = parseRefreshTokenCounter(jtiString)
-    const key = getJTIRedisKey(jti)
-    const value = (await redis.get(key)) || "0"
-    const currValue = Math.max(parseInt(value) || 0, counter)
+    const { jti } = parseRefreshTokenCounter(jtiString)
+    const counter = await getCurrentCounter(jti)
+
     span.setAttributes({
-      current_value: currValue,
+      counter,
       jti: jti,
-      value,
-      key,
     })
-    return currValue
+    return counter
   })
 }
 /**
@@ -49,18 +75,15 @@ export const revokePreviousRefreshToken = async (
   previousJTI: string
 ): Promise<string> => {
   return startActiveSpan("updateLastJTISeen", async (span) => {
-    const redis = await getRedis()
     const { jti } = parseRefreshTokenCounter(previousJTI)
-    const lastSeen = await getLastJTISeen(previousJTI)
+    const lastSeen = await getLastJTISeen(jti)
     span.setAttributes({
       jti,
       lastSeen,
     })
-    const key = getJTIRedisKey(jti)
     const counter = lastSeen + 1
-    const newJTI = joinRefreshTokenCounter({ jti, counter })
-    await redis.set(key, counter)
-    return newJTI
+    await updateCounter(jti, counter)
+    return joinRefreshTokenCounter({ jti, counter })
   })
 }
 
@@ -71,7 +94,32 @@ export const revokePreviousRefreshToken = async (
  * @returns Wether the token has been revoked
  */
 export const isRevoked = async (refreshToken: RefreshTokenPayload) => {
-  const currentCounter = await getLastJTISeen(refreshToken.jti)
-  const { counter } = parseRefreshTokenCounter(refreshToken.jti)
-  return currentCounter > counter
+  return startActiveSpan("isRevoked", async (span) => {
+    const currentCounter = await getLastJTISeen(refreshToken.jti)
+    const { counter } = parseRefreshTokenCounter(refreshToken.jti)
+
+    span.setAttributes({
+      currentCounter,
+      counter,
+    })
+    return currentCounter > counter
+  })
+}
+
+export const revokeUserAppTokens = async (userID: string, appID: string) => {
+  return startActiveSpan(
+    "revokeUserAppTokens",
+    { attributes: { userID, appID } },
+    async () => {
+      const prisma = getPrisma()
+      return prisma.refresh_token.deleteMany({
+        where: {
+          AND: {
+            app_id: appID,
+            user_id: userID,
+          },
+        },
+      })
+    }
+  )
 }

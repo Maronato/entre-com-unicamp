@@ -11,6 +11,7 @@ import { startActiveSpan } from "@/utils/server/telemetry/trace"
 import { verifyTOTP } from "@/utils/server/totp"
 
 import { App } from "../app/types"
+import { revokeUserAppTokens } from "../token/revoke"
 
 export type User = Pick<
   user,
@@ -106,42 +107,13 @@ export async function deleteUser(user: User) {
   )
 }
 
-export async function authorizeApp(userID: User["id"], appID: App["id"]) {
-  return startActiveSpan(
-    "authorizeApp",
-    { attributes: { user: userID, app: appID } },
-    async () => {
-      const prisma = getPrisma()
-      return prisma.user.update({
-        data: {
-          authorized_apps: {
-            connectOrCreate: {
-              create: { app: { connect: { id: appID } } },
-              where: {
-                app_id_user_id: {
-                  app_id: appID,
-                  user_id: userID,
-                },
-              },
-            },
-          },
-        },
-        where: { id: userID },
-      })
-    }
-  )
-}
-
 export async function deauthorizeApp(userID: User["id"], appID: App["id"]) {
   return startActiveSpan(
-    "unauthorizeApp",
+    "deauthorizeApp",
     { attributes: { user: userID, app: appID } },
     async () => {
-      const prisma = getPrisma()
       try {
-        await prisma.user_authorized_app.delete({
-          where: { app_id_user_id: { app_id: appID, user_id: userID } },
-        })
+        await revokeUserAppTokens(userID, appID)
       } catch (e) {
         const logger = getLogger()
         logger.error(e)
@@ -161,11 +133,13 @@ export async function userAuthorizedApp(
     async () => {
       const prisma = getPrisma()
       return (
-        (await prisma.app.count({
+        (await prisma.refresh_token.count({
           where: {
             AND: {
-              client_id: clientID,
-              authorized_by: { some: { user_id: userID } },
+              app: {
+                client_id: clientID,
+              },
+              user_id: userID,
             },
           },
         })) > 0
@@ -182,11 +156,9 @@ export async function getAuthorizedApps(userID: User["id"]) {
       const prisma = getPrisma()
       return prisma.app.findMany({
         where: {
-          authorized_by: {
+          refresh_token: {
             some: {
-              user: {
-                id: userID,
-              },
+              user_id: userID,
             },
           },
         },

@@ -1,6 +1,8 @@
+import { getPrisma } from "@/prisma/db"
 import { signJWT } from "@/utils/server/jwt"
 import { startActiveSpan } from "@/utils/server/telemetry/trace"
 
+import { App } from "../app/types"
 import { Scope } from "../scope"
 import { User } from "../user"
 
@@ -12,6 +14,32 @@ import {
   RefreshToken,
   TokenType,
 } from "./types"
+
+const registerRefreshToken = async (
+  userID: User["id"],
+  clientID: App["client_id"],
+  jti: string
+) => {
+  const prisma = getPrisma()
+  return startActiveSpan(
+    "registerRefreshToken",
+    { attributes: { userID, jti } },
+    async () => {
+      await prisma.refresh_token.create({
+        data: {
+          jti: jti,
+          counter: 1,
+          user: {
+            connect: { id: userID },
+          },
+          app: {
+            connect: { client_id: clientID },
+          },
+        },
+      })
+    }
+  )
+}
 
 const createToken =
   <T extends TokenType>(type: T, expirationTime: string | false) =>
@@ -34,12 +62,19 @@ const createToken =
         type,
         scope,
       }
-      return signJWT(
+      const [signed, signedJTI] = await signJWT(
         { ...payload, jti },
         clientID,
         user.id,
-        expirationTime || undefined
+        expirationTime || undefined,
+        true
       )
+
+      if (type === "refresh_token" && !jti) {
+        await registerRefreshToken(user.id, clientID, signedJTI)
+      }
+
+      return signed
     })
   }
 

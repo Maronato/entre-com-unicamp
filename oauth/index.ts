@@ -22,7 +22,7 @@ import {
   parseToken,
   rotateRefreshToken,
 } from "./token"
-import { authorizeApp, getUser, User } from "./user"
+import { getUser, User } from "./user"
 
 export const isErrorCode = (value: unknown): value is ErrorCodes =>
   typeof value === "string" &&
@@ -113,9 +113,6 @@ export class AuthorizationServer {
           setError(ErrorCodes.INVALID_REQUEST)
           return ErrorCodes.INVALID_REQUEST
         }
-
-        // User has authorized app
-        await authorizeApp(user.id, app.id)
 
         return createCodeGrant(
           auth.clientID,
