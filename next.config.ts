@@ -12,6 +12,10 @@ const config: NextConfig = {
       source: "/oauth/token",
       destination: "/api/oauth/token",
     },
+    {
+      source: "/.well-known/jwks",
+      destination: "/api/oauth/keys",
+    },
   ],
 }
 

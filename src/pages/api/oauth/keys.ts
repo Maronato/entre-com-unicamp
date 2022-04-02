@@ -11,6 +11,7 @@ async function handler(
   res: NextApiResponse<JSONWebKeySet>
 ) {
   const server = new AuthorizationServer()
+  res.setHeader("Content-Type", "application/json")
   return respondOk(res, await server.getJWKS())
 }
 
