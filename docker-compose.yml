@@ -13,9 +13,12 @@ networks:
   ecu: {}
 
 secrets:
-  jwt-private-key:
-    name: jwt-private-key-${VERSION}
-    file: ./jwt-private-key.pem
+  jwt-access-secret:
+    name: jwt-access-secret-${VERSION}
+    file: ./jwt-access-secret.pem
+  jwt-id-secret:
+    name: jwt-id-secret-${VERSION}
+    file: ./jwt-id-secret.pem
 
 services:
   entre-com-unicamp:
@@ -27,7 +30,8 @@ services:
       - logging
     env_file: .env
     secrets:
-      - jwt-private-key
+      - jwt-access-secret
+      - jwt-id-secret
     environment:
       DOCKER_SERVICE_ID: "{{.Service.ID}}"
       DOCKER_SERVICE_NAME: "{{.Service.Name}}"
