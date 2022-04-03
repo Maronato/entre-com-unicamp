@@ -16,6 +16,7 @@ type CodeRequestData = {
   redirectUri: string
   scope?: Scope[]
   state?: string
+  nonce?: string
 }
 
 export type ChallengeRequestData = CodeRequestData & {
@@ -67,7 +68,8 @@ async function handler(
       user.id,
       data.redirectUri,
       data.scope,
-      data.state
+      data.state,
+      data.nonce
     )
     if (isErrorCode(code)) {
       return respondInvalidRequest(res, { error: code, state: data.state })
@@ -80,7 +82,8 @@ async function handler(
     user.id,
     data.redirectUri,
     data.scope,
-    data.state
+    data.state,
+    data.nonce
   )
   if (isErrorCode(code)) {
     return respondInvalidRequest(res, { error: code, state: data.state })

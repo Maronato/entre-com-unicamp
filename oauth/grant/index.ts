@@ -5,6 +5,7 @@ import { getRedis } from "@/utils/server/redis"
 import { startActiveSpan } from "@/utils/server/telemetry/trace"
 
 import { Scope } from "../scope"
+import { cacheIDNonce } from "../token/create"
 import { User } from "../user"
 
 export type CodeChallengeMethod = "plain" | "S256"
@@ -35,12 +36,17 @@ export type AuthorizationCodeGrant = string
 const codeGrantTTL = "2m"
 const codeGrantTTLSeconds = 60 * 2
 
+type State = {
+  state?: string
+  nonce?: string
+}
+
 export async function createCodeGrant(
   clientID: string,
   userID: User["id"],
   scope: Scope[],
   redirectURI: string,
-  state?: string
+  stateD?: State
 ): Promise<AuthorizationCodeGrant>
 export async function createCodeGrant(
   clientID: string,
@@ -49,21 +55,24 @@ export async function createCodeGrant(
   redirectURI: string,
   codeChallenge: string,
   codeChallengeMethod: CodeChallengeMethod,
-  state?: string
+  stateD?: State
 ): Promise<AuthorizationCodeGrant>
 export async function createCodeGrant(
   clientID: string,
   userID: User["id"],
   scope: Scope[],
   redirectURI: string,
-  stateOrCodeChallenge?: string,
+  stateDOrCodeChallenge?: string | State,
   codeChallengeMethod?: CodeChallengeMethod,
-  maybeState?: string
+  maybeStateD?: State
 ): Promise<AuthorizationCodeGrant> {
   return startActiveSpan("createCodeGrant", async (span) => {
-    const [state, codeChallenge] = codeChallengeMethod
-      ? [maybeState, stateOrCodeChallenge]
-      : [stateOrCodeChallenge, undefined]
+    const [stateD, codeChallenge] = codeChallengeMethod
+      ? [maybeStateD as State | undefined, stateDOrCodeChallenge as string]
+      : [stateDOrCodeChallenge as State | undefined, undefined]
+
+    const { state, nonce } =
+      typeof stateD === "string" ? ({ state: stateD } as State) : stateD || {}
 
     span.setAttributes({
       clientID,
@@ -71,9 +80,14 @@ export async function createCodeGrant(
       scope,
       redirectURI,
       state,
+      nonce,
       codeChallenge,
       codeChallengeMethod,
     })
+
+    if (nonce) {
+      await cacheIDNonce(clientID, nonce)
+    }
 
     const payload = {
       scope,

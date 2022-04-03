@@ -15,7 +15,9 @@ export const withErrorHandler =
         } catch (e) {
           span.recordException(e as Exception)
           setError("Error handling request")
-          res.status(500).send("Server error")
+          if (!res.headersSent) {
+            res.status(500).send("Server error")
+          }
         } finally {
           span.setAttributes({
             [SemanticAttributes.HTTP_STATUS_CODE]: res.statusCode,

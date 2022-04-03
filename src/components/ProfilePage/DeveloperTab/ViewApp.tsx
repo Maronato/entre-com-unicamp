@@ -7,6 +7,7 @@ import {
 } from "react"
 
 import { SaveIcon, TrashIcon } from "@heroicons/react/outline"
+import classNames from "classnames"
 import useSWR from "swr"
 
 import AvatarForm from "@/components/Forms/AvatarForm"
@@ -14,7 +15,7 @@ import InputForm from "@/components/Forms/InputForm"
 import SwitchForm from "@/components/Forms/SwitchForm"
 import TextareaForm from "@/components/Forms/TextareaForm"
 import { AppType, SerializedApp } from "@/oauth/app/types"
-import { getScopeDescription } from "@/oauth/scope"
+import { getScopeDevDescription, REQUIRED_SCOPE } from "@/oauth/scope"
 import { deleteFetch, getFetch, patchFetch } from "@/utils/browser/fetch"
 import { isURL } from "@/utils/common/misc"
 
@@ -213,10 +214,16 @@ const ViewApp: FunctionComponent<{ clientID: string; goBack: () => void }> = ({
             <ul className="list-disc list-inside space-y-4">
               {data.scope.map((s) => (
                 <li key={s} className="list-item">
-                  <span className="font-mono text-gray-200 bg-gray-700 px-1 py-1 rounded mr-3">
-                    {s}
+                  <span
+                    className={classNames({
+                      "after:content-['*'] after:text-red-500":
+                        REQUIRED_SCOPE.includes(s),
+                    })}>
+                    <span className="font-mono text-gray-200 bg-gray-700 px-1 py-1 rounded text-sm">
+                      {s}
+                    </span>
                   </span>
-                  {getScopeDescription(s)}
+                  <p className="ml-4 mt-1">{getScopeDevDescription(s)}</p>
                 </li>
               ))}
             </ul>

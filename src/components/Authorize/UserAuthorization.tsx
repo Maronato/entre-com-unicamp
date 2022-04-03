@@ -67,6 +67,7 @@ const UserAuthorization: FunctionComponent<
   redirectUri,
   scope = REQUIRED_SCOPE,
   state,
+  nonce,
   codeChallengeMethod,
   codeChallenge,
   app,
@@ -114,6 +115,7 @@ const UserAuthorization: FunctionComponent<
         responseType: "code",
         scope: selectedScopeList,
         state,
+        nonce,
       }
       const response = await postFetch<ValidResponseData>(
         "/api/oauth/authorize",
@@ -140,6 +142,7 @@ const UserAuthorization: FunctionComponent<
     redirectUri,
     selectedScopeList,
     state,
+    nonce,
   ])
 
   const reject = async () => {

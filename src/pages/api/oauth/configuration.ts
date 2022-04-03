@@ -1,7 +1,7 @@
 import { JSONWebKeySet } from "jose"
 
 import { Scope } from "@/oauth/scope"
-import { ALGORITHM, ISSUER } from "@/utils/server/jwt"
+import { ISSUER } from "@/utils/server/jwt"
 import { handleRequest, withDefaultMiddleware } from "@/utils/server/middleware"
 import { respondOk } from "@/utils/server/serverUtils"
 
@@ -11,12 +11,13 @@ async function handler(
   req: NextApiRequest,
   res: NextApiResponse<JSONWebKeySet>
 ) {
-  const host = req.headers.host || "http://example.com"
+  const protocol = process.env.NODE_ENV === "production" ? "https" : "http"
+  const host = `${protocol}://${req.headers.host}` || "http://example.com"
 
   const authorization_endpoint = `${host}/oauth/authorize`
   const token_endpoint = `${host}/oauth/token`
   const userinfo_endpoint = `${host}/api/me`
-  const jwks_uri = `${host}/.well-known/jwks"`
+  const jwks_uri = `${host}/.well-known/jwks.json`
   const registration_endpoint = `${host}/login`
   const service_documentation = `${host}/docs`
 
@@ -25,7 +26,6 @@ async function handler(
     issuer: ISSUER,
     authorization_endpoint,
     token_endpoint,
-    token_endpoint_auth_signing_alg_values_supported: [ALGORITHM],
     userinfo_endpoint,
     jwks_uri,
     registration_endpoint,
@@ -34,7 +34,7 @@ async function handler(
     response_modes_supported: ["query"],
     grant_types_supported: ["authorization_code", "refresh_token"],
     subject_types_supported: ["public"],
-    id_token_signing_alg_values_supported: [ALGORITHM, "RS256"],
+    id_token_signing_alg_values_supported: ["RS256"],
     claims_supported: [
       "aud",
       "sub",

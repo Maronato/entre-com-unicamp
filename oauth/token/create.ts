@@ -1,5 +1,6 @@
 import { getPrisma } from "@/prisma/db"
-import { signJWT } from "@/utils/server/jwt"
+import { ALGORITHM, signJWT } from "@/utils/server/jwt"
+import { getRedis } from "@/utils/server/redis"
 import { startActiveSpan } from "@/utils/server/telemetry/trace"
 
 import { App } from "../app/types"
@@ -68,6 +69,7 @@ const createToken =
         clientID,
         user.id,
         expirationTime || undefined,
+        ALGORITHM.ES256,
         true
       )
 
@@ -103,6 +105,19 @@ export const rotateRefreshToken = async (
   })
 }
 
+const nonceRedisKey = (clientID: App["client_id"]) => `nonce:${clientID}`
+export const cacheIDNonce = async (
+  clientID: App["client_id"],
+  nonce: string
+) => {
+  const redis = await getRedis()
+  await redis.set(nonceRedisKey(clientID), nonce, 60 * 10)
+}
+const getIDNonce = async (clientID: App["client_id"]) => {
+  const redis = await getRedis()
+  return redis.getdel(nonceRedisKey(clientID))
+}
+
 export const createIDToken = async (
   clientID: App["client_id"],
   user: Pick<User, "id">,
@@ -123,10 +138,16 @@ export const createIDToken = async (
     type: "id_token",
     scope,
   }
+  const nonce = await getIDNonce(clientID)
+  if (nonce) {
+    payload.nonce = nonce
+  }
+
   return await signJWT(
     { ...payload },
     clientID,
     serialized.id,
-    ACCESS_TOKEN_EXPIRATION_TIME
+    ACCESS_TOKEN_EXPIRATION_TIME,
+    ALGORITHM.RS256
   )
 }

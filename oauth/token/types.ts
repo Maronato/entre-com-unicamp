@@ -49,6 +49,7 @@ type BaseIDTokenPayload = BaseTokenPayload &
     type: IDTokenType
     aud: typeof ISSUER
     sub: string
+    nonce?: string
   }
 export type IDTokenPayload = ExtendJWTPayload<BaseIDTokenPayload>
 

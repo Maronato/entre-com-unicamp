@@ -63,6 +63,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({
     redirect_uri,
     scope,
     state,
+    nonce,
   } = query
 
   let app: App | null
@@ -97,7 +98,8 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({
     !response_type ||
     Array.isArray(code_challenge) ||
     Array.isArray(code_challenge_method) ||
-    Array.isArray(state)
+    Array.isArray(state) ||
+    Array.isArray(nonce)
   ) {
     redirectUrl.searchParams.append("error", ErrorCodes.INVALID_REQUEST)
     return respondRedirect()
@@ -147,6 +149,9 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({
   }
   if (state) {
     authQuery.state = state
+  }
+  if (nonce) {
+    authQuery.nonce = nonce
   }
 
   const serializedApp = await serializeApp(app)

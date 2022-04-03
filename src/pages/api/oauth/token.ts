@@ -10,6 +10,23 @@ import { respondInvalidRequest, respondOk } from "@/utils/server/serverUtils"
 
 import type { NextApiRequest, NextApiResponse } from "next"
 
+const decodeBasicAuth = (
+  req: NextApiRequest
+): [string, string] | [null, null] => {
+  const auth = req.headers.authorization
+  if (!auth) {
+    return [null, null]
+  }
+  const [, base64] = auth.split(" ")
+  const [username, password] = Buffer.from(base64, "base64")
+    .toString("utf-8")
+    .split(":")
+  if (!username || !password) {
+    return [null, null]
+  }
+  return [username, password]
+}
+
 type BaseRequestData = {
   grant_type: GrantType
   client_id: string
@@ -93,22 +110,22 @@ async function accessTokenHandler(
   const data = req.body as AccessRequestData
   const server = new AuthorizationServer()
 
-  const secretOrVerifier =
-    "client_secret" in data ? data.client_secret : data.code_verifier
+  const [username, password] = decodeBasicAuth(req)
 
-  if (
-    !data.client_id ||
-    !data.code ||
-    !data.redirect_uri ||
-    !secretOrVerifier
-  ) {
+  const secretOrVerifier =
+    password ||
+    ("client_secret" in data ? data.client_secret : data.code_verifier)
+
+  const client_id = username || data.client_id
+
+  if (!client_id || !data.code || !data.redirect_uri || !secretOrVerifier) {
     return respondInvalidRequest(res, "invalid_request")
   }
 
   const auth = await server.exchangeToken(
     "authorization_code",
     data.code,
-    data.client_id,
+    client_id,
     secretOrVerifier,
     data.redirect_uri
   )
@@ -126,11 +143,17 @@ async function refreshTokenHandler(
   const data = req.body as RefreshRequestData
   const server = new AuthorizationServer()
 
-  const clientSecret = "client_secret" in data ? data.client_secret : undefined
+  const [username, password] = decodeBasicAuth(req)
+
+  const clientSecret =
+    password || ("client_secret" in data ? data.client_secret : undefined)
+
+  const client_id = username || data.client_id
+
   const auth = await server.exchangeToken(
     "refresh_token",
     data.refresh_token,
-    data.client_id,
+    client_id,
     clientSecret
   )
   if (typeof auth === "string") {

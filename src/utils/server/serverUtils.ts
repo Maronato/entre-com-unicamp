@@ -31,6 +31,10 @@ async function respond(
 ): Promise<void> {
   dataOrError = await dataOrError
 
+  if (res.headersSent) {
+    return
+  }
+
   if (statusIsOk(statusCode)) {
     dataOrError = dataOrError ?? "success"
     return res

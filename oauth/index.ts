@@ -53,7 +53,8 @@ export class AuthorizationServer {
     userID: User["id"],
     redirectURI: string,
     scope?: Scope[],
-    state?: string
+    state?: string,
+    nonce?: string
   ): Promise<AuthorizationCodeGrant | ErrorCodes>
   async authorize(
     responseType: ResponseType,
@@ -61,7 +62,8 @@ export class AuthorizationServer {
     userID: User["id"],
     redirectURI: string,
     scope?: Scope[],
-    state?: string
+    state?: string,
+    nonce?: string
   ): Promise<AuthorizationCodeGrant | ErrorCodes>
   async authorize(
     responseType: ResponseType,
@@ -69,7 +71,8 @@ export class AuthorizationServer {
     userID: User["id"],
     redirectURI: string,
     scope?: Scope[],
-    state?: string
+    state?: string,
+    nonce?: string
   ): Promise<AuthorizationCodeGrant | ErrorCodes> {
     return startActiveSpan(
       "AuthorizationServer.authorize",
@@ -81,6 +84,7 @@ export class AuthorizationServer {
           redirectURI,
           scope,
           state,
+          nonce,
         })
 
         const app = await getAppByClientID(auth.clientID)
@@ -105,13 +109,10 @@ export class AuthorizationServer {
           return ErrorCodes.INVALID_SCOPE
         }
         if (app.type === "confidential") {
-          return createCodeGrant(
-            app.client_id,
-            user.id,
-            scope,
-            redirectURI,
-            state
-          )
+          return createCodeGrant(app.client_id, user.id, scope, redirectURI, {
+            state,
+            nonce,
+          })
         }
         if (!("codeChallenge" in auth)) {
           setError(ErrorCodes.INVALID_REQUEST)
@@ -125,7 +126,7 @@ export class AuthorizationServer {
           redirectURI,
           auth.codeChallenge,
           auth.codeChallengeMethod,
-          state
+          { state, nonce }
         )
       }
     )
