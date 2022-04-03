@@ -181,6 +181,20 @@ export async function enableTOTP(userID: User["id"], secret: string) {
   )
 }
 
+export async function disableTOTP(userID: User["id"]) {
+  return startActiveSpan(
+    "disableTOTP",
+    { attributes: { user: userID } },
+    async () => {
+      const prisma = getPrisma()
+      return prisma.user.update({
+        where: { id: userID },
+        data: { totp_secret: null },
+      })
+    }
+  )
+}
+
 export async function hasTOTP(userID: User["id"]): Promise<boolean>
 export async function hasTOTP(user: User): Promise<boolean>
 export async function hasTOTP(user: User | User["id"]) {

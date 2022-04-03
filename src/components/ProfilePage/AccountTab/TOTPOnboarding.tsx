@@ -1,6 +1,9 @@
 import { FormEventHandler, FunctionComponent, useEffect, useState } from "react"
 
-import { ShieldCheckIcon } from "@heroicons/react/outline"
+import {
+  ShieldCheckIcon,
+  ShieldExclamationIcon,
+} from "@heroicons/react/outline"
 import QRCode from "react-qr-code"
 import useSWR from "swr"
 
@@ -44,11 +47,42 @@ const TOTPOnboarding: FunctionComponent = () => {
     return <div>Carregando...</div>
   }
 
-  if (data.totpEnabled) {
+  const reset = () => {
+    setCode("")
+    setErrorMessage(undefined)
+    setLoaded(false)
+    setSecret(generateSecret())
+    setLoading(false)
+  }
+
+  const disableTOTP: FormEventHandler = async (e) => {
+    e.preventDefault()
+    setErrorMessage(undefined)
+
+    setLoading(true)
+    try {
+      await postFetch(`/api/login/totp/disable`, { code })
+      mutate()
+      reset()
+    } catch (e) {
+      setErrorMessage("Falha ao desabilitar o código TOTP")
+    }
+    setLoading(false)
+  }
+
+  if (data.totpEnabled && !loaded) {
     return (
-      <div className="font-bold flex flex-row items-center">
-        <ShieldCheckIcon className="h-6 w-6 text-green-500 mr-2" /> Habilitado
-        com sucesso!
+      <div className="flex flex-row items-center space-x-4">
+        <div className="font-bold flex flex-row items-center">
+          <ShieldCheckIcon className="h-6 w-6 text-green-500 mr-2" /> Habilitado
+        </div>
+        <Button
+          color="red"
+          outline
+          onClick={() => setLoaded(true)}
+          icon={ShieldExclamationIcon}>
+          Desabilitar
+        </Button>
       </div>
     )
   }
@@ -63,6 +97,7 @@ const TOTPOnboarding: FunctionComponent = () => {
       try {
         await postFetch(`/api/login/totp/enable`, { secret })
         mutate()
+        reset()
       } catch (e) {
         setErrorMessage("Falha ao habilitar o código TOTP")
       }
@@ -85,6 +120,32 @@ const TOTPOnboarding: FunctionComponent = () => {
     )
   }
 
+  if (data.totpEnabled) {
+    return (
+      <form onSubmit={disableTOTP}>
+        <p className="mb-2">Digite o código atual para desabilitar</p>
+        <div className="w-60 flex flex-row space-x-4 items-end">
+          <InputForm
+            htmlFor="one-time-code"
+            onChange={(e) => setCode(e.target.value)}
+            autoComplete="one-time-code"
+            placeholder="123456"
+            value={code}
+          />
+          <Button
+            color="red"
+            type="submit"
+            icon={ShieldExclamationIcon}
+            loading={loading}
+            disabled={code.length !== 6}>
+            Desabilitar
+          </Button>
+        </div>
+        {errorMessage && <div>{errorMessage}</div>}
+      </form>
+    )
+  }
+
   return (
     <form onSubmit={enableTOTP}>
       <p className="mb-5">
@@ -98,7 +159,7 @@ const TOTPOnboarding: FunctionComponent = () => {
       <p className="mb-5 mt-10">
         2. Cole um dos códigos gerados no gerador abaixo para habilitar
       </p>
-      <div className="w-56 mx-auto flex flex-row space-x-4 items-end">
+      <div className="w-60 mx-auto flex flex-row space-x-4 items-end">
         <InputForm
           htmlFor="one-time-code"
           onChange={(e) => setCode(e.target.value)}

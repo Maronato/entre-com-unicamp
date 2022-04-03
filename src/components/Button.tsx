@@ -40,12 +40,12 @@ const borderColorMap: Record<Color, string> = {
 }
 
 const textColorMap: Record<Color, string> = {
-  primary: "text-primary-400",
+  primary: "text-primary-300",
   secondary: "text-secondary-400",
-  blue: "text-blue-400",
+  blue: "text-blue-300",
   yellow: "text-yellow-400",
-  green: "text-green-400",
-  red: "text-red-400",
+  green: "text-green-300",
+  red: "text-red-300",
   indigo: "text-indigo-400",
 }
 
