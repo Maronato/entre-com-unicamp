@@ -32,7 +32,7 @@ function getPrivateKeys(): Promise<KeyObject[]> {
   return startActiveSpan("getPrivateKeys", async (_, setError) => {
     // In production, look for secrets
     if (process.env.NODE_ENV === "production") {
-      return getSecret("jwt-private-ke", async (secret) => [
+      return getSecret("jwt-private-key", async (secret) => [
         (await importPKCS8(secret, ALGORITHM)) as KeyObject,
       ])
     } else {
