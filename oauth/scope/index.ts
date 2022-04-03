@@ -26,3 +26,8 @@ export function isScope(v: unknown): v is Scope {
 }
 
 export const REQUIRED_SCOPE = [Scope.PROFILE_READ]
+
+export const DEFAULT_SCOPE = [
+  Scope.PROFILE_READ,
+  Scope.OPENID
+]
