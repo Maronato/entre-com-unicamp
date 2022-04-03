@@ -15,27 +15,27 @@ import { revokeUserAppTokens } from "../token/revoke"
 
 export type User = Pick<
   user,
-  "id" | "email" | "avatar" | "name" | "totp_secret"
+  "id" | "email" | "picture" | "name" | "totp_secret"
 >
 type SerializedPrivateUserInfo = Record<string, never>
 export type SerializedUser<Private extends boolean = false> =
   (Private extends true ? SerializedPrivateUserInfo : Record<string, never>) & {
     id: string
     email: string
-    avatar: string
+    picture: string
     name: string | null
   }
 
 export async function createUser(
   email: string,
   name?: string,
-  avatar?: string
+  picture?: string
 ): Promise<User> {
   return startActiveSpan("createUser", { attributes: { email } }, async () => {
     const prisma = getPrisma()
-    avatar = avatar ?? generateIdenticon(email)
+    picture = picture ?? generateIdenticon(email)
     const user = await prisma.user.create({
-      data: { avatar, email, name },
+      data: { picture, email, name },
     })
     return user
   })
@@ -43,7 +43,7 @@ export async function createUser(
 
 export async function updateUser(
   user: User,
-  data: Partial<Pick<User, "name" | "avatar">>
+  data: Partial<Pick<User, "name" | "picture">>
 ): Promise<User> {
   return startActiveSpan(
     "updateUser",
@@ -51,20 +51,20 @@ export async function updateUser(
     async () => {
       const prisma = getPrisma()
 
-      if (data.avatar) {
+      if (data.picture) {
         const newAvatar = await promoteTempAvatarToCurrent(
           user.id,
-          data.avatar,
-          user.avatar
+          data.picture,
+          user.picture
         )
         if (newAvatar) {
-          data.avatar = newAvatar
+          data.picture = newAvatar
         }
       }
 
       const updatedUser = await prisma.user.update({
         where: { id: user.id },
-        data: { name: data.name, avatar: data.avatar },
+        data: { name: data.name, picture: data.picture },
       })
       return updatedUser
     }
@@ -102,7 +102,7 @@ export async function deleteUser(user: User) {
     async () => {
       const prisma = getPrisma()
       await prisma.user.delete({ where: { id: user.id } })
-      await deleteCurrentAvatar(user.avatar)
+      await deleteCurrentAvatar(user.picture)
     }
   )
 }
@@ -235,7 +235,7 @@ export function serializeUser<P extends boolean = false>(
     "serializeUser",
     { attributes: { user: user.id } },
     () => {
-      const keys: (keyof User)[] = ["email", "avatar", "name", "id"]
+      const keys: (keyof User)[] = ["email", "picture", "name", "id"]
 
       if (includePrivateInfo) {
         keys.push()

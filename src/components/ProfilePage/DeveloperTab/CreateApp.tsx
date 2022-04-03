@@ -81,7 +81,7 @@ const CreateApp: FunctionComponent<{
       <AvatarForm
         identiconSource={formData.name || ""}
         setAvatarURL={(url) => updateFormData("logo", url)}
-        avatarURL={formData.logo}>
+        pictureURL={formData.logo}>
         Logo
       </AvatarForm>
       <hr className="border-gray-300 dark:border-gray-600" />

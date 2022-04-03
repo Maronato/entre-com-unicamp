@@ -34,7 +34,7 @@ type ValidateData = {
   clientID?: string
   userID?: User["id"]
   scope?: Scope[]
-  type?: TokenType
+  types?: TokenType[]
 }
 
 export async function validateToken(
@@ -62,7 +62,7 @@ export async function validateToken(
       setError("Failed to parse")
       return false
     }
-    if (validate.type && validate.type !== parsed.type) {
+    if (validate.types && !validate.types.includes(parsed.type)) {
       setError("Type mismatch")
       return false
     }

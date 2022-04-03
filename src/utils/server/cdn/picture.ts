@@ -1,7 +1,7 @@
 export const getTempAvatarKey = (id: string, nonce: string) =>
-  `avatars/temp/${id}/${nonce}`
+  `pictures/temp/${id}/${nonce}`
 export const getCurrentAvatarKey = (id: string, nonce: string) =>
-  `avatars/${id}/${nonce}`
+  `pictures/${id}/${nonce}`
 
 const getCDNHost = () => {
   return process.env.CDN_URL || "http://localhost:9000/development"
@@ -19,7 +19,7 @@ export const parseTempAvatarURL = (
   if (!pathname) {
     return null
   }
-  const match = pathname.match(/\/avatars\/temp\/(.+)\/(.+)$/)
+  const match = pathname.match(/\/pictures\/temp\/(.+)\/(.+)$/)
   if (!match) {
     return null
   }
@@ -36,7 +36,7 @@ export const parseCurrentAvatarURL = (
   if (!pathname) {
     return null
   }
-  const match = pathname.match(/\/avatars\/(.+)\/(.+)$/)
+  const match = pathname.match(/\/pictures\/(.+)\/(.+)$/)
   if (!match) {
     return null
   }

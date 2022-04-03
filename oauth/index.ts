@@ -22,6 +22,8 @@ import {
   parseToken,
   rotateRefreshToken,
 } from "./token"
+import { createIDToken } from "./token/create"
+import { IDToken } from "./token/types"
 import { getUser, User } from "./user"
 
 export const isErrorCode = (value: unknown): value is ErrorCodes =>
@@ -32,6 +34,8 @@ type ResponseType = "code"
 export type AuthorizationCodeGrantType = "authorization_code"
 type RefreshTokenGrantType = "refresh_token"
 export type GrantType = AuthorizationCodeGrantType | RefreshTokenGrantType
+
+type MaybeIDToken = IDToken | undefined
 
 type ConfidentialAuth = {
   clientID: App["client_id"]
@@ -132,7 +136,7 @@ export class AuthorizationServer {
     user: Pick<User, "id">,
     scope: Scope[],
     previousJTI?: string
-  ): Promise<[AccessToken, RefreshToken]> {
+  ): Promise<[AccessToken, RefreshToken, MaybeIDToken]> {
     return startActiveSpan(
       "AuthorizationServer.generateAccessRefreshTokenPair",
       async (span) => {
@@ -145,11 +149,13 @@ export class AuthorizationServer {
           return Promise.all([
             createAccessToken(app.client_id, user, scope),
             createRefreshToken(app.client_id, user, scope),
+            createIDToken(app.client_id, user, scope),
           ])
         }
         return Promise.all([
           createAccessToken(app.client_id, user, scope),
           rotateRefreshToken(previousJTI, app.client_id, user, scope),
+          createIDToken(app.client_id, user, scope),
         ])
       }
     )
@@ -160,7 +166,7 @@ export class AuthorizationServer {
     app: App,
     redirectURI: string,
     codeVerifierOrClientSecret?: string
-  ): Promise<[AccessToken, RefreshToken] | ErrorCodes> {
+  ): Promise<[AccessToken, RefreshToken, MaybeIDToken] | ErrorCodes> {
     return startActiveSpan(
       "AuthorizationServer.exchangeAuthorizationCode",
       async (span, setError) => {
@@ -206,7 +212,7 @@ export class AuthorizationServer {
     refreshToken: RefreshTokenPayload,
     app: App,
     clientSecret?: string
-  ): Promise<[AccessToken, RefreshToken] | ErrorCodes> {
+  ): Promise<[AccessToken, RefreshToken, MaybeIDToken] | ErrorCodes> {
     return startActiveSpan(
       "AuthorizationServer.exchangeRefreshToken",
       async (span, setError) => {
@@ -237,20 +243,20 @@ export class AuthorizationServer {
     clientID: string,
     clientSecretOrCodeVerifier: string,
     redirectURI: string
-  ): Promise<[AccessToken, RefreshToken] | ErrorCodes>
+  ): Promise<[AccessToken, RefreshToken, MaybeIDToken] | ErrorCodes>
   async exchangeToken(
     grantType: RefreshTokenGrantType,
     refreshToken: string,
     clientID: string,
     clientSecret?: string
-  ): Promise<[AccessToken, RefreshToken] | ErrorCodes>
+  ): Promise<[AccessToken, RefreshToken, MaybeIDToken] | ErrorCodes>
   async exchangeToken(
     grantType: GrantType,
     codeOrRefreshToken: string,
     clientID: string,
     clientSecretOrCodeVerifier?: string,
     redirectURI?: string
-  ): Promise<[AccessToken, RefreshToken] | ErrorCodes> {
+  ): Promise<[AccessToken, RefreshToken, MaybeIDToken] | ErrorCodes> {
     return startActiveSpan(
       "AuthorizationServer.exchangeToken",
       async (span, setError) => {
@@ -288,7 +294,7 @@ export class AuthorizationServer {
             RefreshTokenPayload
           >(codeOrRefreshToken)
           const isValid = await validateToken(codeOrRefreshToken, {
-            type: "refresh_token",
+            types: ["refresh_token"],
           })
 
           if (!guardRefreshTokenType(refreshToken, isValid)) {

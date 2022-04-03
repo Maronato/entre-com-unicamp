@@ -25,10 +25,6 @@ async function handler(
     issuer: ISSUER,
     authorization_endpoint,
     token_endpoint,
-    token_endpoint_auth_methods_supported: [
-      "client_secret_basic",
-      "private_key_jwt",
-    ],
     token_endpoint_auth_signing_alg_values_supported: [ALGORITHM],
     userinfo_endpoint,
     jwks_uri,
@@ -48,6 +44,9 @@ async function handler(
       "scope",
       "iat",
       "exp",
+      "name",
+      "email",
+      "picture",
     ],
     service_documentation,
   }

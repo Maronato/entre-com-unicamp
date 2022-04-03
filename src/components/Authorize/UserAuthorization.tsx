@@ -89,15 +89,22 @@ const UserAuthorization: FunctionComponent<
     .filter(([_, v]) => v)
     .map(([s]) => s)
 
-  const url = new URL(redirectUri)
-  if (state) {
-    url.searchParams.append("state", state)
-  }
-  const redirect = useCallback(() => router.push(url.href), [router, url.href])
+  const redirect = useCallback(
+    (searchParams: URLSearchParams) => {
+      const url = new URL(redirectUri)
+      searchParams.forEach((v, k) => url.searchParams.set(k, v))
+      router.push(url.href)
+    },
+    [router, redirectUri]
+  )
 
   const authorize = useCallback(async () => {
     setLoading(true)
     setButtonClicked("authorize")
+    const searchParams = new URLSearchParams()
+    if (state) {
+      searchParams.set("state", state)
+    }
     try {
       const payload: Partial<ChallengeRequestData> = {
         clientID,
@@ -112,19 +119,19 @@ const UserAuthorization: FunctionComponent<
         "/api/oauth/authorize",
         payload
       )
-      url.searchParams.append("code", response.code)
+      searchParams.set("code", response.code)
     } catch (res: unknown) {
       // Redirect failure
       if (typeof res === "object" && res) {
-        url.searchParams.append(
+        searchParams.append(
           "error",
           (await (res as Response).json())["error"] || "server_error"
         )
       } else {
-        url.searchParams.append("error", "server_error")
+        searchParams.append("error", "server_error")
       }
     }
-    redirect()
+    redirect(searchParams)
   }, [
     clientID,
     codeChallenge,
@@ -133,18 +140,20 @@ const UserAuthorization: FunctionComponent<
     redirectUri,
     selectedScopeList,
     state,
-    url.searchParams,
   ])
 
   const reject = async () => {
     setLoading(true)
     setButtonClicked("reject")
-    url.searchParams.append("error", "access_denied")
-    redirect()
+    redirect(new URLSearchParams([["error", "access_denied"]]))
   }
 
   useEffect(() => {
     const checkAppAuthorized = async () => {
+      // if scopes are beyond the required ones, it is not safe to auto authorize
+      if (scope.some((s) => !REQUIRED_SCOPE.includes(s))) {
+        return
+      }
       try {
         const apps = await getFetch<SerializedApp[]>("/api/apps/authorized")
         apps.forEach((a) => {
@@ -158,7 +167,7 @@ const UserAuthorization: FunctionComponent<
     }
 
     checkAppAuthorized()
-  }, [app.client_id, authorize])
+  }, [app.client_id, authorize, scope])
 
   if (!user) {
     return null

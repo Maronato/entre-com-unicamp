@@ -4,13 +4,14 @@ import { startActiveSpan } from "@/utils/server/telemetry/trace"
 
 import { App } from "../app/types"
 import { Scope } from "../scope"
-import { User } from "../user"
+import { getUser, serializeUser, User } from "../user"
 
 import { revokePreviousRefreshToken } from "./revoke"
 import {
   AccessToken,
   AccessTokenType,
   BaseTokenPayload,
+  IDTokenPayload,
   RefreshToken,
   TokenType,
 } from "./types"
@@ -78,11 +79,17 @@ const createToken =
     })
   }
 
-export const createAccessToken = createToken("access_token", "2h")
+const ACCESS_TOKEN_EXPIRATION_TIME = "1h"
+
+export const createAccessToken = createToken(
+  "access_token",
+  ACCESS_TOKEN_EXPIRATION_TIME
+)
 
 export const createLoginToken = createToken("login_token", "1y")
 
 export const createRefreshToken = createToken("refresh_token", false)
+
 export const rotateRefreshToken = async (
   previousJTI: string,
   ...args: Parameters<typeof createRefreshToken>
@@ -94,4 +101,32 @@ export const rotateRefreshToken = async (
     const jti = await revokePreviousRefreshToken(previousJTI)
     return createRefreshToken(args[0], args[1], args[2], jti)
   })
+}
+
+export const createIDToken = async (
+  clientID: App["client_id"],
+  user: Pick<User, "id">,
+  scope: Scope[]
+): Promise<string | undefined> => {
+  if (!scope.includes(Scope.OPENID)) {
+    return undefined
+  }
+  const userData = await getUser(user.id)
+  if (!userData) {
+    return undefined
+  }
+  const serialized = serializeUser(userData)
+  const payload: Omit<IDTokenPayload, "aud" | "sub"> = {
+    email: serialized.email,
+    name: serialized.name || "",
+    picture: serialized.picture,
+    type: "id_token",
+    scope,
+  }
+  return await signJWT(
+    { ...payload },
+    clientID,
+    serialized.id,
+    ACCESS_TOKEN_EXPIRATION_TIME
+  )
 }

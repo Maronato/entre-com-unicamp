@@ -5,7 +5,7 @@ import classNames from "classnames"
 
 import Avatar from "@/components/Avatar"
 import Button from "@/components/Button"
-import { RequestData, ResponseData } from "@/pages/api/avatar"
+import { RequestData, ResponseData } from "@/pages/api/picture"
 import { postFetch } from "@/utils/browser/fetch"
 import { generateIdenticon } from "@/utils/server/identicon"
 
@@ -27,10 +27,10 @@ export const uploadFile = async (
 }
 
 const AvatarForm: FunctionComponent<{
-  avatarURL?: string
+  pictureURL?: string
   setAvatarURL: (newURL: string) => void
   identiconSource: string
-}> = ({ avatarURL, setAvatarURL, identiconSource, children }) => {
+}> = ({ pictureURL, setAvatarURL, identiconSource, children }) => {
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [uploadAvatarButtonText, setUploadAvatarButtonText] =
     useState("Alterar imagem")
@@ -43,7 +43,7 @@ const AvatarForm: FunctionComponent<{
         operation: "getUploadURL",
       }
       const { cdnURL, uploadURL } = await postFetch<ResponseData>(
-        "/api/avatar",
+        "/api/picture",
         signedURLPayload
       )
 
@@ -66,7 +66,7 @@ const AvatarForm: FunctionComponent<{
   return (
     <div>
       <label
-        htmlFor="avatar"
+        htmlFor="picture"
         className="block font-medium text-gray-700 dark:text-gray-200 mb-3">
         {children}
       </label>
@@ -75,12 +75,12 @@ const AvatarForm: FunctionComponent<{
           <Avatar
             className="w-20 h-20 lg:w-32 lg:h-32"
             name={identiconSource}
-            src={avatarURL}
+            src={pictureURL}
           />
         </div>
         <div className="flex flex-col space-y-2 ml-4">
           <label
-            htmlFor="avatar-upload"
+            htmlFor="picture-upload"
             className={classNames(
               "px-4 py-2 rounded-md text-white transition-all duration-200 text-base flex flex-row items-center justify-between shadow",
               {
@@ -92,8 +92,8 @@ const AvatarForm: FunctionComponent<{
             <UploadIcon className="w-4 h-4 mr-2" />
             <span>{uploadAvatarButtonText}</span>
             <input
-              id="avatar-upload"
-              name="avatar-upload"
+              id="picture-upload"
+              name="picture-upload"
               type="file"
               onChangeCapture={uploadAvatar}
               className="sr-only"

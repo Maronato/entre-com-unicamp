@@ -36,9 +36,9 @@ async function handleGET(
 const handlePATCH: NextApiHandler = async (req, res) => {
   const user = getRequestUser(req)
 
-  const { name, avatar } = req.body as Partial<Pick<User, "name" | "avatar">>
+  const { name, picture } = req.body as Partial<Pick<User, "name" | "picture">>
 
-  const updated = await updateUser(user, { name, avatar })
+  const updated = await updateUser(user, { name, picture })
 
   return respondOk(res, serializeUser(updated))
 }

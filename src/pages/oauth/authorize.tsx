@@ -125,6 +125,13 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({
     redirectUrl.searchParams.append("error", ErrorCodes.INVALID_SCOPE)
     return respondRedirect()
   }
+  // Remove then add at the beginnig
+  REQUIRED_SCOPE.forEach((s) => {
+    if (scopeArr.includes(s)) {
+      scopeArr.splice(scopeArr.indexOf(s), 1)
+    }
+  })
+  scopeArr.unshift(...REQUIRED_SCOPE)
 
   const authQuery: Partial<AuthorizeProps> = {
     clientID: client_id,

@@ -1,6 +1,6 @@
 import { createRandomString } from "@/utils/common/random"
 import { getRequestUser } from "@/utils/server/auth"
-import { getTempAvatarURL } from "@/utils/server/cdn/avatar"
+import { getTempAvatarURL } from "@/utils/server/cdn/picture"
 import { getAvatarUploadSignedURL } from "@/utils/server/cdn/s3"
 import { handleRequest, withDefaultMiddleware } from "@/utils/server/middleware"
 import { withAuthMiddleware } from "@/utils/server/middleware/auth"

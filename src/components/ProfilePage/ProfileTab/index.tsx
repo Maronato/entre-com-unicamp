@@ -11,7 +11,7 @@ import { useUser } from "@/utils/browser/hooks/useUser"
 
 import TabFrame from "../TabFrame"
 
-type EditableUser = Pick<SerializedUser<false>, "name" | "avatar">
+type EditableUser = Pick<SerializedUser<false>, "name" | "picture">
 
 const ProfileTab: FunctionComponent = () => {
   const { user, mutate } = useUser()
@@ -42,8 +42,8 @@ const ProfileTab: FunctionComponent = () => {
       if (formData.name !== user?.name) {
         payload.name = formData.name
       }
-      if (formData.avatar !== user?.avatar) {
-        payload.avatar = formData.avatar
+      if (formData.picture !== user?.picture) {
+        payload.picture = formData.picture
       }
       await patchFetch<SerializedUser<false>>("/api/me", payload)
       mutate()
@@ -74,9 +74,9 @@ const ProfileTab: FunctionComponent = () => {
             </InputForm>
           </div>
           <AvatarForm
-            avatarURL={formData.avatar}
+            pictureURL={formData.picture}
             identiconSource={user.email}
-            setAvatarURL={(url) => updateFormData("avatar", url)}>
+            setAvatarURL={(url) => updateFormData("picture", url)}>
             Foto de perfil
           </AvatarForm>
           <div className="flex flex-row justify-start">

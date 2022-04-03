@@ -45,7 +45,9 @@ async function verifyAuthToken(
       !result ||
       !(await validateToken(result, {
         scope,
-        type: loginTokenOnly ? "login_token" : undefined,
+        types: loginTokenOnly
+          ? ["login_token"]
+          : ["login_token", "access_token"],
       }))
     ) {
       setError("Invalid token")

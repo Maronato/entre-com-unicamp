@@ -71,7 +71,7 @@ const LoggedInProfile: FunctionComponent = () => {
             {user?.email ? (
               <span className="w-8 h-8">
                 {" "}
-                <Avatar name={user.email} src={user.avatar} />{" "}
+                <Avatar name={user.email} src={user.picture} />{" "}
               </span>
             ) : (
               <UserIcon className="w-5 h-5 md:w-6 md:h-6 text-current" />

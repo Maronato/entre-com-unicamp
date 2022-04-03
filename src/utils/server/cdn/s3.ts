@@ -23,7 +23,7 @@ import {
   getTempAvatarKey,
   parseCurrentAvatarURL,
   parseTempAvatarURL,
-} from "./avatar"
+} from "./picture"
 
 // Use Minio dev configs by default
 const bucket = process.env.AWS_S3_BUCKET_NAME || "development"
@@ -107,13 +107,13 @@ export const getAvatarUploadSignedURL = (resourceID: string, nonce: string) => {
   )
 }
 
-export const deleteCurrentAvatar = (avatarURL: string) => {
+export const deleteCurrentAvatar = (pictureURL: string) => {
   return startActiveSpan(
     "deleteCurrentAvatar",
-    { attributes: { avatarURL, ...clientData } },
+    { attributes: { pictureURL, ...clientData } },
     async (span) => {
       const { s3RequestDuration } = getInstruments()
-      const parsed = parseCurrentAvatarURL(avatarURL)
+      const parsed = parseCurrentAvatarURL(pictureURL)
       if (!parsed) {
         return
       }

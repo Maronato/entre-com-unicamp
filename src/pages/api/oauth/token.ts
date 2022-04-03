@@ -4,6 +4,7 @@ import {
   AuthorizationCodeGrantType,
 } from "@/oauth"
 import { AccessToken, RefreshToken } from "@/oauth/token"
+import { IDToken } from "@/oauth/token/types"
 import { handleRequest, withDefaultMiddleware } from "@/utils/server/middleware"
 import { respondInvalidRequest, respondOk } from "@/utils/server/serverUtils"
 
@@ -42,6 +43,7 @@ type RequestData = AccessRequestData | RefreshRequestData
 type ValidResponseData = {
   access_token: string
   refresh_token: string
+  id_token?: string
   token_type: "Bearer"
 }
 type ErrorResponseData = {
@@ -66,8 +68,17 @@ async function handler(
 function respondExchange(
   res: NextApiResponse<ResponseData>,
   accessToken: AccessToken,
-  refreshToken: RefreshToken
+  refreshToken: RefreshToken,
+  idToken?: IDToken
 ) {
+  if (idToken) {
+    respondOk(res, {
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      id_token: idToken,
+      token_type: "Bearer",
+    })
+  }
   return respondOk(res, {
     access_token: accessToken,
     refresh_token: refreshToken,
@@ -104,8 +115,8 @@ async function accessTokenHandler(
   if (typeof auth === "string") {
     return respondInvalidRequest(res, auth)
   }
-  const [accessToken, refreshToken] = auth
-  return respondExchange(res, accessToken, refreshToken)
+  const [accessToken, refreshToken, idToken] = auth
+  return respondExchange(res, accessToken, refreshToken, idToken)
 }
 
 async function refreshTokenHandler(
@@ -125,8 +136,8 @@ async function refreshTokenHandler(
   if (typeof auth === "string") {
     return respondInvalidRequest(res, auth)
   }
-  const [accessToken, refreshToken] = auth
-  return respondExchange(res, accessToken, refreshToken)
+  const [accessToken, refreshToken, idToken] = auth
+  return respondExchange(res, accessToken, refreshToken, idToken)
 }
 
 export default withDefaultMiddleware(handleRequest(handler), ["POST"])

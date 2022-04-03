@@ -234,7 +234,7 @@ const ViewApp: FunctionComponent<{ clientID: string; goBack: () => void }> = ({
         <AvatarForm
           identiconSource={formData.name || ""}
           setAvatarURL={(url) => updateFormData("logo", url)}
-          avatarURL={formData.logo}>
+          pictureURL={formData.logo}>
           Logo
         </AvatarForm>
         <div>
