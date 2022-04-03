@@ -4,7 +4,7 @@ import { GetServerSideProps, NextPage } from "next"
 import Image from "next/image"
 
 import Layout from "@/components/Layout"
-import { REQUIRED_SCOPE } from "@/oauth/scope"
+import { DEFAULT_SCOPE, REQUIRED_SCOPE } from "@/oauth/scope"
 import OAuthFlowImage from "@/public/docs/oauth.png"
 import { UserFallback, UserProvicer } from "@/utils/browser/hooks/useUser"
 import { serverFetch } from "@/utils/server/auth"
@@ -55,6 +55,20 @@ const DocsPage: FunctionComponent = () => {
         </p>
       </section>
       <Section>
+        <Heading>Vai usar OpenID Connect?</Heading>
+        <Paragraph>
+          O <b>Entre com Unicamp</b> expoõe todos os{" "}
+          <RegularLink href="https://datatracker.ietf.org/doc/html/rfc8414#section-3">
+            metadados
+          </RegularLink>{" "}
+          na URL padrão:
+          <br />
+          <br />
+          <RegularLink
+            href={`${baseURL}/.well-known/openid-configuration`}>{`${baseURL}/.well-known/openid-configuration`}</RegularLink>
+        </Paragraph>
+      </Section>
+      <Section>
         <Heading>Já sabe usar OAuth 2.0?</Heading>
         <ul className="list-disc list-inside mt-5">
           <li className="list-item">
@@ -70,7 +84,10 @@ const DocsPage: FunctionComponent = () => {
             <b>response_type permitidos</b>: {`code`}
           </li>
           <li className="list-item">
-            <b>Scope padrão</b>: {REQUIRED_SCOPE.join(", ")}
+            <b>Scope obrigatória</b>: {REQUIRED_SCOPE.join(", ")}
+          </li>
+          <li className="list-item">
+            <b>Scope padrão</b>: {DEFAULT_SCOPE.join(", ")}
           </li>
           <li className="list-item">
             <b>grant_type permitidos</b>: {`authorization_code e refresh_token`}
@@ -82,8 +99,8 @@ const DocsPage: FunctionComponent = () => {
             <b>TTL do refresh_token</b>: não expira
           </li>
           <li className="list-item">
-            refresh_token é rodado a cada refresh, com o token anterior sendo
-            invalidado
+            refresh_token é atualizado a cada refresh, com o token anterior
+            sendo invalidado
           </li>
 
           <li className="list-item">Public clients devem usar PKCE.</li>

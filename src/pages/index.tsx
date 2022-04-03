@@ -147,9 +147,10 @@ const IndexPage: FunctionComponent = () => {
                   Cria um app novo colocando as informações dele
                 </li>
                 <li className="list-item">
-                  Usa o Entre com Unicamp como um provedor comum de OAuth2.{" "}
-                  <RegularLink href="https://aaronparecki.com/oauth-2-simplified/#creating-an-app">
-                    Leia esse guia para mais informações
+                  Usa o Entre com Unicamp como um provedor comum de OAuth 2.0 ou
+                  OpenID Connect.{" "}
+                  <RegularLink href="/docs">
+                    Veja nossas docs para mais detalhes!
                   </RegularLink>
                 </li>
               </ul>
@@ -215,7 +216,7 @@ const IndexPage: FunctionComponent = () => {
             </span>
           </h1>
           <p className="text-xl lg:text-2xl text-gray-500 dark:text-gray-400 text-center mt-5 lg:mt-10">
-            Um provedor de OAuth2 para apps feitos por e para membros da{" "}
+            Um provedor de OAuth e OIDC para apps feitos por e para membros da{" "}
             <span className="text-secondary-600 dark:text-secondary-500 font-bold">
               Unicamp
             </span>

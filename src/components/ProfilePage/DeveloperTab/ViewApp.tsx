@@ -235,7 +235,7 @@ const ViewApp: FunctionComponent<{ clientID: string; goBack: () => void }> = ({
             Informações e configurações
           </h3>
           <p className="text-gray-500 dark:text-gray-400">
-            As configurações de OAuth2 e outros dados do app
+            As configurações de OAuth e outros dados do app
           </p>
         </div>
         <AvatarForm

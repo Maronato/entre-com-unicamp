@@ -68,7 +68,7 @@ const CreateApp: FunctionComponent<{
           className="text-blue-500 dark:text-blue-400 underline">
           esse artigo
         </a>{" "}
-        para aprender mais sobre OAuth2 e o seu app.
+        para aprender mais sobre OAuth 2.0 e o seu app.
       </p>
       <InputForm
         htmlFor="name"
