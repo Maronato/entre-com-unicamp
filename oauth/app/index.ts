@@ -7,7 +7,7 @@ import {
 } from "@/utils/server/cdn/s3"
 import { startActiveSpan } from "@/utils/server/telemetry/trace"
 
-import { REQUIRED_SCOPE, Scope } from "../scope"
+import { DEFAULT_SCOPE, Scope } from "../scope"
 import { getUser, serializeUser, User } from "../user"
 
 import { App, AppType, SerializedApp } from "./types"
@@ -18,7 +18,7 @@ export function createApp(
   type: AppType,
   redirectURIs: string[],
   logo?: string,
-  scope: Scope[] = REQUIRED_SCOPE
+  scope: Scope[] = DEFAULT_SCOPE
 ): Promise<App> {
   return startActiveSpan(
     "createApp",
