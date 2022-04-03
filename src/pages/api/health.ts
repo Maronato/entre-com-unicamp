@@ -1,6 +1,7 @@
 import { getPrisma } from "@/prisma/db"
 import { listObjects } from "@/utils/server/cdn/s3"
 import { testSendEmailCode } from "@/utils/server/emailCodes"
+import { signJWT } from "@/utils/server/jwt"
 import { handleRequest, withDefaultMiddleware } from "@/utils/server/middleware"
 import { getRedis } from "@/utils/server/redis"
 import {
@@ -80,12 +81,29 @@ const testSendEmail = async (): Promise<true | string> => {
   return errorMessage
 }
 
+const testSignToken = async (): Promise<true | string> => {
+  let errorMessage = "Sign Token test failed"
+  try {
+    const token = await signJWT({})
+    if (typeof token[0] === "string" && typeof token[1] === "string") {
+      return true
+    }
+    errorMessage = "Invalid value returned from sign token signature test"
+  } catch (e) {
+    logger.error(e)
+    errorMessage = "Failed to sign token"
+  }
+  logger.error(`Sign Token Health check failed: ${errorMessage}`)
+  return errorMessage
+}
+
 async function handler(_req: NextApiRequest, res: NextApiResponse) {
   const tests: [string, () => Promise<true | string>][] = [
     ["database", testDB],
     ["redis", testRedis],
     ["s3", testS3],
     ["sendEmail", testSendEmail],
+    ["signature", testSignToken],
   ]
 
   const results = await Promise.all(
