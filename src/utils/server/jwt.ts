@@ -9,6 +9,8 @@ import {
   jwtVerify,
   importPKCS8,
   JSONWebKeySet,
+  JWK,
+  calculateJwkThumbprint,
 } from "jose"
 
 import { createRandomString } from "@/utils/common/random"
@@ -25,15 +27,14 @@ const TYPE = "JWT"
 const DEFAULT_PRIVATE_KEY =
   '{"kty":"EC","x":"f-Ix02u9TbSSPZDuVHkdJuG0GDCqqpczasp8rd2Y-yM","y":"LPO4N2PC5G3JgrvuchnnJwhmkkL8SbEl4iYxs0h1r7U","crv":"P-256","d":"L-pJifhr1qAmWSvrsfOtR71aZFRr_P9gu9W_08uHDdQ"}'
 
-function getPrivateKey(): Promise<KeyObject> {
+function getPrivateKeys(): Promise<KeyObject[]> {
   const logger = getLogger()
-  return startActiveSpan("getPrivateKey", async (_, setError) => {
+  return startActiveSpan("getPrivateKeys", async (_, setError) => {
     // In production, look for secrets
     if (process.env.NODE_ENV === "production") {
-      return getSecret(
-        "jwt-private-ke",
-        async (secret) => (await importPKCS8(secret, ALGORITHM)) as KeyObject
-      )
+      return getSecret("jwt-private-ke", async (secret) => [
+        (await importPKCS8(secret, ALGORITHM)) as KeyObject,
+      ])
     } else {
       // In development, use the default key
       let key = process.env.JWT_PRIVATE_KEY
@@ -42,25 +43,74 @@ function getPrivateKey(): Promise<KeyObject> {
         setError("JWT_PRIVATE_KEY is not set")
         key = DEFAULT_PRIVATE_KEY
       }
-      return (await importJWK(JSON.parse(key), ALGORITHM)) as KeyObject
+      return [(await importJWK(JSON.parse(key), ALGORITHM)) as KeyObject]
     }
   })
 }
 
-let cachedPub: KeyObject | undefined = undefined
-async function getPublicKey() {
-  return startActiveSpan("getPublicKey", async () => {
-    if (!cachedPub) {
-      cachedPub = createPublicKey(await getPrivateKey())
+type Keypair = { priv: KeyObject; pub: KeyObject }
+function getKeypair(privateKey: KeyObject): Keypair {
+  return startActiveSpan("getKeypair", () => {
+    const publicKey = createPublicKey(privateKey)
+    return {
+      priv: privateKey,
+      pub: publicKey,
     }
-    return cachedPub
+  })
+}
+
+async function generateJWK(key: KeyObject): Promise<JWK> {
+  return startActiveSpan("generateJWK", async () => {
+    const jwk = await exportJWK(key)
+    const kid = await calculateJwkThumbprint(jwk)
+    return { ...jwk, kid }
+  })
+}
+
+type PrivateAndJWK = {
+  priv: KeyObject
+  jwk: JWK
+}
+async function generatePrivateAndJWK(
+  privateKey: KeyObject
+): Promise<PrivateAndJWK> {
+  return startActiveSpan("generatePrivateAndJWK", async () => {
+    const keypair = getKeypair(privateKey)
+    const jwk = await generateJWK(keypair.pub)
+    return {
+      priv: keypair.priv,
+      jwk,
+    }
+  })
+}
+
+const cachedPJWK: PrivateAndJWK[] = []
+async function getPrivateAndJWKs(): Promise<PrivateAndJWK[]> {
+  return startActiveSpan("generatePrivateAndJWK", async () => {
+    if (cachedPJWK.length === 0) {
+      const keys = await getPrivateKeys()
+      const jwks = await Promise.all(keys.map(generatePrivateAndJWK))
+      cachedPJWK.push(...jwks)
+    }
+    return cachedPJWK
+  })
+}
+
+async function choosePrivateAndJWK(): Promise<PrivateAndJWK> {
+  return startActiveSpan("choosePrivateAndJWK", async () => {
+    const keys = await getPrivateAndJWKs()
+    // Maybe choose at random
+    return keys[0]
   })
 }
 
 export async function getJSONWebKeySet(): Promise<JSONWebKeySet> {
-  return startActiveSpan("getJSONWebKeySet", async () => ({
-    keys: [await exportJWK(await getPublicKey())],
-  }))
+  return startActiveSpan("getJSONWebKeySet", async () => {
+    const jwks = await getPrivateAndJWKs()
+    return {
+      keys: jwks.map((pjwk) => pjwk.jwk),
+    }
+  })
 }
 
 async function getJWKS() {
@@ -101,10 +151,16 @@ export async function signJWT(
     })
 
     const jti = payload.jti || createRandomString(12)
-    span.setAttribute("jti", jti)
+
+    const {
+      jwk: { kid },
+      priv,
+    } = await choosePrivateAndJWK()
+
+    span.setAttributes({ jti, kid })
 
     let token = new SignJWT({ ...payload })
-      .setProtectedHeader({ alg: ALGORITHM, typ: TYPE })
+      .setProtectedHeader({ alg: ALGORITHM, typ: TYPE, kid })
       .setIssuedAt()
       .setIssuer(ISSUER)
       .setJti(jti)
@@ -118,7 +174,7 @@ export async function signJWT(
     if (expirationTime) {
       token = token.setExpirationTime(expirationTime)
     }
-    const signed = await token.sign(await getPrivateKey())
+    const signed = await token.sign(priv)
     if (returnJTI) {
       return [signed, jti] as [string, string]
     }

@@ -17,7 +17,15 @@ const config: NextConfig = {
       destination: "/api/oauth/keys",
     },
     {
+      source: "/.well-known/jwks.json",
+      destination: "/api/oauth/keys",
+    },
+    {
       source: "/.well-known/openid-configuration",
+      destination: "/api/oauth/configuration",
+    },
+    {
+      source: "/.well-known/openid-configuration.json",
       destination: "/api/oauth/configuration",
     },
   ],
