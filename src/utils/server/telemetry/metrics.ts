@@ -70,6 +70,23 @@ export const getInstruments = () => {
   return global.instruments
 }
 
+const getDefaultLabels = () => {
+  const labels: Record<string, string> = {}
+  Object.entries({
+    service: process.env.DOCKER_SERVICE_NAME ?? APP_NAME,
+    service_id: process.env.DOCKER_SERVICE_ID,
+    node: process.env.DOCKER_NODE_ID,
+    node_hostname: process.env.DOCKER_NODE_HOSTNAME,
+    container: process.env.DOCKER_TASK_NAME,
+    container_id: process.env.DOCKER_TASK_ID,
+  }).forEach(([key, value]) => {
+    if (value) {
+      labels[key] = value
+    }
+  })
+  return labels
+}
+
 export const startHistogram = (
   hist: Histogram,
   baseArgs: Record<string, string> = {}
@@ -78,6 +95,7 @@ export const startHistogram = (
   return (endArgs: Record<string, string> = {}) => {
     const responseTime = new Date().getTime() - start
     hist.record(responseTime / 1000, {
+      ...getDefaultLabels(),
       ...baseArgs,
       ...endArgs,
     })
