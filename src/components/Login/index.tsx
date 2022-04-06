@@ -4,7 +4,7 @@ import { ExclamationCircleIcon } from "@heroicons/react/solid"
 
 import { UserInfoResponse } from "@/pages/api/login/loginUserInfo"
 import { getFetch } from "@/utils/browser/fetch"
-import { InputHandler, useInput } from "@/utils/browser/hooks/useInput"
+import { InputHandler } from "@/utils/browser/hooks/useInput"
 import { useAuth } from "@/utils/browser/hooks/useUser"
 
 import EmailCodeForm from "./EmailCodeForm"
@@ -17,10 +17,14 @@ const Login: FC = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | undefined>()
 
-  const [email, setEmail] = useInput()
+  const [email, setRawEmail] = useState("")
   const [code, setCode] = useState<string>("")
   const [readyForCode, setReadyForCode] = useState(false)
   const [authMethod, setAuthMethod] = useState<"totp" | "email">("email")
+
+  const setEmail: InputHandler = (event) => {
+    setRawEmail(event.target.value.toLowerCase())
+  }
 
   const setUppercaseCode: InputHandler = (e) => {
     setError(undefined)

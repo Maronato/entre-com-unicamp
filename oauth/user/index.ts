@@ -9,13 +9,14 @@ import { generateIdenticon } from "@/utils/server/identicon"
 import { getLogger } from "@/utils/server/telemetry/logs"
 import { startActiveSpan } from "@/utils/server/telemetry/trace"
 import { verifyTOTP } from "@/utils/server/totp"
+import { fetchUnicampData, UnicampData } from "@/utils/server/unicamp"
 
 import { App } from "../app/types"
 import { revokeUserAppTokens } from "../token/revoke"
 
 export type User = Pick<
   user,
-  "id" | "email" | "picture" | "name" | "totp_secret"
+  "id" | "email" | "picture" | "name" | "totp_secret" | "university_info"
 >
 type SerializedPrivateUserInfo = Record<string, never>
 export type SerializedUser<Private extends boolean = false> =
@@ -24,6 +25,7 @@ export type SerializedUser<Private extends boolean = false> =
     email: string
     picture: string
     name: string | null
+    university_info: UnicampData
   }
 
 export async function createUser(
@@ -33,9 +35,17 @@ export async function createUser(
 ): Promise<User> {
   return startActiveSpan("createUser", { attributes: { email } }, async () => {
     const prisma = getPrisma()
-    picture = picture ?? generateIdenticon(email)
+    picture = picture ?? generateIdenticon(email.toLowerCase())
+
+    const [hidratedName, unicampData] = await fetchUnicampData(email, name)
+
     const user = await prisma.user.create({
-      data: { picture, email, name },
+      data: {
+        picture,
+        email: email.toLowerCase(),
+        name: hidratedName,
+        university_info: unicampData,
+      },
     })
     return user
   })
@@ -62,9 +72,18 @@ export async function updateUser(
         }
       }
 
+      const [hidratedName, unicampData] = await fetchUnicampData(
+        user.email,
+        data.name || user.name || undefined
+      )
+
       const updatedUser = await prisma.user.update({
         where: { id: user.id },
-        data: { name: data.name, picture: data.picture },
+        data: {
+          name: hidratedName,
+          picture: data.picture,
+          university_info: unicampData,
+        },
       })
       return updatedUser
     }
@@ -249,7 +268,13 @@ export function serializeUser<P extends boolean = false>(
     "serializeUser",
     { attributes: { user: user.id } },
     () => {
-      const keys: (keyof User)[] = ["email", "picture", "name", "id"]
+      const keys: (keyof User)[] = [
+        "email",
+        "picture",
+        "name",
+        "id",
+        "university_info",
+      ]
 
       if (includePrivateInfo) {
         keys.push()

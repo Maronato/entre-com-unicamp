@@ -28,14 +28,15 @@ model app {
 }
 
 model user {
-  id            String          @id(map: "user_pkey") @default(cuid())
-  created_at    DateTime        @default(now()) @db.Timestamptz(6)
-  email         String          @unique
-  name          String?
-  picture       String
-  totp_secret   String?
-  apps          app[]
-  refresh_token refresh_token[]
+  id              String          @id(map: "user_pkey") @default(cuid())
+  created_at      DateTime        @default(now()) @db.Timestamptz(6)
+  email           String          @unique
+  name            String?
+  picture         String
+  university_info Json            @default("{}")
+  totp_secret     String?
+  apps            app[]
+  refresh_token   refresh_token[]
 }
 
 model refresh_token {

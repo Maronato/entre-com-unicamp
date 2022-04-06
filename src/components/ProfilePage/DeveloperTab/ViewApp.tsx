@@ -10,6 +10,7 @@ import { SaveIcon, TrashIcon } from "@heroicons/react/outline"
 import classNames from "classnames"
 import useSWR from "swr"
 
+import Divider from "@/components/Divider"
 import AvatarForm from "@/components/Forms/AvatarForm"
 import InputForm from "@/components/Forms/InputForm"
 import SwitchForm from "@/components/Forms/SwitchForm"
@@ -197,7 +198,7 @@ const ViewApp: FunctionComponent<{ clientID: string; goBack: () => void }> = ({
             <CopyValue value={data.client_secret} secret />
           </div>
         </div>
-        <hr className="border-gray-300 dark:border-gray-600" />
+        <Divider />
         <div>
           <h3 className="text-gray-600 dark:text-gray-300 text-xl font-bold">
             Permissões (ou scope)
@@ -229,7 +230,7 @@ const ViewApp: FunctionComponent<{ clientID: string; goBack: () => void }> = ({
             </ul>
           </div>
         </div>
-        <hr className="border-gray-300 dark:border-gray-600" />
+        <Divider />
         <div>
           <h3 className="text-gray-600 dark:text-gray-300 text-xl font-bold">
             Informações e configurações
@@ -273,7 +274,7 @@ const ViewApp: FunctionComponent<{ clientID: string; goBack: () => void }> = ({
           </SwitchForm>
         </div>
 
-        <hr className="border-gray-300 dark:border-gray-600" />
+        <Divider />
         <div className="flex flex-col justify-between items-start lg:flex-row">
           <div className="w-full lg:w-max">
             <Button

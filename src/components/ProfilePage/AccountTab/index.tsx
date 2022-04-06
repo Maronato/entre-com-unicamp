@@ -9,7 +9,7 @@ const AccountTab: FunctionComponent = () => {
   return (
     <TabFrame title="Conta" description="Alterar dados da conta">
       <div className="flex flex-col space-y-8">
-        <div className="block pb-14 mb-10 border-b border-gray-600 dark:border-gray-400 border-opacity-20 dark:border-opacity-20">
+        <div className="block pb-14 mb-10 border-b border-gray-600 dark:border-gray-400 border-opacity-40 dark:border-opacity-40">
           <label
             className="block text-gray-700 dark:text-gray-200 text-lg font-bold mb-3"
             htmlFor="name">

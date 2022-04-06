@@ -2,6 +2,7 @@ import { FormEvent, FunctionComponent, useState } from "react"
 
 import { PlusIcon } from "@heroicons/react/outline"
 
+import Divider from "@/components/Divider"
 import AvatarForm from "@/components/Forms/AvatarForm"
 import InputForm from "@/components/Forms/InputForm"
 import SwitchForm from "@/components/Forms/SwitchForm"
@@ -84,7 +85,7 @@ const CreateApp: FunctionComponent<{
         pictureURL={formData.logo}>
         Logo
       </AvatarForm>
-      <hr className="border-gray-300 dark:border-gray-600" />
+      <Divider />
       <div>
         <h3 className="text-gray-600 dark:text-gray-300 text-xl font-bold">
           Identificando e autenticando seus usuários
@@ -157,7 +158,7 @@ const CreateApp: FunctionComponent<{
         </span>
       </div>
 
-      <hr className="border-gray-300 dark:border-gray-600" />
+      <Divider />
 
       <Button
         type="submit"

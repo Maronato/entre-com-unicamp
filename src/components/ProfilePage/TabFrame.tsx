@@ -10,7 +10,7 @@ const TabFrame: FunctionComponent<{ title: string; description?: string }> = ({
       <div className="mb-10">
         <h2 className="text-4xl font-bold">{title}</h2>
         {description && (
-          <p className="text-lg text-gray-600 dark:text-gray-400 mt-3">
+          <p className="text-md text-gray-600 dark:text-gray-400 mt-3">
             {description}
           </p>
         )}

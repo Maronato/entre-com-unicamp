@@ -30,5 +30,9 @@ declare namespace NodeJS {
     // Analytics
     NEXT_PUBLIC_TRACKING_ID?: string
     NEXT_PUBLIC_TRACKING_URL?: string
+
+    // GDE access
+    GDE_USER?: string
+    GDE_PASSWORD?: string
   }
 }
