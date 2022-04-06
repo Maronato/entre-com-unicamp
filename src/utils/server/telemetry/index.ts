@@ -12,6 +12,7 @@ import {
 
 import { updateS3RequestSpan } from "../cdn/s3"
 import { updateAPIGatewayRequestSpan } from "../emailCodes/aws"
+import { updateGDERequestSpan } from "../unicamp/gde/spanFix"
 
 import { APP_NAME } from "./consts"
 import { registerInstruments } from "./metrics"
@@ -49,6 +50,7 @@ const getSDK = async () => {
           // Set the peer service to AWS S3 if the request is for AWS S3
           updateS3RequestSpan(span, request)
           updateAPIGatewayRequestSpan(span, request)
+          updateGDERequestSpan(span, request)
         },
       }),
       new WinstonInstrumentation(),
