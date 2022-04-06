@@ -15,11 +15,11 @@ enum ScopeDescriptions {
 }
 
 enum ScopeDevDescriptions {
-  OPENID = "Acessar seus dados usando OpenID Connect",
-  PROFILE_READ = "Ver seu perfil público",
-  PROFILE_WRITE = "Modificar seu perfil público",
-  APPS_READ = "Ver seus apps",
-  APPS_WRITE = "Modificar seus apps",
+  OPENID = "Scope básica do OIDC",
+  PROFILE_READ = "Acessar o perfil público do usuário",
+  PROFILE_WRITE = "Modificar o perfil público do usuário",
+  APPS_READ = "Acessar os apps do usuário",
+  APPS_WRITE = "Modificar os apps do usuário",
 }
 export function getScopeDescription(scope: Scope): ScopeDescriptions {
   const res = Object.entries(Scope).find(([, value]) => value === scope)
