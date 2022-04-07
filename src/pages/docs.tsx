@@ -1,6 +1,7 @@
 import { FunctionComponent, useEffect, useState } from "react"
 
 import { GetServerSideProps, NextPage } from "next"
+import { NextSeo } from "next-seo"
 import Image from "next/image"
 
 import Layout from "@/components/Layout"
@@ -188,6 +189,7 @@ const Page: NextPage<Props> = ({ fallback, ...props }) => {
   return (
     <UserProvicer fallback={fallback}>
       <Layout>
+        <NextSeo title="Documentação" />
         <DocsPage {...props} />
       </Layout>
     </UserProvicer>

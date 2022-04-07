@@ -49,6 +49,7 @@
     "ioredis": "<5",
     "jose": "^4.6.0",
     "next": "12.1.0",
+    "next-seo": "^5.4.0",
     "pg-connection-string": "^2.5.0",
     "prisma": "^3.10.0",
     "react": "17.0.2",
