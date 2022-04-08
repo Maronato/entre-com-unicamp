@@ -35,6 +35,7 @@ specifiers:
   jose: ^4.6.0
   lint-staged: ^12.3.5
   next: 12.1.0
+  next-seo: ^5.4.0
   pg-connection-string: ^2.5.0
   postcss: ^8.4.8
   postcss-import: ^14.1.0
@@ -79,6 +80,7 @@ dependencies:
   ioredis: 4.28.5
   jose: 4.6.0
   next: 12.1.0_react-dom@17.0.2+react@17.0.2
+  next-seo: 5.4.0_caa633a00319350dbda42996613fe26c
   pg-connection-string: 2.5.0
   prisma: 3.10.0
   react: 17.0.2
@@ -4082,6 +4084,18 @@ packages:
   /neo-async/2.6.2:
     resolution: {integrity: sha512-Yd3UES5mWCSqR+qNT93S3UoYUkqAZ9lLg8a7g9rimsWmYGK8cVToA4/sF3RrshdyV3sAGMXVUmpMYOw+dLpOuw==}
     dev: true
+
+  /next-seo/5.4.0_caa633a00319350dbda42996613fe26c:
+    resolution: {integrity: sha512-R9DhajPwJnR/lsF2hZ8cN8uqr5CVITsRrCG1AF5+ufcaybKYOvnH8sH9MaH4/hpkps3PQ9H71S7J7SPYixAYzQ==}
+    peerDependencies:
+      next: ^8.1.1-canary.54 || >=9.0.0
+      react: '>=16.0.0'
+      react-dom: '>=16.0.0'
+    dependencies:
+      next: 12.1.0_react-dom@17.0.2+react@17.0.2
+      react: 17.0.2
+      react-dom: 17.0.2_react@17.0.2
+    dev: false
 
   /next/12.1.0_react-dom@17.0.2+react@17.0.2:
     resolution: {integrity: sha512-s885kWvnIlxsUFHq9UGyIyLiuD0G3BUC/xrH0CEnH5lHEWkwQcHOORgbDF0hbrW9vr/7am4ETfX4A7M6DjrE7Q==}

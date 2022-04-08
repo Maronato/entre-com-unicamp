@@ -15,6 +15,7 @@ import {
 } from "@heroicons/react/outline"
 import classNames from "classnames"
 import { GetServerSideProps, NextPage } from "next"
+import { NextSeo } from "next-seo"
 import { useRouter } from "next/router"
 
 import Layout from "@/components/Layout"
@@ -130,6 +131,7 @@ const Page: NextPage<Props> = ({ fallback }) => {
   return (
     <UserProvicer fallback={fallback}>
       <Layout>
+        <NextSeo title="Perfil" />
         <ProfilePage />
       </Layout>
     </UserProvicer>
