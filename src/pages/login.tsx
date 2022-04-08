@@ -1,7 +1,6 @@
 import { FunctionComponent } from "react"
 
 import { GetServerSideProps, NextPage } from "next"
-import { NextSeo } from "next-seo"
 import { useRouter } from "next/router"
 
 import Layout from "@/components/Layout"
@@ -29,7 +28,6 @@ const LoginPage: FunctionComponent = () => {
 const Page: NextPage<Props> = ({ ...props }) => {
   return (
     <Layout>
-      <NextSeo title="Login" />
       <LoginPage {...props} />
     </Layout>
   )
