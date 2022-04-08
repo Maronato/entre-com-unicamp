@@ -45,7 +45,7 @@ type BaseLoginTokenPayload = BaseTokenPayload & {
 export type LoginTokenPayload = ExtendJWTPayload<BaseLoginTokenPayload>
 
 type BaseIDTokenPayload = BaseTokenPayload &
-  Pick<User, "name" | "picture" | "email"> & {
+  Pick<User, "name" | "picture" | "email" | "university_info"> & {
     type: IDTokenType
     aud: typeof ISSUER
     sub: string

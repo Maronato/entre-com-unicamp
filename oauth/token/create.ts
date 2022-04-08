@@ -135,6 +135,7 @@ export const createIDToken = async (
     email: serialized.email,
     name: serialized.name || "",
     picture: serialized.picture,
+    university_info: serialized.university_info,
     type: "id_token",
     scope,
   }
