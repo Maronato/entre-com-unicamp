@@ -162,7 +162,7 @@ const UserAuthorization: FunctionComponent<
           }
         })
       } catch (e) {
-        console.error(e)
+        // ignore
       }
     }
 

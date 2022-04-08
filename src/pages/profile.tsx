@@ -129,7 +129,7 @@ const ProfilePage: FunctionComponent = () => {
 const Page: NextPage<Props> = ({ fallback }) => {
   return (
     <UserProvicer fallback={fallback}>
-      <Layout>
+      <Layout title="Perfil">
         <ProfilePage />
       </Layout>
     </UserProvicer>

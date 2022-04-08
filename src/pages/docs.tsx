@@ -187,7 +187,7 @@ const DocsPage: FunctionComponent = () => {
 const Page: NextPage<Props> = ({ fallback, ...props }) => {
   return (
     <UserProvicer fallback={fallback}>
-      <Layout>
+      <Layout title="Documentação">
         <DocsPage {...props} />
       </Layout>
     </UserProvicer>

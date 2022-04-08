@@ -39,9 +39,10 @@ const AuthorizePage: FunctionComponent<ValidProps | ErrorProps> = (props) => {
 }
 
 const Page: NextPage<Props> = ({ fallback, ...props }) => {
+  const title = "error" in props ? props.error : `Autorizar ${props.app.name}`
   return (
     <UserProvicer fallback={fallback}>
-      <Layout>
+      <Layout title={title}>
         <AuthorizePage {...props} />
       </Layout>
     </UserProvicer>

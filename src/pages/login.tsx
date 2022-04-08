@@ -27,7 +27,7 @@ const LoginPage: FunctionComponent = () => {
 
 const Page: NextPage<Props> = ({ ...props }) => {
   return (
-    <Layout>
+    <Layout title="Login">
       <LoginPage {...props} />
     </Layout>
   )
