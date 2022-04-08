@@ -11,7 +11,7 @@ import {
   CodeChallengeMethod,
   revokeGrant,
 } from "./grant"
-import { REQUIRED_SCOPE, Scope } from "./scope"
+import { Scope } from "./scope"
 import {
   createAccessToken,
   createRefreshToken,
@@ -58,7 +58,7 @@ type AuthorizationRequest = {
   userID: User["id"]
   clientID: string
   redirectURI: string
-  scope?: Scope[]
+  scope: Scope[]
   state?: string
   nonce?: string
   codeChallenge?: string
@@ -105,9 +105,7 @@ export class AuthorizationServer {
           return ErrorCodes.UNSUPPORTED_RESPONSE_TYPE
         }
 
-        const definedScope = scope ?? REQUIRED_SCOPE
-
-        if (!definedScope.every((s) => app.scope.includes(s))) {
+        if (!scope.every((s) => app.scope.includes(s))) {
           setError(ErrorCodes.INVALID_SCOPE)
           return ErrorCodes.INVALID_SCOPE
         }
@@ -126,7 +124,7 @@ export class AuthorizationServer {
           return createCodeGrant(
             clientID,
             user.id,
-            definedScope,
+            scope,
             redirectURI,
             codeChallenge,
             codeChallengeMethod,
@@ -134,7 +132,7 @@ export class AuthorizationServer {
           )
         }
 
-        return createCodeGrant(clientID, user.id, definedScope, redirectURI, {
+        return createCodeGrant(clientID, user.id, scope, redirectURI, {
           state,
           nonce,
         })

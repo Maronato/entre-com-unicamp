@@ -3,8 +3,11 @@ import {
   GrantType,
   AuthorizationCodeGrantType,
 } from "@/oauth"
+import { Scope } from "@/oauth/scope"
 import { AccessToken, RefreshToken } from "@/oauth/token"
-import { IDToken } from "@/oauth/token/types"
+import { ACCESS_TOKEN_EXPIRATION_TIME_SECONDS } from "@/oauth/token/create"
+import { AccessTokenPayload, IDToken } from "@/oauth/token/types"
+import { simpleParseJWT } from "@/utils/server/jwt"
 import { handleRequest, withDefaultMiddleware } from "@/utils/server/middleware"
 import { respondInvalidRequest, respondOk } from "@/utils/server/serverUtils"
 
@@ -12,7 +15,7 @@ import type { NextApiRequest, NextApiResponse } from "next"
 
 const decodeBasicAuth = (
   req: NextApiRequest
-): [string, string] | [null, null] => {
+): [string, string | null] | [null, null] => {
   const auth = req.headers.authorization
   if (!auth) {
     return [null, null]
@@ -21,10 +24,10 @@ const decodeBasicAuth = (
   const [username, password] = Buffer.from(base64, "base64")
     .toString("utf-8")
     .split(":")
-  if (!username || !password) {
+  if (!username) {
     return [null, null]
   }
-  return [username, password]
+  return [username, password || null]
 }
 
 const extractCredentials = (req: NextApiRequest) => {
@@ -73,6 +76,8 @@ type ValidResponseData = {
   refresh_token: string
   id_token?: string
   token_type: "Bearer"
+  expires_in: number
+  scope: Scope[]
 }
 type ErrorResponseData = {
   error: string
@@ -99,19 +104,21 @@ function respondExchange(
   refreshToken: RefreshToken,
   idToken?: IDToken
 ) {
-  if (idToken) {
-    respondOk(res, {
-      access_token: accessToken,
-      refresh_token: refreshToken,
-      id_token: idToken,
-      token_type: "Bearer",
-    })
-  }
-  return respondOk(res, {
+  const tokenPayload = simpleParseJWT<AccessTokenPayload>(accessToken)
+  const response: ValidResponseData = {
     access_token: accessToken,
     refresh_token: refreshToken,
     token_type: "Bearer",
-  })
+    expires_in: ACCESS_TOKEN_EXPIRATION_TIME_SECONDS,
+    scope: tokenPayload.scope,
+  }
+  if (idToken) {
+    respondOk(res, {
+      ...response,
+      id_token: idToken,
+    })
+  }
+  return respondOk(res, response)
 }
 
 async function accessTokenHandler(

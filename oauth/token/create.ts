@@ -82,6 +82,7 @@ const createToken =
   }
 
 const ACCESS_TOKEN_EXPIRATION_TIME = "1h"
+export const ACCESS_TOKEN_EXPIRATION_TIME_SECONDS = 60 * 60
 
 export const createAccessToken = createToken(
   "access_token",

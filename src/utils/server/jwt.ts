@@ -241,3 +241,8 @@ export async function verifyJWT<T extends JWTPayload = JWTPayload>(
     }
   })
 }
+
+export const simpleParseJWT = <T>(token: string): T => {
+  const [, payload] = token.split(".")
+  return JSON.parse(Buffer.from(payload, "base64").toString("utf8"))
+}

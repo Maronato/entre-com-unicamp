@@ -1,7 +1,7 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import { AuthorizationServer, isErrorCode } from "@/oauth"
 import { CodeChallengeMethod } from "@/oauth/grant"
-import { Scope } from "@/oauth/scope"
+import { REQUIRED_SCOPE, Scope } from "@/oauth/scope"
 import { ErrorCodes } from "@/utils/common/errorCode"
 import { getRequestUser } from "@/utils/server/auth"
 import { handleRequest, withDefaultMiddleware } from "@/utils/server/middleware"
@@ -62,7 +62,7 @@ async function handler(
     clientID,
     redirectURI,
     userID: user.id,
-    scope,
+    scope: scope ?? REQUIRED_SCOPE,
     nonce,
     codeChallenge,
     codeChallengeMethod,
