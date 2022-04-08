@@ -43,7 +43,7 @@ services:
       DOCKER_TASK_SLOT: "{{.Task.Slot}}"
     deploy:
       mode: replicated
-      replicas: 2
+      replicas: 1
       update_config:
         parallelism: 1
         failure_action: rollback
