@@ -37,57 +37,60 @@ export type GrantType = AuthorizationCodeGrantType | RefreshTokenGrantType
 
 type MaybeIDToken = IDToken | undefined
 
-type ConfidentialAuth = {
-  clientID: App["client_id"]
+type ExchangeAccessTokenRequest = {
+  grantType: AuthorizationCodeGrantType
+  code: string
+  clientID: string
+  redirectURI: string
+  clientSecret?: string
+  codeVerifier?: string
 }
 
-type PublicAuth = {
-  clientID: App["client_id"]
-  codeChallenge: string
-  codeChallengeMethod: CodeChallengeMethod
+type ExchangeRefreshTokenRequest = {
+  grantType: RefreshTokenGrantType
+  refreshToken: string
+  clientID: string
+  clientSecret?: string
 }
+
+type AuthorizationRequest = {
+  responseType: ResponseType
+  userID: User["id"]
+  clientID: string
+  redirectURI: string
+  scope?: Scope[]
+  state?: string
+  nonce?: string
+  codeChallenge?: string
+  codeChallengeMethod?: CodeChallengeMethod
+}
+
 export class AuthorizationServer {
-  async authorize(
-    responseType: ResponseType,
-    auth: ConfidentialAuth,
-    userID: User["id"],
-    redirectURI: string,
-    scope?: Scope[],
-    state?: string,
-    nonce?: string
-  ): Promise<AuthorizationCodeGrant | ErrorCodes>
-  async authorize(
-    responseType: ResponseType,
-    auth: PublicAuth,
-    userID: User["id"],
-    redirectURI: string,
-    scope?: Scope[],
-    state?: string,
-    nonce?: string
-  ): Promise<AuthorizationCodeGrant | ErrorCodes>
-  async authorize(
-    responseType: ResponseType,
-    auth: ConfidentialAuth | PublicAuth,
-    userID: User["id"],
-    redirectURI: string,
-    scope?: Scope[],
-    state?: string,
-    nonce?: string
-  ): Promise<AuthorizationCodeGrant | ErrorCodes> {
+  async authorize({
+    userID,
+    clientID,
+    redirectURI,
+    responseType,
+    codeChallenge,
+    codeChallengeMethod,
+    nonce,
+    scope,
+    state,
+  }: AuthorizationRequest): Promise<AuthorizationCodeGrant | ErrorCodes> {
     return startActiveSpan(
       "AuthorizationServer.authorize",
       async (span, setError) => {
         span.setAttributes({
           responseType,
-          clientID: auth.clientID,
-          userID: userID,
+          clientID,
+          userID,
           redirectURI,
           scope,
           state,
           nonce,
         })
 
-        const app = await getAppByClientID(auth.clientID)
+        const app = await getAppByClientID(clientID)
         if (!app || !app.redirect_uris.includes(redirectURI)) {
           setError(ErrorCodes.INVALID_CLIENT_OR_REDIRECT_URI)
           return ErrorCodes.INVALID_CLIENT_OR_REDIRECT_URI
@@ -102,32 +105,39 @@ export class AuthorizationServer {
           return ErrorCodes.UNSUPPORTED_RESPONSE_TYPE
         }
 
-        scope = scope ?? REQUIRED_SCOPE
+        const definedScope = scope ?? REQUIRED_SCOPE
 
-        if (!scope.every((s) => app.scope.includes(s))) {
+        if (!definedScope.every((s) => app.scope.includes(s))) {
           setError(ErrorCodes.INVALID_SCOPE)
           return ErrorCodes.INVALID_SCOPE
         }
-        if (app.type === "confidential") {
-          return createCodeGrant(app.client_id, user.id, scope, redirectURI, {
-            state,
-            nonce,
-          })
-        }
-        if (!("codeChallenge" in auth)) {
+
+        // Public must not have codeChallenge
+        if (app.type === "public" && !(codeChallenge && codeChallengeMethod)) {
           setError(ErrorCodes.INVALID_REQUEST)
           return ErrorCodes.INVALID_REQUEST
         }
 
-        return createCodeGrant(
-          auth.clientID,
-          user.id,
-          scope,
-          redirectURI,
-          auth.codeChallenge,
-          auth.codeChallengeMethod,
-          { state, nonce }
-        )
+        if (codeChallenge || codeChallengeMethod) {
+          if (!(codeChallenge && codeChallengeMethod)) {
+            setError(ErrorCodes.INVALID_REQUEST)
+            return ErrorCodes.INVALID_REQUEST
+          }
+          return createCodeGrant(
+            clientID,
+            user.id,
+            definedScope,
+            redirectURI,
+            codeChallenge,
+            codeChallengeMethod,
+            { state, nonce }
+          )
+        }
+
+        return createCodeGrant(clientID, user.id, definedScope, redirectURI, {
+          state,
+          nonce,
+        })
       }
     )
   }
@@ -163,10 +173,13 @@ export class AuthorizationServer {
   }
 
   private async exchangeAuthorizationCode(
-    code: string,
     app: App,
-    redirectURI: string,
-    codeVerifierOrClientSecret?: string
+    {
+      code,
+      redirectURI,
+      clientSecret,
+      codeVerifier,
+    }: Omit<ExchangeAccessTokenRequest, "clientID" | "grantType">
   ): Promise<[AccessToken, RefreshToken, MaybeIDToken] | ErrorCodes> {
     return startActiveSpan(
       "AuthorizationServer.exchangeAuthorizationCode",
@@ -176,21 +189,16 @@ export class AuthorizationServer {
           app: app.client_id,
         })
 
-        const grant = await (codeVerifierOrClientSecret
-          ? verifyCodeGrant(
-              code,
-              app.client_id,
-              redirectURI,
-              codeVerifierOrClientSecret
-            )
+        const grant = await (codeVerifier
+          ? verifyCodeGrant(code, app.client_id, redirectURI, codeVerifier)
           : verifyCodeGrant(code, app.client_id, redirectURI))
 
         if (!grant) {
           setError(ErrorCodes.INVALID_GRANT)
           return ErrorCodes.INVALID_GRANT
         } else if (
-          !("codeChallenge" in grant) &&
-          app.client_secret !== codeVerifierOrClientSecret
+          (!("codeChallenge" in grant) || clientSecret) &&
+          app.client_secret !== clientSecret
         ) {
           setError(ErrorCodes.INVALID_CLIENT)
           return ErrorCodes.INVALID_CLIENT
@@ -239,51 +247,24 @@ export class AuthorizationServer {
   }
 
   async exchangeToken(
-    grantType: AuthorizationCodeGrantType,
-    code: string,
-    clientID: string,
-    clientSecretOrCodeVerifier: string,
-    redirectURI: string
-  ): Promise<[AccessToken, RefreshToken, MaybeIDToken] | ErrorCodes>
-  async exchangeToken(
-    grantType: RefreshTokenGrantType,
-    refreshToken: string,
-    clientID: string,
-    clientSecret?: string
-  ): Promise<[AccessToken, RefreshToken, MaybeIDToken] | ErrorCodes>
-  async exchangeToken(
-    grantType: GrantType,
-    codeOrRefreshToken: string,
-    clientID: string,
-    clientSecretOrCodeVerifier?: string,
-    redirectURI?: string
+    payload: ExchangeAccessTokenRequest | ExchangeRefreshTokenRequest
   ): Promise<[AccessToken, RefreshToken, MaybeIDToken] | ErrorCodes> {
     return startActiveSpan(
       "AuthorizationServer.exchangeToken",
       async (span, setError) => {
         span.setAttributes({
-          grantType,
-          clientID,
-          redirectURI,
+          grantType: payload.grantType,
+          clientID: payload.clientID,
         })
 
-        const app = await getAppByClientID(clientID)
+        const app = await getAppByClientID(payload.clientID)
         if (!app) {
           setError(ErrorCodes.INVALID_CLIENT)
           return ErrorCodes.INVALID_CLIENT
         }
-        if (grantType === "authorization_code") {
-          if (!redirectURI) {
-            setError(ErrorCodes.INVALID_REQUEST)
-            return ErrorCodes.INVALID_REQUEST
-          }
-          return this.exchangeAuthorizationCode(
-            codeOrRefreshToken,
-            app,
-            redirectURI,
-            clientSecretOrCodeVerifier
-          )
-        } else if (grantType === "refresh_token") {
+        if (payload.grantType === "authorization_code") {
+          return this.exchangeAuthorizationCode(app, payload)
+        } else if (payload.grantType === "refresh_token") {
           // Typeguard that saves us a type check later
           const guardRefreshTokenType = <T>(
             token: T,
@@ -293,8 +274,8 @@ export class AuthorizationServer {
           const refreshToken = await parseToken<
             RefreshToken,
             RefreshTokenPayload
-          >(codeOrRefreshToken)
-          const isValid = await validateToken(codeOrRefreshToken, {
+          >(payload.refreshToken)
+          const isValid = await validateToken(payload.refreshToken, {
             types: ["refresh_token"],
           })
 
@@ -305,7 +286,7 @@ export class AuthorizationServer {
           return this.exchangeRefreshToken(
             refreshToken,
             app,
-            clientSecretOrCodeVerifier
+            payload.clientSecret
           )
         } else {
           setError(ErrorCodes.UNSUPPORTED_GRANT_TYPE)

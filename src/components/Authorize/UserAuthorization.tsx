@@ -6,10 +6,7 @@ import { useRouter } from "next/router"
 
 import { SerializedApp } from "@/oauth/app/types"
 import { getScopeDescription, REQUIRED_SCOPE, Scope } from "@/oauth/scope"
-import {
-  ValidResponseData,
-  ChallengeRequestData,
-} from "@/pages/api/oauth/authorize"
+import { ValidResponseData, RequestData } from "@/pages/api/oauth/authorize"
 import { getFetch, postFetch } from "@/utils/browser/fetch"
 import { useAuth } from "@/utils/browser/hooks/useUser"
 
@@ -64,7 +61,7 @@ const UserAuthorization: FunctionComponent<
   AuthorizeProps & { app: SerializedApp }
 > = ({
   clientID,
-  redirectUri,
+  redirectURI,
   scope = REQUIRED_SCOPE,
   state,
   nonce,
@@ -92,11 +89,11 @@ const UserAuthorization: FunctionComponent<
 
   const redirect = useCallback(
     (searchParams: URLSearchParams) => {
-      const url = new URL(redirectUri)
+      const url = new URL(redirectURI)
       searchParams.forEach((v, k) => url.searchParams.set(k, v))
       router.push(url.href)
     },
-    [router, redirectUri]
+    [router, redirectURI]
   )
 
   const authorize = useCallback(async () => {
@@ -107,11 +104,11 @@ const UserAuthorization: FunctionComponent<
       searchParams.set("state", state)
     }
     try {
-      const payload: Partial<ChallengeRequestData> = {
+      const payload: Partial<RequestData> = {
         clientID,
         codeChallenge,
         codeChallengeMethod,
-        redirectUri,
+        redirectURI,
         responseType: "code",
         scope: selectedScopeList,
         state,
@@ -139,7 +136,7 @@ const UserAuthorization: FunctionComponent<
     codeChallenge,
     codeChallengeMethod,
     redirect,
-    redirectUri,
+    redirectURI,
     selectedScopeList,
     state,
     nonce,

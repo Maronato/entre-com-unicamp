@@ -137,7 +137,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({
 
   const authQuery: Partial<AuthorizeProps> = {
     clientID: client_id,
-    redirectUri: redirect_uri,
+    redirectURI: redirect_uri,
     scope: scopeArr,
   }
 

@@ -27,6 +27,24 @@ const decodeBasicAuth = (
   return [username, password]
 }
 
+const extractCredentials = (req: NextApiRequest) => {
+  const data = req.body as Partial<RequestData>
+
+  const [basicClientID, basicClientSecret] = decodeBasicAuth(req)
+
+  const clientSecret = basicClientSecret || data.client_secret
+
+  const codeVerifier = "code_verifier" in data ? data.code_verifier : undefined
+
+  const clientID = basicClientID || data.client_id
+
+  return {
+    clientSecret,
+    codeVerifier,
+    clientID,
+  }
+}
+
 type BaseRequestData = {
   grant_type: GrantType
   client_id: string
@@ -37,23 +55,16 @@ type BaseAccessRequestData = BaseRequestData & {
   code: string
   redirect_uri: string
 }
-type AccessPublicRequestData = BaseAccessRequestData & {
-  code_verifier: string
-}
-type AccessConfidentialRequestData = BaseAccessRequestData & {
-  client_secret: string
-}
-type AccessRequestData = AccessPublicRequestData | AccessConfidentialRequestData
 
-type BaseRefreshRequestData = BaseRequestData & {
+type AccessRequestData = BaseAccessRequestData & {
+  code_verifier?: string
+  client_secret?: string
+}
+
+type RefreshRequestData = BaseRequestData & {
   refresh_token: string
+  client_secret?: string
 }
-type RefreshConfidentialRequestData = BaseRefreshRequestData & {
-  client_secret: string
-}
-type RefreshRequestData =
-  | BaseRefreshRequestData
-  | RefreshConfidentialRequestData
 
 type RequestData = AccessRequestData | RefreshRequestData
 
@@ -110,25 +121,25 @@ async function accessTokenHandler(
   const data = req.body as AccessRequestData
   const server = new AuthorizationServer()
 
-  const [username, password] = decodeBasicAuth(req)
+  const { clientID, clientSecret, codeVerifier } = extractCredentials(req)
 
-  const secretOrVerifier =
-    password ||
-    ("client_secret" in data ? data.client_secret : data.code_verifier)
-
-  const client_id = username || data.client_id
-
-  if (!client_id || !data.code || !data.redirect_uri || !secretOrVerifier) {
+  if (
+    !clientID ||
+    !data.code ||
+    !data.redirect_uri ||
+    !(clientSecret || codeVerifier)
+  ) {
     return respondInvalidRequest(res, "invalid_request")
   }
 
-  const auth = await server.exchangeToken(
-    "authorization_code",
-    data.code,
-    client_id,
-    secretOrVerifier,
-    data.redirect_uri
-  )
+  const auth = await server.exchangeToken({
+    grantType: "authorization_code",
+    clientID,
+    clientSecret,
+    code: data.code,
+    redirectURI: data.redirect_uri,
+    codeVerifier,
+  })
   if (typeof auth === "string") {
     return respondInvalidRequest(res, auth)
   }
@@ -143,19 +154,18 @@ async function refreshTokenHandler(
   const data = req.body as RefreshRequestData
   const server = new AuthorizationServer()
 
-  const [username, password] = decodeBasicAuth(req)
+  const { clientID, clientSecret } = extractCredentials(req)
 
-  const clientSecret =
-    password || ("client_secret" in data ? data.client_secret : undefined)
+  if (!clientID || !data.refresh_token) {
+    return respondInvalidRequest(res, "invalid_request")
+  }
 
-  const client_id = username || data.client_id
-
-  const auth = await server.exchangeToken(
-    "refresh_token",
-    data.refresh_token,
-    client_id,
-    clientSecret
-  )
+  const auth = await server.exchangeToken({
+    grantType: "refresh_token",
+    clientID,
+    clientSecret,
+    refreshToken: data.refresh_token,
+  })
   if (typeof auth === "string") {
     return respondInvalidRequest(res, auth)
   }

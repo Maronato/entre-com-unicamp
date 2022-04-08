@@ -10,21 +10,16 @@ import { respondInvalidRequest, respondOk } from "@/utils/server/serverUtils"
 
 import type { NextApiRequest, NextApiResponse } from "next"
 
-type CodeRequestData = {
+export type RequestData = {
   clientID: string
   responseType: "code"
-  redirectUri: string
+  redirectURI: string
   scope?: Scope[]
   state?: string
   nonce?: string
+  codeChallenge?: string
+  codeChallengeMethod?: CodeChallengeMethod
 }
-
-export type ChallengeRequestData = CodeRequestData & {
-  codeChallenge: string
-  codeChallengeMethod: CodeChallengeMethod
-}
-
-export type RequestData = CodeRequestData | ChallengeRequestData
 
 export type ValidResponseData = {
   code: string
@@ -44,51 +39,39 @@ async function handler(
   const user = getRequestUser(req)
 
   const server = new AuthorizationServer()
-  const data: Partial<RequestData> = req.body
+  const {
+    clientID,
+    nonce,
+    redirectURI,
+    responseType,
+    scope,
+    state,
+    codeChallenge,
+    codeChallengeMethod,
+  }: Partial<RequestData> = req.body
 
-  if (!data.responseType || !data.clientID || !data.redirectUri) {
+  if (!responseType || !clientID || !redirectURI) {
     return respondInvalidRequest(res, {
       error: ErrorCodes.INVALID_REQUEST,
-      state: data.state,
+      state,
     })
   }
 
-  if (
-    "codeChallenge" in data &&
-    data.codeChallenge &&
-    data.codeChallengeMethod
-  ) {
-    const code = await server.authorize(
-      data.responseType,
-      {
-        clientID: data.clientID,
-        codeChallenge: data.codeChallenge,
-        codeChallengeMethod: data.codeChallengeMethod,
-      },
-      user.id,
-      data.redirectUri,
-      data.scope,
-      data.state,
-      data.nonce
-    )
-    if (isErrorCode(code)) {
-      return respondInvalidRequest(res, { error: code, state: data.state })
-    }
-    return respondOk(res, { code, state: data.state })
-  }
-  const code = await server.authorize(
-    data.responseType,
-    { clientID: data.clientID },
-    user.id,
-    data.redirectUri,
-    data.scope,
-    data.state,
-    data.nonce
-  )
+  const code = await server.authorize({
+    responseType,
+    clientID,
+    redirectURI,
+    userID: user.id,
+    scope,
+    nonce,
+    codeChallenge,
+    codeChallengeMethod,
+    state,
+  })
   if (isErrorCode(code)) {
-    return respondInvalidRequest(res, { error: code, state: data.state })
+    return respondInvalidRequest(res, { error: code, state })
   }
-  return respondOk(res, { code, state: data.state })
+  return respondOk(res, { code, state })
 }
 
 export default withDefaultMiddleware(
