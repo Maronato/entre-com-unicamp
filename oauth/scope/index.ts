@@ -1,9 +1,10 @@
 export enum Scope {
   OPENID = "openid",
-  PROFILE_READ = "profile:read",
+  PROFILE_READ = "profile",
   PROFILE_WRITE = "profile:write",
-  APPS_READ = "apps:read",
+  APPS_READ = "apps",
   APPS_WRITE = "apps:write",
+  EMAIL_READ = "email",
 }
 
 enum ScopeDescriptions {
@@ -12,6 +13,7 @@ enum ScopeDescriptions {
   PROFILE_WRITE = "Modificar seu perfil público",
   APPS_READ = "Ver seus apps",
   APPS_WRITE = "Modificar seus apps",
+  EMAIL_READ = "Ver seu email público",
 }
 
 enum ScopeDevDescriptions {
@@ -20,6 +22,7 @@ enum ScopeDevDescriptions {
   PROFILE_WRITE = "Modificar o perfil público do usuário",
   APPS_READ = "Acessar os apps do usuário",
   APPS_WRITE = "Modificar os apps do usuário",
+  EMAIL_READ = "Acessar o email do usuário",
 }
 export function getScopeDescription(scope: Scope): ScopeDescriptions {
   const res = Object.entries(Scope).find(([, value]) => value === scope)
@@ -40,6 +43,10 @@ export function isScope(v: unknown): v is Scope {
   return Object.values(Scope).includes(v as Scope)
 }
 
-export const REQUIRED_SCOPE = [Scope.PROFILE_READ]
+export const REQUIRED_SCOPE = [Scope.PROFILE_READ, Scope.EMAIL_READ]
 
-export const DEFAULT_SCOPE = [Scope.PROFILE_READ, Scope.OPENID]
+export const DEFAULT_SCOPE = [
+  Scope.PROFILE_READ,
+  Scope.EMAIL_READ,
+  Scope.OPENID,
+]
