@@ -94,6 +94,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 }
 
 export default withDefaultMiddleware(
-  withAuthMiddleware(handleRequest(handler)),
+  withAuthMiddleware(handleRequest(handler), true),
   ["GET", "DELETE", "PATCH"]
 )

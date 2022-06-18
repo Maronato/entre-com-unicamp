@@ -5,6 +5,7 @@ import {
   getRequestUser,
   hidrateAuthRequest,
 } from "../auth"
+import { allowCORS } from "../cors"
 import { Handler, respondUnauthorized } from "../serverUtils"
 import { startActiveSpan } from "../telemetry/trace"
 
@@ -13,6 +14,11 @@ export const withAuthMiddleware =
   async (req, res) => {
     return startActiveSpan(`Middleware - withAuth`, async (span, setError) => {
       let authRequest: AuthenticatedAPIRequest
+      // If the request can be made by other apps, allow CORS
+      if (!checkAudience) {
+        allowCORS(res)
+      }
+
       try {
         authRequest = await hidrateAuthRequest(req, checkAudience, scope)
         const user = getRequestUser(authRequest)

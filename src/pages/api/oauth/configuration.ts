@@ -3,6 +3,7 @@ import { JSONWebKeySet } from "jose"
 import { Scope } from "@/oauth/scope"
 import { ISSUER } from "@/utils/server/jwt"
 import { handleRequest, withDefaultMiddleware } from "@/utils/server/middleware"
+import { withCORSAllowed } from "@/utils/server/middleware/cors"
 import { respondOk } from "@/utils/server/serverUtils"
 
 import type { NextApiRequest, NextApiResponse } from "next"
@@ -53,4 +54,6 @@ async function handler(
   return respondOk(res, configuration)
 }
 
-export default withDefaultMiddleware(handleRequest(handler))
+export default withDefaultMiddleware(withCORSAllowed(handleRequest(handler)), [
+  "GET",
+])

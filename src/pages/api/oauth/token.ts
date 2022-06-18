@@ -9,6 +9,7 @@ import { ACCESS_TOKEN_EXPIRATION_TIME_SECONDS } from "@/oauth/token/create"
 import { AccessTokenPayload, IDToken } from "@/oauth/token/types"
 import { simpleParseJWT } from "@/utils/server/jwt"
 import { handleRequest, withDefaultMiddleware } from "@/utils/server/middleware"
+import { withCORSAllowed } from "@/utils/server/middleware/cors"
 import { respondInvalidRequest, respondOk } from "@/utils/server/serverUtils"
 
 import type { NextApiRequest, NextApiResponse } from "next"
@@ -180,4 +181,6 @@ async function refreshTokenHandler(
   return respondExchange(res, accessToken, refreshToken, idToken)
 }
 
-export default withDefaultMiddleware(handleRequest(handler), ["POST"])
+export default withDefaultMiddleware(withCORSAllowed(handleRequest(handler)), [
+  "POST",
+])
