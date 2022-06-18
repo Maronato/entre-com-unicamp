@@ -1,3 +1,4 @@
+import { CookieSerializeOptions } from "cookie"
 import { GetServerSideProps, NextApiRequest, NextApiResponse } from "next"
 
 import { REQUIRED_SCOPE, Scope } from "@/oauth/scope"
@@ -15,11 +16,12 @@ const AUTH_COOKIE_NAME = "jwt-auth"
 
 const MAX_AGE = 60 * 60 * 24 * 30 * 12
 
-const getAuthCookieOptions = () => ({
+const getAuthCookieOptions = (): CookieSerializeOptions => ({
   maxAge: MAX_AGE,
   path: "/",
-  sameSite: true,
+  sameSite: "lax",
   httpOnly: true,
+  domain: ISSUER,
   secure: process.env.NODE_ENV === "production",
 })
 
