@@ -21,7 +21,7 @@ const getAuthCookieOptions = (): CookieSerializeOptions => ({
   path: "/",
   sameSite: "lax",
   httpOnly: true,
-  domain: ISSUER,
+  domain: process.env.NODE_ENV === "production" ? ISSUER : undefined,
   secure: process.env.NODE_ENV === "production",
 })
 

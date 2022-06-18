@@ -8,7 +8,7 @@ import Layout from "@/components/Layout"
 import { getAppByClientID, serializeApp } from "@/oauth/app"
 import { App, SerializedApp } from "@/oauth/app/types"
 import { CodeChallengeMethod } from "@/oauth/grant"
-import { isScope, REQUIRED_SCOPE } from "@/oauth/scope"
+import { isScope, REQUIRED_SCOPE, DEFAULT_SCOPE } from "@/oauth/scope"
 import { ErrorCodes } from "@/utils/common/errorCode"
 import { serverFetch } from "@/utils/server/auth"
 
@@ -118,7 +118,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({
     ? Array.isArray(scope)
       ? scope
       : scope.split(" ")
-    : REQUIRED_SCOPE
+    : DEFAULT_SCOPE.slice(0)
 
   if (!scopeArr.every(isScope)) {
     redirectUrl.searchParams.append("error", ErrorCodes.INVALID_SCOPE)
