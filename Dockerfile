@@ -29,6 +29,7 @@ RUN yarn build
 # Production image, copy all the files and run next
 FROM base AS runner
 WORKDIR /app
+RUN apt-get update && apt-get install curl -y
 ENV NODE_ENV=production
 COPY --from=builder /app/next.config.mjs ./
 COPY --from=builder /app/public ./public
