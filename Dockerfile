@@ -1,28 +1,33 @@
-FROM node:16 AS prod-deps
+FROM node:16-slim AS base
+RUN apt-get update
+RUN apt-get install -y openssl
+
+FROM base AS prod-deps
 WORKDIR /app
 ENV NODE_ENV=production
-COPY package.json pnpm-lock.yaml ./
+RUN echo "strict-peer-dependencies=false" > .npmrc
+COPY package.json yarn.lock ./
+RUN npm set-script prepare "" && yarn install --frozen-lockfile --production
 COPY prisma ./prisma
-RUN yarn global add pnpm
-RUN pnpm install --prefer-frozen-lockfile --prod
 RUN yarn prisma generate
 
-FROM node:16 AS build-deps
+FROM base AS build-deps
 WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
+RUN echo "strict-peer-dependencies=false" > .npmrc
 COPY --from=prod-deps /app/node_modules ./node_modules
-RUN yarn global add pnpm
-RUN pnpm install --prefer-frozen-lockfile --prefer-offline
+COPY package.json yarn.lock ./
+RUN yarn install --frozen-lockfile --prefer-offline
 
-FROM node:16 AS builder
+FROM base AS builder
 WORKDIR /app
 ENV NODE_ENV=production
 COPY . .
+RUN rm -rdf node_modules
 COPY --from=build-deps /app/node_modules ./node_modules
 RUN yarn build
 
 # Production image, copy all the files and run next
-FROM node:16 AS runner
+FROM base AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=builder /app/next.config.mjs ./
